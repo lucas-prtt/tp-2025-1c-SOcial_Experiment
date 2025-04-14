@@ -66,7 +66,7 @@ void esperarClientes(int socket_server, void (*atenderCliente)(void*), parametro
                     (void*)infoThread);
         pthread_detach(thread);
     }
-
+}
 
 void * atenderConThread(void * infoThread){   // PLACEHOLDER (Cambiarle el nombre tambien)
 	int cliente_fd = /* SOCKET CLIENTE */            (*(infoAtencionThread*)infoThread).socket;
@@ -81,6 +81,4 @@ void * atenderConThread(void * infoThread){   // PLACEHOLDER (Cambiarle el nombr
 
 	free(infoThread); // Libera el pointer infoThread. No asi los parametros 
 	pthread_exit(0);  // Termina el thread una vez establecida la conexion con el modulo en cuestion
-
-
 }

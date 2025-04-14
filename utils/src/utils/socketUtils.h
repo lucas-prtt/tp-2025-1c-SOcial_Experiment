@@ -19,7 +19,7 @@ typedef struct{ //Ej de uso para pasarle parametros a AtenderCliente
 int crearSocket(char* ip, char* puerto, struct addrinfo **servinfo);
 int crearSocketServer(char* puerto);
 int conectarSocketClient(char* ip, char* puerto);
-void esperarClientes(int socket_server, void (*atenderCliente)(void*));
+void esperarClientes(int socket_server, void (*atenderCliente)(void*), parametrosAtencionThread * params);
 void * atenderConThread(void * infoThread);
 
 
