@@ -5,8 +5,9 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <pthread.h>
 
-int crearSocket(char* ip, char* puerto, struct addrinfo *servinfo);
+int crearSocket(char* ip, char* puerto, struct addrinfo **servinfo);
 int crearSocketServer(char* puerto);
 int conectarSocketClient(char* ip, char* puerto);
 
