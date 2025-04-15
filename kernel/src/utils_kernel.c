@@ -41,9 +41,7 @@ void * esperarIOEscucha(void * socket){
         if(nuevoSocket == -1){
             pthread_testcancel();
         }
-        int * socketConexion = malloc(sizeof(int));
-        *socketConexion = nuevoSocket;
-        list_add(conexiones.CPUsDispatch, socketConexion);
+        conexiones.IOEscucha = nuevoSocket;
         printf("- IO conectado\n");
         fflush(stdout);
     }
