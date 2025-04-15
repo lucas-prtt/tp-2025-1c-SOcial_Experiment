@@ -34,3 +34,7 @@ int conectarSocketClient(char* ip, char* puerto){//Devuelve un socket listo para
 	freeaddrinfo(serverInfo);
     return soc;
 }
+
+void liberarConexion(int socket){
+    close(socket);
+}

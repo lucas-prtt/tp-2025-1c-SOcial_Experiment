@@ -11,7 +11,7 @@
 int crearSocket(char* ip, char* puerto, struct addrinfo **servinfo);
 int crearSocketServer(char* puerto);
 int conectarSocketClient(char* ip, char* puerto);
-
+void liberarConexion(int socket);
 
 
 
