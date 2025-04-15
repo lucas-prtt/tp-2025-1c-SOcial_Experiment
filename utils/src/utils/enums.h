@@ -1,0 +1,7 @@
+
+
+typedef enum{
+	SOYKERNEL, SOYCPU, SOYMEMORIA, SOYIO
+} ID_MODULO;
+
+
