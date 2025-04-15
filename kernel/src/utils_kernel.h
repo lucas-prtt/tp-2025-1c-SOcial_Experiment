@@ -2,7 +2,8 @@
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <utils/socketUtils.h>
-typedef struct{
+
+typedef struct {
     t_list * CPUsDispatch;
     t_list * CPUsInterrupt;
     int IOEscucha;

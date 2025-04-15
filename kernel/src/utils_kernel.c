@@ -8,7 +8,7 @@ void * esperarCPUDispatch(void * socket){
     while(1){
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
-        if(nuevoSocket == -1){
+        if(nuevoSocket == -1) {
             pthread_testcancel(); // Para asegurarse que el -1 que sale de shutdown no entre en la lista 
         }
         int * socketConexion = malloc(sizeof(int));
@@ -18,12 +18,13 @@ void * esperarCPUDispatch(void * socket){
         fflush(stdout);
     }
 }
+
 void * esperarCPUInterrupt(void * socket){
     conexiones.CPUsInterrupt = list_create();
     while(1){
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
-        if(nuevoSocket == -1){
+        if(nuevoSocket == -1) {
             pthread_testcancel();
         }
         int * socketConexion = malloc(sizeof(int));
@@ -33,12 +34,13 @@ void * esperarCPUInterrupt(void * socket){
         fflush(stdout);
     }
 }
+
 void * esperarIOEscucha(void * socket){
     conexiones.CPUsDispatch = list_create();
     while(1){
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
-        if(nuevoSocket == -1){
+        if(nuevoSocket == -1) {
             pthread_testcancel();
         }
         conexiones.IOEscucha = nuevoSocket;

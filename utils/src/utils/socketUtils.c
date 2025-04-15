@@ -1,10 +1,10 @@
 #include "socketUtils.h"
 
-int crearSocket(char* ip, char* puerto, struct addrinfo **server_info){ //Es llamada por crearSocketServer y conectarSocketCliente. No deberia hacer falta usarla
+int crearSocket(char* ip, char* puerto, struct addrinfo **server_info) { //Es llamada por crearSocketServer y conectarSocketCliente. No deberia hacer falta usarla
     // Recordar que es necesario server_info como pointer a pointer ya que el pointer es modificado al alocar memoria en getaddrinfo()
     int soc;
     struct addrinfo hints;
-
+    
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
