@@ -36,7 +36,6 @@ void * esperarCPUInterrupt(void * socket){
 }
 
 void * esperarIOEscucha(void * socket){
-    conexiones.CPUsDispatch = list_create();
     while(1){
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
