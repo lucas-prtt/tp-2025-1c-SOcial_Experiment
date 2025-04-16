@@ -10,9 +10,6 @@ int main(int argc, char* argv[]) {
     
     log_debug(logger, "Kernel iniciado");
 
-    // Soy consciente de que es un lio de llamado de funciones. Despues lo intentaré abstraer y reducir
-    // Por lo pronto compila y deberia andar
-
     int socketCPUDispatch = crearSocketDesdeConfig(config, "PUERTO_ESCUCHA_DISPATCH");
     int socketCPUInterrupt = crearSocketDesdeConfig(config, "PUERTO_ESCUCHA_INTERRUPT");
     int socketEscuchaIO = crearSocketDesdeConfig(config, "PUERTO_ESCUCHA_IO");
@@ -39,7 +36,10 @@ int main(int argc, char* argv[]) {
     shutdown(ioConnect, SHUT_RD);
     log_debug(logger, "Threads de conexion eliminados");
 
-    bool isConexionIOyCPUDisponible = !list_is_empty(conexiones.CPUsDispatch) && list_size(conexiones.CPUsDispatch) == list_size(conexiones.CPUsInterrupt) && conexiones.IOEscucha != -1;
+    // TODO: Filtrar lista de CPUs con CPUs que no tengan ID (No hicieron handshake, ID = -1)
+    // TODO: Filtrar lista de CPUs con CPUs que tengan un tipo de socket (interrupt/dispatch) y no el otro (Uno de los dos handshakes falló)
+
+    bool isConexionIOyCPUDisponible = !list_is_empty(conexiones.CPUsDispatch) && list_size(conexiones.CPUsDispatch) == list_size(conexiones.CPUsInterrupt) && conexiones.IOEscucha.ID != -1;
     bool isMemoriaDisponible = verificarModuloMemoriaDisponible();
     bool listoParaIniciar = isConexionIOyCPUDisponible && isMemoriaDisponible;
     log_debug(logger, "Verificacion de conexiones realizada");

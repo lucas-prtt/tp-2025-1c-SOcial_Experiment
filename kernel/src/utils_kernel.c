@@ -11,10 +11,12 @@ void * esperarCPUDispatch(void * socket){
         if(nuevoSocket == -1) {
             pthread_testcancel(); // Para asegurarse que el -1 que sale de shutdown no entre en la lista 
         }
-        int * socketConexion = malloc(sizeof(int));
-        *socketConexion = nuevoSocket;
-        list_add(conexiones.CPUsDispatch, socketConexion);
-        printf("- CPU conectada para dispatch\n");
+        IDySocket * CPUIDySocket = malloc(sizeof(IDySocket));
+        CPUIDySocket->SOCKET = nuevoSocket;
+        CPUIDySocket->ID = -1; // -1 = No se recibio Handshake: Se desconoce el ID del CPU
+        list_add(conexiones.CPUsDispatch, CPUIDySocket);
+        // TODO: Codigo para handshake en nuevo thread (Establece el ID del CPU)
+        printf("- CPU conectada para dispatch\n"); //Porahi conviene poner esto en el handshake
         fflush(stdout);
     }
 }
@@ -27,23 +29,28 @@ void * esperarCPUInterrupt(void * socket){
         if(nuevoSocket == -1) {
             pthread_testcancel();
         }
-        int * socketConexion = malloc(sizeof(int));
-        *socketConexion = nuevoSocket;
-        list_add(conexiones.CPUsInterrupt, socketConexion);
+        IDySocket * CPUIDySocket = malloc(sizeof(IDySocket));
+        CPUIDySocket->SOCKET = nuevoSocket;
+        CPUIDySocket->ID = -1;
+        list_add(conexiones.CPUsInterrupt, CPUIDySocket);
+        // TODO: Codigo para handshake en nuevo thread (Establece el ID del CPU)
         printf("- CPU conectada para Interrupt\n");
         fflush(stdout);
     }
 }
 
 void * esperarIOEscucha(void * socket){
-    conexiones.IOEscucha = -1;
+    conexiones.IOEscucha.ID = -1;
+    conexiones.IOEscucha.SOCKET = -1;
     while(1){
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
         if(nuevoSocket == -1) {
             pthread_testcancel();
         }
-        conexiones.IOEscucha = nuevoSocket;
+        conexiones.IOEscucha.SOCKET = nuevoSocket;
+        // TODO: Codigo handshake (Establece ID del IO)
+        // Como solo es un IO, se puede no crear otro thread
         printf("- IO conectado\n");
         fflush(stdout);
     }
@@ -58,7 +65,7 @@ void eliminarConexiones(void){ // libera los sockets de CPU e IO y borra las lis
     list_iterate(conexiones.CPUsInterrupt, liberarConexionPuntero);
     list_destroy_and_destroy_elements(conexiones.CPUsDispatch, free);
     list_destroy_and_destroy_elements(conexiones.CPUsInterrupt, free);
-    liberarConexion(conexiones.IOEscucha);
+    liberarConexion(conexiones.IOEscucha.SOCKET);
     return;
 }
 

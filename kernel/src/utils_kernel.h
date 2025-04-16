@@ -3,14 +3,20 @@
 #include <commons/config.h>
 #include <utils/socketUtils.h>
 
+
 typedef struct {
     char* puerto;
     char* IP;
 } IPyPuerto;
 typedef struct {
+    int ID;
+    int SOCKET;
+} IDySocket;
+
+typedef struct {
     t_list * CPUsDispatch;
     t_list * CPUsInterrupt;
-    int IOEscucha;
+    IDySocket IOEscucha;
     IPyPuerto ipYPuertoMemoria;
 } conexionesAModulos;
 
