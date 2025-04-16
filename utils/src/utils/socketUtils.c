@@ -30,11 +30,28 @@ int conectarSocketClient(char* ip, char* puerto){//Devuelve un socket listo para
     int soc;
     struct addrinfo * serverInfo = NULL;
     soc = crearSocket(ip, puerto, &serverInfo);
-    connect(soc, serverInfo->ai_addr, serverInfo->ai_addrlen);
+    int err = connect(soc, serverInfo->ai_addr, serverInfo->ai_addrlen);
 	freeaddrinfo(serverInfo);
+    if (err == -1)
+    return err;
     return soc;
+}
+
+int estaConexionDisponible(char* ip, char* puerto){
+        int nuevoSocket;
+        nuevoSocket = conectarSocketClient(ip, puerto);
+        if(nuevoSocket == -1){
+            return 0;
+        }
+        else{
+            liberarConexion(nuevoSocket);
+            return 1;
+        }
 }
 
 void liberarConexion(int socket){
     close(socket);
+}
+void liberarConexionPuntero(void * socket){
+    close(*(int*)socket);
 }

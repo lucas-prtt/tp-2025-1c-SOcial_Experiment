@@ -4,14 +4,23 @@
 #include <utils/socketUtils.h>
 
 typedef struct {
+    char* puerto;
+    char* IP;
+} IPyPuerto;
+typedef struct {
     t_list * CPUsDispatch;
     t_list * CPUsInterrupt;
     int IOEscucha;
+    IPyPuerto ipYPuertoMemoria;
 } conexionesAModulos;
+
 
 extern conexionesAModulos conexiones;
 
-int crearSocketDesdeConfig(t_config * config, char opcion[]);
 void * esperarCPUDispatch(void * socket);
 void * esperarCPUInterrupt(void * socket);
 void * esperarIOEscucha(void * socket);
+int verificarModuloMemoriaDisponible();
+void eliminarConexiones(void);
+int crearSocketDesdeConfig(t_config * config, char opcion[]);
+

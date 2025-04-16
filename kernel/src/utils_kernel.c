@@ -36,6 +36,7 @@ void * esperarCPUInterrupt(void * socket){
 }
 
 void * esperarIOEscucha(void * socket){
+    conexiones.IOEscucha = -1;
     while(1){
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
@@ -48,10 +49,23 @@ void * esperarIOEscucha(void * socket){
     }
 }
 
+int verificarModuloMemoriaDisponible(void){
+    return estaConexionDisponible(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
+}
+
+void eliminarConexiones(void){ // libera los sockets de CPU e IO y borra las listas de CPU
+    list_iterate(conexiones.CPUsDispatch, liberarConexionPuntero);
+    list_iterate(conexiones.CPUsInterrupt, liberarConexionPuntero);
+    list_destroy_and_destroy_elements(conexiones.CPUsDispatch, free);
+    list_destroy_and_destroy_elements(conexiones.CPUsInterrupt, free);
+    liberarConexion(conexiones.IOEscucha);
+    return;
+}
+
 int crearSocketDesdeConfig(t_config * config, char opcion[]){
-    int puertoCPUDispatch = config_get_int_value(config, opcion);
+    int puertoConfig = config_get_int_value(config, opcion);
     char puerto[7];
-    sprintf(puerto, "%d", puertoCPUDispatch);
+    sprintf(puerto, "%d", puertoConfig);
     return crearSocketServer(puerto);
 }
 
