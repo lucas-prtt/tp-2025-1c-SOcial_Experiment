@@ -11,9 +11,8 @@ t_paquete* crear_paquete(int tipo_mensaje) {
 }
 
 void agregar_a_paquete(t_paquete* paquete, void* contenido, int size) {
-    paquete->buffer = realloc(paquete->buffer, paquete->tamanio + size + 1); // hace que el buffer tenga espacio para los datos a agregar
+    paquete->buffer = realloc(paquete->buffer, paquete->tamanio + size); // hace que el buffer tenga espacio para los datos a agregar
     memcpy((char*)paquete->buffer + paquete->tamanio, contenido, size); // copia al buffer el mensaje a enviar
-    ((char*)paquete->buffer)[paquete->tamanio + size] = '\0';
     paquete->tamanio += size; // aumenta el tamanio total del buffer al agregarle los datos
 }
 
@@ -41,9 +40,6 @@ int recibir_paquete(int socket, t_paquete* paquete) {
     paquete->tipo_mensaje = tipo_mensaje; // se cargan los valores recibidos en el paquete que se paso como parametro
     paquete->tamanio = tamanio;
     paquete->buffer = buffer;
-    if (tamanio > 0 && ((char*)buffer)[tamanio - 1] != '\0') {
-        ((char*)paquete->buffer)[tamanio] = '\0'; // Añadir terminador solo si es necesario
-    }
 }
 
 void eliminar_paquete(t_paquete* paquete) { // libera la memoria utilizada por el paquete
