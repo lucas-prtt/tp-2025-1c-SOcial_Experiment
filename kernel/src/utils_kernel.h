@@ -30,3 +30,6 @@ int verificarModuloMemoriaDisponible();
 void eliminarConexiones(void);
 int crearSocketDesdeConfig(t_config * config, char opcion[]);
 
+void *handshakeCPUInterrupt(void * socket);
+void *handshakeCPUDispatch(void * socket);
+void handshakeIO(void * socket);
