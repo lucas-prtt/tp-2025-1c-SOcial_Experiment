@@ -11,15 +11,39 @@ t_paquete* crear_paquete(int tipo_mensaje) {
 }
 
 void agregar_a_paquete(t_paquete* paquete, void* contenido, int size) {
-    paquete->buffer = realloc(paquete->buffer, paquete->tamanio + size); // hace que el buffer tenga espacio para los datos a agregar
+    paquete->buffer = realloc(paquete->buffer, paquete->tamanio + size + 1); // hace que el buffer tenga espacio para los datos a agregar
     memcpy((char*)paquete->buffer + paquete->tamanio, contenido, size); // copia al buffer el mensaje a enviar
+    ((char*)paquete->buffer)[paquete->tamanio + size] = '\0';
     paquete->tamanio += size; // aumenta el tamanio total del buffer al agregarle los datos
 }
 
 void enviar_paquete(t_paquete* paquete, int socket) {
-    send(socket, &(paquete->tipo_mensaje), sizeof(int), 0); // envia el tipo de mensaje
-    send(socket, &(paquete->tamanio), sizeof(int), 0); // envia el tamaño del buffer
-    send(socket, paquete->buffer, paquete->tamanio, 0); // envia el contenido del buffer
+    int total_bytes = sizeof(int) + sizeof(int) + paquete->tamanio; //calcula el tamaño total del bloque
+    void* buffer = malloc(total_bytes);// reserva memoria para el bloque
+    int offset = 0; // variable desplazamiento para rellenar el buffer
+    memcpy(buffer + offset, &(paquete->tipo_mensaje), sizeof(int)); // copia el tipo de mensaje en el principio del buffer
+    offset += sizeof(int); //aumenta el uffset para dejar espacio al contenido
+    memcpy(buffer + offset, &(paquete->tamanio), sizeof(int)); // copa el tamanio del buffer despues del tipo de mensaje
+    offset += sizeof(int);
+    memcpy(buffer + offset, paquete->buffer, paquete->tamanio); // copia el contenido del buffer despues de los dos int
+    send(socket, buffer, total_bytes, 0); // envia el paquete
+    free(buffer); // libera la memoria despues de enviarlo
+
+}
+
+int recibir_paquete(int socket, t_paquete* paquete) {
+    int tipo_mensaje;
+    int tamanio;
+    recv(socket, &tipo_mensaje, sizeof(int), MSG_WAITALL); // guarda en tipo_mensaje el encabezado del paquete leyendo los primeros 4 bytes del socket
+    recv(socket, &tamanio, sizeof(int), MSG_WAITALL); // guarda los siguientes 4 bytes que representan al tamanio del buffer
+    void* buffer = malloc(tamanio); // reserva memoria para el contenido
+    recv(socket, buffer, tamanio, MSG_WAITALL); // recibe los bytes del socket y los guarda en el buffer
+    paquete->tipo_mensaje = tipo_mensaje; // se cargan los valores recibidos en el paquete que se paso como parametro
+    paquete->tamanio = tamanio;
+    paquete->buffer = buffer;
+    if (tamanio > 0 && ((char*)buffer)[tamanio - 1] != '\0') {
+        ((char*)paquete->buffer)[tamanio] = '\0'; // Añadir terminador solo si es necesario
+    }
 }
 
 void eliminar_paquete(t_paquete* paquete) { // libera la memoria utilizada por el paquete
