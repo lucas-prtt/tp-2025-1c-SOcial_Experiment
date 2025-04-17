@@ -2,16 +2,70 @@
 
 ModulosConectados conexiones;
 
-void * recibirConexion(ID_MODULO handshake){
-    t_config* config = config_create("memory.config");
-    t_log* logger = log_create("memory.log", "memory", false, log_level_from_string(config_get_string_value(config, "LOG_LEVEL")));
-    switch (handshake)
-    {
-    case SOYKERNEL:
-        printf("Hola soy el kernel \n");
-        break;
-    
-    default:
-        abort(); break;
+int crearSocketConfig(t_config* config, char opcion[]){
+    int puertoConfig = config_get_int_value(config, opcion);
+    char puerto[7];
+    sprintf(puerto, "%d", puertoConfig);
+    return crearSocketServer(puerto);
+}
+
+void* aceptarConexiones(void* socketPtr) {
+
+    int socket = *(int*)socketPtr;
+    free(socketPtr);
+
+    while (1) {
+        struct sockaddr_in dirCliente;
+        socklen_t tamDireccion = sizeof(dirCliente);
+
+        int socketCliente = accept(socket, (void*)&dirCliente, &tamDireccion);
+        if (socketCliente == -1) {
+            log_error(logger, "Error al aceptar conexión");
+            continue;
+        }
+
+        char ipCliente[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &dirCliente.sin_addr, ipCliente, INET_ADDRSTRLEN);
+        int puertoCliente = ntohs(dirCliente.sin_port);
+
+        log_info(logger, "Conexión entrante desde %s:%d", ipCliente, puertoCliente);
+
+        // Por el momento no voy a atender la conexion hasta que utilizemos handshake, acepto las conexiones pero todavia no detecto que modulo se esta conectando
+
+        // pthread_t hiloCliente;
+        // int* socketClientePtr = malloc(sizeof(int));
+        // *socketClientePtr = socketCliente;
+
+        // pthread_create(&hiloCliente, NULL, atenderConexion, socketClientePtr);
+        // pthread_detach(hiloCliente);
+
+        close(socketCliente);
     }
+    return NULL;
+}
+
+void* atenderConexion(void* socketPtr) {
+    int socket = *(int*)socketPtr;
+    free(socketPtr);
+    ID_MODULO id;
+    int bytesRecibidos = recv(socket, &id, sizeof(ID_MODULO), 0);
+    if (bytesRecibidos <= 0) {
+        log_error(logger, "No se recibió ningún handshake (o se cerró la conexión)");
+        close(socket);
+        return NULL;
+    }
+    switch (id) {
+        case SOYKERNEL:
+            log_info(logger, "Se conectó el Kernel.");
+            break;
+        case SOYCPU:
+            log_info(logger, "Se conectó una CPU.");
+            break;
+        default:
+            log_error(logger, "Modulo desconocido.");
+            close(socket);
+            return NULL;
+    }
+    close(socket);
+    return NULL;
 }

@@ -11,9 +11,7 @@ typedef struct
 } ModulosConectados;
 
 extern t_log* logger;
-extern t_config * config;
 
-// int crearSocket(t_config * config, char opcion[]);
-void * recibirConexion(ID_MODULO handshake);
-void * kernelConnection(void * socket);
-void * CPUConnection(void * socket);
+int crearSocketConfig(t_config* config, char opcion[]);
+void* aceptarConexiones(void* socketPtr); 
+void* atenderConexion(void* socketPtr);
