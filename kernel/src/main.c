@@ -38,13 +38,12 @@ int main(int argc, char* argv[]) {
 
     // TODO: Filtrar lista de CPUs con CPUs que no tengan ID (No hicieron handshake, ID = -1)
     // TODO: Filtrar lista de CPUs con CPUs que tengan un tipo de socket (interrupt/dispatch) y no el otro (Uno de los dos handshakes falló)
-
-    bool isConexionIOyCPUDisponible = !list_is_empty(conexiones.CPUsDispatch) && list_size(conexiones.CPUsDispatch) == list_size(conexiones.CPUsInterrupt) && conexiones.IOEscucha.ID != -1;
+    bool isConexionIOyCPUDisponible = !list_is_empty(conexiones.CPUsDispatch) && (list_size(conexiones.CPUsDispatch) == list_size(conexiones.CPUsInterrupt)) && conexiones.IOEscucha.SOCKET != -1;
     bool isMemoriaDisponible = verificarModuloMemoriaDisponible();
     bool listoParaIniciar = isConexionIOyCPUDisponible && isMemoriaDisponible;
     log_debug(logger, "Verificacion de conexiones realizada");
     
-    if (!listoParaIniciar){
+    if (!listoParaIniciar) {
         printf("\nNo se pudieron realizar las conexiones necesarias:\n");        log_debug(logger, "Conexiones insuficientes");
         if (!isMemoriaDisponible){
             printf("-No se puede conectar a la memoria\n"); log_debug(logger, "-> Memoria no disponible");

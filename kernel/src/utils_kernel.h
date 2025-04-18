@@ -8,6 +8,7 @@ typedef struct {
     char* puerto;
     char* IP;
 } IPyPuerto;
+
 typedef struct {
     int ID;
     int SOCKET;
