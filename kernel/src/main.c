@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     log_debug(logger, "Verificacion de conexiones realizada");
     
     if (!listoParaIniciar){
-        printf("\nNo se pudoieron realizar las conexiones necesarias:\n");        log_debug(logger, "Conexiones insuficientes");
+        printf("\nNo se pudieron realizar las conexiones necesarias:\n");        log_debug(logger, "Conexiones insuficientes");
         if (!isMemoriaDisponible){
             printf("-No se puede conectar a la memoria\n"); log_debug(logger, "-> Memoria no disponible");
         }
