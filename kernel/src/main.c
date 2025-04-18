@@ -38,7 +38,12 @@ int main(int argc, char* argv[]) {
 
     // TODO: Filtrar lista de CPUs con CPUs que no tengan ID (No hicieron handshake, ID = -1)
     // TODO: Filtrar lista de CPUs con CPUs que tengan un tipo de socket (interrupt/dispatch) y no el otro (Uno de los dos handshakes falló)
+<<<<<<< HEAD
     bool isConexionIOyCPUDisponible = !list_is_empty(conexiones.CPUsDispatch) && (list_size(conexiones.CPUsDispatch) == list_size(conexiones.CPUsInterrupt)) && conexiones.IOEscucha.SOCKET != -1;
+=======
+
+    bool isConexionIOyCPUDisponible = !list_is_empty(conexiones.CPUsDispatch) && list_size(conexiones.CPUsDispatch) == list_size(conexiones.CPUsInterrupt) && conexiones.IOEscucha.SOCKET != -1;
+>>>>>>> handshake-cleanup
     bool isMemoriaDisponible = verificarModuloMemoriaDisponible();
     bool listoParaIniciar = isConexionIOyCPUDisponible && isMemoriaDisponible;
     log_debug(logger, "Verificacion de conexiones realizada");

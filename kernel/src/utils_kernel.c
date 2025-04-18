@@ -5,6 +5,8 @@ conexionesAModulos conexiones;
 
 void * esperarCPUDispatch(void * socket){
     conexiones.CPUsDispatch = list_create();
+    t_list * createdThreads = list_create();
+    pthread_cleanup_push(closeTreadsFromListAndCleanUpList, createdThreads);
     while(1){
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
@@ -15,16 +17,20 @@ void * esperarCPUDispatch(void * socket){
         CPUIDySocket->SOCKET = nuevoSocket;
         CPUIDySocket->ID = -1; // -1 = No se recibio Handshake: Se desconoce el ID del CPU
         list_add(conexiones.CPUsDispatch, CPUIDySocket);
-        pthread_t hilo;
-        pthread_create(&hilo, NULL, handshakeCPUDispatch, socket);
-        pthread_detach(hilo);
+        pthread_t * hilo = malloc(sizeof(pthread_t));
+        pthread_create(hilo, NULL, handshakeCPUDispatch, socket);
+        pthread_detach(*hilo);
+        list_add(createdThreads, hilo);
         printf("- CPU conectada para dispatch\n"); //Porahi conviene poner esto en el handshake
         fflush(stdout);
     }
+    pthread_cleanup_pop(1);
 }
 
 void * esperarCPUInterrupt(void * socket){
     conexiones.CPUsInterrupt = list_create();
+    t_list * createdThreads = list_create();
+    pthread_cleanup_push(closeTreadsFromListAndCleanUpList, createdThreads);
     while(1){
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
@@ -35,17 +41,22 @@ void * esperarCPUInterrupt(void * socket){
         CPUIDySocket->SOCKET = nuevoSocket;
         CPUIDySocket->ID = -1;
         list_add(conexiones.CPUsInterrupt, CPUIDySocket);
-        pthread_t hilo;
-        pthread_create(&hilo, NULL, handshakeCPUInterrupt, socket);
-        pthread_detach(hilo);
+        pthread_t * hilo = malloc(sizeof(pthread_t));
+        pthread_create(hilo, NULL, handshakeCPUInterrupt, socket);
+        pthread_detach(*hilo);
+        list_add(createdThreads, hilo);
         printf("- CPU conectada para Interrupt\n");
         fflush(stdout);
     }
+    pthread_cleanup_pop(1);
+
 }
 
 void * esperarIOEscucha(void * socket){
     conexiones.IOEscucha.ID = -1;
     conexiones.IOEscucha.SOCKET = -1;
+    t_list * createdThreads = list_create();
+    pthread_cleanup_push(closeTreadsFromListAndCleanUpList, createdThreads);
     while(1){
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
@@ -53,10 +64,15 @@ void * esperarIOEscucha(void * socket){
             pthread_testcancel();
         }
         conexiones.IOEscucha.SOCKET = nuevoSocket;
-        handshakeIO(socket);
+        pthread_t * hilo = malloc(sizeof(pthread_t));
+        pthread_create(hilo, NULL, handshakeIO, socket);
+        pthread_detach(*hilo);
+        list_add(createdThreads, hilo);
         printf("- IO conectado\n");
         fflush(stdout);
     }
+    pthread_cleanup_pop(1);
+    
 }
 
 int verificarModuloMemoriaDisponible(void){
@@ -82,42 +98,33 @@ int crearSocketDesdeConfig(t_config * config, char opcion[]){
 }
 
 void * handshakeCPUDispatch(void * socket){
+    int id;
     bool socket_coincide(void * cpu){
         return *(int*)socket == (*(IDySocket*)cpu).SOCKET;
-    }// Closure que se fija si el socket de la lista coincide con el del thread
-    sleep(5); // Doy tiempo a que CPU mande el handshake
-    int * id = malloc(sizeof(int));
-    int err = recv(*(int*)socket, id, sizeof(id), MSG_DONTWAIT); // Se fija si mando el handshake. Si no lo mando no se bloquea
-    if (err == -1){free(id);pthread_exit(NULL);}
+    }
+    recv(*(int*)socket, &id, sizeof(id), MSG_WAITALL);
     void * infoCPU = list_find(conexiones.CPUsDispatch, socket_coincide);
     if(infoCPU != NULL){
-        (*(IDySocket*)infoCPU).ID = *id;
+        (*(IDySocket*)infoCPU).ID = id;
     }
-    free(id);
     pthread_exit(NULL);
 }
 void * handshakeCPUInterrupt(void * socket){
+    int id;
     bool socket_coincide(void * cpu){
         return *(int*)socket == (*(IDySocket*)cpu).SOCKET;
-    }// Closure que se fija si el socket de la lista coincide con el del thread
-    sleep(5); // Doy tiempo a que CPU mande el handshake
-    int * id = malloc(sizeof(int));
-    int err = recv(*(int*)socket, id, sizeof(id), MSG_DONTWAIT); // Se fija si mando el handshake. Si no lo mando no se bloquea
-    if (err == -1){free(id);pthread_exit(NULL);}
+    }
+    recv(*(int*)socket, &id, sizeof(id), MSG_WAITALL);
     void * infoCPU = list_find(conexiones.CPUsInterrupt, socket_coincide);
     if(infoCPU != NULL){
-        (*(IDySocket*)infoCPU).ID = *id;
+        (*(IDySocket*)infoCPU).ID = id;
     }
-    free(id);
     pthread_exit(NULL);
 }
-void handshakeIO(void * socket){
-    sleep(5); // Doy tiempo a que CPU mande el handshake
-    int * id = malloc(sizeof(int));
-    int err = recv(*(int*)socket, id, sizeof(id), MSG_DONTWAIT); // Se fija si mando el handshake. Si no lo mando no se bloquea
-    if (err == -1){free(id);return;}
-    conexiones.IOEscucha.ID = *id;
-    free(id);
-    return;
+void *handshakeIO(void * socket){
+    int id;
+    recv(*(int*)socket, &id, sizeof(id), MSG_DONTWAIT); // Se fija si mando el handshake. Si no lo mando no se bloquea
+    conexiones.IOEscucha.ID = id;
+    pthread_exit(NULL);
 }
 
