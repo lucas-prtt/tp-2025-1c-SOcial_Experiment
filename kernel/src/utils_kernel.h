@@ -2,7 +2,7 @@
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <utils/socketUtils.h>
-
+#include <utils/threads.h>
 
 typedef struct {
     char* puerto;
@@ -32,4 +32,4 @@ int crearSocketDesdeConfig(t_config * config, char opcion[]);
 
 void *handshakeCPUInterrupt(void * socket);
 void *handshakeCPUDispatch(void * socket);
-void handshakeIO(void * socket);
+void * handshakeIO(void * socket);
