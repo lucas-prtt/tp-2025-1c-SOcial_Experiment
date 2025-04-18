@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
     pthread_create(&ioConnect, NULL, esperarIOEscucha, &socketEscuchaIO);
     log_debug(logger, "Threads de conexion creados");
 
-    printf("Conectando modulos\nPresione enter para finalizar la etapa de conexion y comenzar a ejecutar el kernel");
+    printf("Conectando modulos\nPresione enter para finalizar la etapa de conexion y comenzar a ejecutar el kernel\n");
     getchar();
 
     threadCancelAndDetach(&cpuDispatchConnect); //Envia un cancel request. No se cancela hasta que se haga shutdown (accept() es bloqueante)

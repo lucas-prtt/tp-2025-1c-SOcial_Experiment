@@ -49,7 +49,7 @@ void * esperarIOEscucha(void * socket){
     while(1){
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
-        if(nuevoSocket == -1) {
+        if(nuevoSocket == -1){
             pthread_testcancel();
         }
         conexiones.IOEscucha.SOCKET = nuevoSocket;
