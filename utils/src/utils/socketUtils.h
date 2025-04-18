@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <pthread.h>
-
+#include <unistd.h>
 
 int crearSocket(char* ip, char* puerto, struct addrinfo **servinfo);
 int crearSocketServer(char* puerto);
