@@ -12,7 +12,6 @@ int main(int argc, char* argv[]) {
     log_info(logger, "LOGGER INICIADO COMO: %s", nombreIO);
 
     int conexion = conectarSocketClient(ip, puerto);
-    //log_info(logger, "%d", conexion);
 
     liberarConexion(conexion);
 	log_destroy(logger);
