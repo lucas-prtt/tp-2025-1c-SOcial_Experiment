@@ -17,7 +17,7 @@ typedef struct {
 typedef struct {
     t_list * CPUsDispatch;
     t_list * CPUsInterrupt;
-    IDySocket IOEscucha;
+    t_list * IOEscucha;
     IPyPuerto ipYPuertoMemoria;
 } conexionesAModulos;
 

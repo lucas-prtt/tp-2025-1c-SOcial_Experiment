@@ -53,8 +53,7 @@ void * esperarCPUInterrupt(void * socket){
 }
 
 void * esperarIOEscucha(void * socket){
-    conexiones.IOEscucha.ID = -1;
-    conexiones.IOEscucha.SOCKET = -1;
+    conexiones.IOEscucha = list_create();
     t_list * createdThreads = list_create();
     pthread_cleanup_push(closeTreadsFromListAndCleanUpList, createdThreads);
     while(1){
@@ -63,7 +62,10 @@ void * esperarIOEscucha(void * socket){
         if(nuevoSocket == -1){
             pthread_testcancel();
         }
-        conexiones.IOEscucha.SOCKET = nuevoSocket;
+        IDySocket * IOIDYSocket = malloc(sizeof(IDySocket));
+        IOIDYSocket->SOCKET = nuevoSocket;
+        IOIDYSocket->ID = -1;
+        list_add(conexiones.IOEscucha, IOIDYSocket) ;
         pthread_t * hilo = malloc(sizeof(pthread_t));
         pthread_create(hilo, NULL, handshakeIO, socket);
         pthread_detach(*hilo);
@@ -84,9 +86,10 @@ void eliminarConexiones(void){ // libera los sockets de CPU e IO y borra las lis
     close((*(IDySocket*)ids).SOCKET);}
     list_iterate(conexiones.CPUsDispatch, liberarConexionIDYSOCKET);
     list_iterate(conexiones.CPUsInterrupt, liberarConexionIDYSOCKET);
+    list_iterate(conexiones.IOEscucha, liberarConexionIDYSOCKET);
     list_destroy_and_destroy_elements(conexiones.CPUsDispatch, free);
     list_destroy_and_destroy_elements(conexiones.CPUsInterrupt, free);
-    liberarConexion(conexiones.IOEscucha.SOCKET);
+    list_destroy_and_destroy_elements(conexiones.IOEscucha, free);
     return;
 }
 
@@ -116,15 +119,22 @@ void * handshakeCPUInterrupt(void * socket){
     }
     recv(*(int*)socket, &id, sizeof(id), MSG_WAITALL);
     void * infoCPU = list_find(conexiones.CPUsInterrupt, socket_coincide);
-    if(infoCPU != NULL){
+    if(infoCPU != NULL){    
         (*(IDySocket*)infoCPU).ID = id;
     }
     pthread_exit(NULL);
 }
+
 void *handshakeIO(void * socket){
     int id;
-    recv(*(int*)socket, &id, sizeof(id), MSG_DONTWAIT); // Se fija si mando el handshake. Si no lo mando no se bloquea
-    conexiones.IOEscucha.ID = id;
+    bool socket_coincide(void * io){
+        return *(int*)socket == (*(IDySocket*)io).SOCKET;
+    }
+    recv(*(int*)socket, &id, sizeof(id), MSG_WAITALL);
+    void * infoIO = list_find(conexiones.IOEscucha, socket_coincide);
+    if(infoIO != NULL){    
+        (*(IDySocket*)infoIO).ID = id;
+    }
     pthread_exit(NULL);
 }
 
