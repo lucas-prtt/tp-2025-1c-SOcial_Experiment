@@ -18,7 +18,7 @@ void * esperarCPUDispatch(void * socket){
         CPUIDySocket->ID = -1; // -1 = No se recibio Handshake: Se desconoce el ID del CPU
         list_add(conexiones.CPUsDispatch, CPUIDySocket);
         pthread_t * hilo = malloc(sizeof(pthread_t));
-        pthread_create(hilo, NULL, handshakeCPUDispatch, socket);
+        pthread_create(hilo, NULL, handshakeCPUDispatch, CPUIDySocket);
         pthread_detach(*hilo);
         list_add(createdThreads, hilo);
         printf("- CPU conectada para dispatch\n"); //Porahi conviene poner esto en el handshake
@@ -42,7 +42,7 @@ void * esperarCPUInterrupt(void * socket){
         CPUIDySocket->ID = -1;
         list_add(conexiones.CPUsInterrupt, CPUIDySocket);
         pthread_t * hilo = malloc(sizeof(pthread_t));
-        pthread_create(hilo, NULL, handshakeCPUInterrupt, socket);
+        pthread_create(hilo, NULL, handshakeCPUInterrupt, CPUIDySocket);
         pthread_detach(*hilo);
         list_add(createdThreads, hilo);
         printf("- CPU conectada para Interrupt\n");
@@ -67,7 +67,7 @@ void * esperarIOEscucha(void * socket){
         IOIDYSocket->ID = -1;
         list_add(conexiones.IOEscucha, IOIDYSocket) ;
         pthread_t * hilo = malloc(sizeof(pthread_t));
-        pthread_create(hilo, NULL, handshakeIO, socket);
+        pthread_create(hilo, NULL, handshakeIO, IOIDYSocket);
         pthread_detach(*hilo);
         list_add(createdThreads, hilo);
         printf("- IO conectado\n");
@@ -100,67 +100,56 @@ int crearSocketDesdeConfig(t_config * config, char opcion[]){
     return crearSocketServer(puerto);
 }
 
-void * handshakeCPUDispatch(void * socket){
+void * handshakeCPUDispatch(void * CPUSocketEId){
     int id;
-    bool socket_coincide(void * cpu){
-        return *(int*)socket == (*(IDySocket*)cpu).SOCKET;
-    }
-    recv(*(int*)socket, &id, sizeof(id), MSG_WAITALL);
-    void * infoCPU = list_find(conexiones.CPUsDispatch, socket_coincide);
-    if(infoCPU != NULL){
-        (*(IDySocket*)infoCPU).ID = id;
-    }
-    pthread_exit(NULL);
-}
-
-void * handshakeCPUInterrupt(void * socket){
-    int id;
-    bool socket_coincide(void * cpu){
-        return *(int*)socket == (*(IDySocket*)cpu).SOCKET;
-    }
-    recv(*(int*)socket, &id, sizeof(id), MSG_WAITALL);
-    void * infoCPU = list_find(conexiones.CPUsInterrupt, socket_coincide);
-    if(infoCPU != NULL){    
-        (*(IDySocket*)infoCPU).ID = id;
-    }
-    pthread_exit(NULL);
-}
-
-/*
-void *handshakeIO(void * socket){
-    int id;
-    bool socket_coincide(void * io){
-        return *(int*)socket == (*(IDySocket*)io).SOCKET;
-    }
-    recv(*(int*)socket, &id, sizeof(id), MSG_WAITALL);
-    void * infoIO = list_find(conexiones.IOEscucha, socket_coincide);
-    if(infoIO != NULL){    
-        (*(IDySocket*)infoIO).ID = id;
-    }
-    pthread_exit(NULL);
-}
-*/
-
-void *handshakeIO(void *socket_io) { //LA QUE YA ESTABA, PERO CON PAQUETES
-    bool socket_coincide(void *io) {
-        return *(int*)socket_io == (*(IDySocket*)io).SOCKET;
-    }
-
-    t_list *lista_contenido = recibir_paquete_lista(*(int*)socket_io, MSG_WAITALL, HANDSHAKE);
-
-    if(lista_contenido == NULL || list_size(lista_contenido) < 2) {  //NO CONSIDERA QUE HAYA UN ERROR, ESTA MAL.
-    //SI ENTRA ACA NO SE AVISA y eso esta mal
+    int elSocket = ((IDySocket*)CPUSocketEId)->SOCKET;
+    t_list * lista_contenido = recibir_paquete_lista(elSocket, MSG_WAITALL, NULL);    
+    if(lista_contenido == NULL || list_size(lista_contenido) < 2) {
         list_destroy(lista_contenido);
         pthread_exit(NULL);
     }
-    
+    id = *(int*)list_get(lista_contenido, 1);
+    ((IDySocket*)CPUSocketEId)->ID = id;
+    t_paquete *paquete_resp = crear_paquete(HANDSHAKE);
+    agregar_a_paquete(paquete_resp, &id, sizeof(id));
+    enviar_paquete(paquete_resp, elSocket);
+    eliminar_paquete(paquete_resp);
+    list_destroy(lista_contenido);
+    pthread_exit(NULL);
+}
+
+void * handshakeCPUInterrupt(void * CPUSocketEId){
+    int id;
+    int elSocket = ((IDySocket*)CPUSocketEId)->SOCKET;
+    t_list * lista_contenido = recibir_paquete_lista(elSocket, MSG_WAITALL, NULL);    
+    if(lista_contenido == NULL || list_size(lista_contenido) < 2) { 
+        list_destroy(lista_contenido);
+        pthread_exit(NULL);
+    }
+    id = *(int*)list_get(lista_contenido, 1);
+    ((IDySocket*)CPUSocketEId)->ID = id;
+    t_paquete *paquete_resp = crear_paquete(HANDSHAKE);
+    agregar_a_paquete(paquete_resp, &id, sizeof(id));
+    enviar_paquete(paquete_resp, elSocket);
+    eliminar_paquete(paquete_resp);
+    list_destroy(lista_contenido);
+    pthread_exit(NULL);
+}
+
+
+void *handshakeIO(void *ioSocketEId) { 
+    int elSocket = ((IDySocket*)ioSocketEId)->SOCKET;
+
+    t_list * lista_contenido = recibir_paquete_lista(elSocket, MSG_WAITALL, NULL);    
+    if(lista_contenido == NULL || list_size(lista_contenido) < 2) {
+        list_destroy(lista_contenido);
+        pthread_exit(NULL);
+    }
     int id = *(int*)list_get(lista_contenido, 1);
-    void *infoIO = list_find(conexiones.IOEscucha, socket_coincide);
-    if(infoIO != NULL)
-        (*(IDySocket*)infoIO).ID = id;
+    ((IDySocket*)ioSocketEId)->ID = id;
     t_paquete *paquete_resp_io = crear_paquete(HANDSHAKE);
     agregar_a_paquete(paquete_resp_io, &id, sizeof(id));
-    enviar_paquete(paquete_resp_io, *(int*)socket_io);
+    enviar_paquete(paquete_resp_io, elSocket);
 
     eliminar_paquete(paquete_resp_io);
     list_destroy(lista_contenido);
