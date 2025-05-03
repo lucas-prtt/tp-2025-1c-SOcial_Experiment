@@ -2,7 +2,9 @@
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <utils/socketUtils.h>
+#include <utils/enums.h>
 #include <utils/threads.h>
+#include <utils/paquetes.h>
 
 typedef struct {
     char* puerto;

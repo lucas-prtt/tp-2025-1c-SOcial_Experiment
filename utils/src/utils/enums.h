@@ -8,4 +8,13 @@ typedef enum {
     SOYIO
 } ID_MODULO;
 
+
+typedef enum {
+    HANDSHAKE,
+    DOS, //INVENTADOS, NO SIRVEN PARA NADA
+    TRES,
+    CUATRO,
+} CODIGO_OP;
+
+
 #endif

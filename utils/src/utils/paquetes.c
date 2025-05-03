@@ -28,11 +28,12 @@ void enviar_paquete(t_paquete* paquete, int socket) {
     memcpy(buffer + offset, paquete->buffer, paquete->tamanio); // copia el contenido del buffer despues de los dos int
     send(socket, buffer, total_bytes, 0); // envia el paquete
     free(buffer); // libera la memoria despues de enviarlo
-
 }
+
 int recibir_paquete_bloqueante(int socket, t_paquete* paquete){
     return recibir_paquete(socket, paquete, MSG_WAITALL);
 }
+
 int recibir_paquete(int socket, t_paquete* paquete, int flags) { //Previamente, siempre estaba en MSG_WAITALL, añadi parametro flags para que tambien pueda ser MSG_DONTWAIT u otros
     int tipo_mensaje;
     int tamanio;
@@ -46,7 +47,7 @@ int recibir_paquete(int socket, t_paquete* paquete, int flags) { //Previamente, 
     return 0;
 }
 
-t_list * recibir_paquete_lista(int socket, int flags, int * codOp){ //CodOp se setea con el tipo de mensaje
+t_list *recibir_paquete_lista(int socket, int flags, int * codOp){ //CodOp se setea con el tipo de mensaje
     t_paquete * paq;
     paq = malloc(sizeof(paq));
     recibir_paquete(socket, paq, flags);

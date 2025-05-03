@@ -112,6 +112,7 @@ void * handshakeCPUDispatch(void * socket){
     }
     pthread_exit(NULL);
 }
+
 void * handshakeCPUInterrupt(void * socket){
     int id;
     bool socket_coincide(void * cpu){
@@ -125,6 +126,7 @@ void * handshakeCPUInterrupt(void * socket){
     pthread_exit(NULL);
 }
 
+/*
 void *handshakeIO(void * socket){
     int id;
     bool socket_coincide(void * io){
@@ -137,4 +139,31 @@ void *handshakeIO(void * socket){
     }
     pthread_exit(NULL);
 }
+*/
 
+void *handshakeIO(void *socket_io) { //LA QUE YA ESTABA, PERO CON PAQUETES
+    bool socket_coincide(void *io) {
+        return *(int*)socket_io == (*(IDySocket*)io).SOCKET;
+    }
+
+    t_list *lista_contenido = recibir_paquete_lista(*(int*)socket_io, MSG_WAITALL, HANDSHAKE);
+
+    if(lista_contenido == NULL || list_size(lista_contenido) < 2) {  //NO CONSIDERA QUE HAYA UN ERROR, ESTA MAL.
+    //SI ENTRA ACA NO SE AVISA y eso esta mal
+        list_destroy(lista_contenido);
+        pthread_exit(NULL);
+    }
+    
+    int id = *(int*)list_get(lista_contenido, 1);
+    void *infoIO = list_find(conexiones.IOEscucha, socket_coincide);
+    if(infoIO != NULL)
+        (*(IDySocket*)infoIO).ID = id;
+    t_paquete *paquete_resp_io = crear_paquete(HANDSHAKE);
+    agregar_a_paquete(paquete_resp_io, &id, sizeof(id));
+    enviar_paquete(paquete_resp_io, *(int*)socket_io);
+
+    eliminar_paquete(paquete_resp_io);
+    list_destroy(lista_contenido);
+    
+    pthread_exit(NULL);
+}

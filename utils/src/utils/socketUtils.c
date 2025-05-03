@@ -26,14 +26,14 @@ int crearSocketServer(char* puerto){ //Devuelve un socket listo para conectar co
     return soc;
 }
 
-int conectarSocketClient(char* ip, char* puerto){//Devuelve un socket listo para comunicarse con el server
+int conectarSocketClient(char* ip, char* puerto){ //Devuelve un socket listo para comunicarse con el server
     int soc;
     struct addrinfo * serverInfo = NULL;
     soc = crearSocket(ip, puerto, &serverInfo);
     int err = connect(soc, serverInfo->ai_addr, serverInfo->ai_addrlen);
 	freeaddrinfo(serverInfo);
     if (err == -1)
-    return err;
+        return err;
     return soc;
 }
 
@@ -52,6 +52,7 @@ int estaConexionDisponible(char* ip, char* puerto){
 void liberarConexion(int socket){
     close(socket);
 }
+
 void liberarConexionPuntero(void * socket){
     close(*(int*)socket);
 }
