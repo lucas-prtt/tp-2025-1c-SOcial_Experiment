@@ -100,49 +100,47 @@ int crearSocketDesdeConfig(t_config * config, char opcion[]){
     return crearSocketServer(puerto);
 }
 
-void * handshakeCPUDispatch(void * CPUSocketEId){
-    int id;
+void *handshakeCPUDispatch(void *CPUSocketEId) { 
     int elSocket = ((IDySocket*)CPUSocketEId)->SOCKET;
-    t_list * lista_contenido = recibir_paquete_lista(elSocket, MSG_WAITALL, NULL);    
+    t_list *lista_contenido = recibir_paquete_lista(elSocket, MSG_WAITALL, NULL);
     if(lista_contenido == NULL || list_size(lista_contenido) < 2) {
-        list_destroy(lista_contenido);
+        enviar_paquete_error(elSocket, lista_contenido);
         pthread_exit(NULL);
     }
-    id = *(int*)list_get(lista_contenido, 1);
+    int id = *(int*)list_get(lista_contenido, 1);
     ((IDySocket*)CPUSocketEId)->ID = id;
-    t_paquete *paquete_resp = crear_paquete(HANDSHAKE);
-    agregar_a_paquete(paquete_resp, &id, sizeof(id));
-    enviar_paquete(paquete_resp, elSocket);
-    eliminar_paquete(paquete_resp);
-    list_destroy(lista_contenido);
+    t_paquete *paquete_resp_cpu = crear_paquete(HANDSHAKE);
+    agregar_a_paquete(paquete_resp_cpu, &id, sizeof(id));
+    enviar_paquete(paquete_resp_cpu, elSocket);
+
+    eliminar_paquete(paquete_resp_cpu);
+    eliminar_paquete_lista(lista_contenido);
     pthread_exit(NULL);
 }
 
-void * handshakeCPUInterrupt(void * CPUSocketEId){
-    int id;
+void *handshakeCPUInterrupt(void *CPUSocketEId) { 
     int elSocket = ((IDySocket*)CPUSocketEId)->SOCKET;
-    t_list * lista_contenido = recibir_paquete_lista(elSocket, MSG_WAITALL, NULL);    
-    if(lista_contenido == NULL || list_size(lista_contenido) < 2) { 
-        list_destroy(lista_contenido);
+    t_list *lista_contenido = recibir_paquete_lista(elSocket, MSG_WAITALL, NULL);
+    if(lista_contenido == NULL || list_size(lista_contenido) < 2) {
+        enviar_paquete_error(elSocket, lista_contenido);
         pthread_exit(NULL);
     }
-    id = *(int*)list_get(lista_contenido, 1);
+    int id = *(int*)list_get(lista_contenido, 1);
     ((IDySocket*)CPUSocketEId)->ID = id;
-    t_paquete *paquete_resp = crear_paquete(HANDSHAKE);
-    agregar_a_paquete(paquete_resp, &id, sizeof(id));
-    enviar_paquete(paquete_resp, elSocket);
-    eliminar_paquete(paquete_resp);
-    list_destroy(lista_contenido);
+    t_paquete *paquete_resp_cpu = crear_paquete(HANDSHAKE);
+    agregar_a_paquete(paquete_resp_cpu, &id, sizeof(id));
+    enviar_paquete(paquete_resp_cpu, elSocket);
+
+    eliminar_paquete(paquete_resp_cpu);
+    eliminar_paquete_lista(lista_contenido);
     pthread_exit(NULL);
 }
-
 
 void *handshakeIO(void *ioSocketEId) { 
     int elSocket = ((IDySocket*)ioSocketEId)->SOCKET;
-
-    t_list * lista_contenido = recibir_paquete_lista(elSocket, MSG_WAITALL, NULL);    
+    t_list *lista_contenido = recibir_paquete_lista(elSocket, MSG_WAITALL, NULL);
     if(lista_contenido == NULL || list_size(lista_contenido) < 2) {
-        list_destroy(lista_contenido);
+        enviar_paquete_error(elSocket, lista_contenido);
         pthread_exit(NULL);
     }
     int id = *(int*)list_get(lista_contenido, 1);
@@ -152,7 +150,6 @@ void *handshakeIO(void *ioSocketEId) {
     enviar_paquete(paquete_resp_io, elSocket);
 
     eliminar_paquete(paquete_resp_io);
-    list_destroy(lista_contenido);
-    
+    eliminar_paquete_lista(lista_contenido);
     pthread_exit(NULL);
 }

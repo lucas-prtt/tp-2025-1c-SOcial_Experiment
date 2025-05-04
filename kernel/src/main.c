@@ -5,7 +5,7 @@
 int main(int argc, char* argv[]) {
 
     t_config * config = config_create("kernel.config");
-    if (config == NULL){ abort(); }
+    if (config == NULL) { abort(); }
     t_log * logger = log_create("kernel.log", "kernel", false, log_level_from_string(config_get_string_value(config, "LOG_LEVEL")));
     
     log_debug(logger, "Kernel iniciado");

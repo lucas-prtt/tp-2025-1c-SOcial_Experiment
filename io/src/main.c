@@ -12,14 +12,22 @@ int main(int argc, char* argv[]) {
     log_info(logger, "LOGGER INICIADO COMO: %d", nombreIO);
 
     int conexion = conectarSocketClient(ip_kernel, puerto_kernel);
-    //if(conexion == -1) //Sale, no sé. NO pudo conectar en log o algo asi
-    int result = handshakeKernel(conexion, nombreIO, logger);
-    if(result == -1)
-        log_info(logger, "HANDSHAKE CON KERNEL FALLIDO PORQUE %d", result);
+    if(conexion == -1) {
+        log_info(logger, "Error al intentar establecer conexión inicial con el modulo Kernel");
+        //exit(EXIT_FAILURE);
+    }
     else
-        log_info(logger, "HANDSHAKE CON KERNEL REALIZADO EXITOSAMENTE, con el id: %d", result);
+        log_info(logger, "Conexión inicial con el modulo Kernel exitosamente establecido");
 
+    int result = handshakeKernel(conexion, nombreIO);
+    if(result == -1) {
+        log_info(logger, "Error al intentar establecer un protocolo de comunicación con el modulo Kernel");
+        //exit(EXIT_FAILURE);
+    }
+    else
+        log_info(logger, "Protocolo inicial de comunicación con el modulo Kernel realizado");
 
+    
     liberarConexion(conexion);
 	log_destroy(logger);
 	config_destroy(config);

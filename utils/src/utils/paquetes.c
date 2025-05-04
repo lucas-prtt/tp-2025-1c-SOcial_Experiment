@@ -2,7 +2,7 @@
 #include <string.h>
 #include <sys/socket.h>
 
-t_paquete* crear_paquete(int tipo_mensaje) { 
+t_paquete* crear_paquete(int tipo_mensaje) {
     t_paquete* paquete = malloc(sizeof(t_paquete)); // reserva memoria para el nuevo paquete
     paquete->tipo_mensaje = tipo_mensaje; // agrega a la estructura del paquete el tipo de mensaje pasado como parametro
     paquete->buffer = NULL; // como al paquete todavia no se le agregó contenido, lo ponemos en nulo
@@ -30,6 +30,15 @@ void enviar_paquete(t_paquete* paquete, int socket) {
     free(buffer); // libera la memoria despues de enviarlo
 }
 
+void enviar_paquete_error(int socket_cliente, t_list *lista_contenido) {
+    int error = -1;
+    t_paquete *paquete_error = crear_paquete(HANDSHAKE);
+    agregar_a_paquete(paquete_error, &error, sizeof(int));
+    enviar_paquete(paquete_error, socket_cliente);
+    eliminar_paquete(paquete_error);
+    eliminar_paquete_lista(lista_contenido);
+}
+
 int recibir_paquete_bloqueante(int socket, t_paquete* paquete){
     return recibir_paquete(socket, paquete, MSG_WAITALL);
 }
@@ -47,9 +56,9 @@ int recibir_paquete(int socket, t_paquete* paquete, int flags) { //Previamente, 
     return 0;
 }
 
-t_list *recibir_paquete_lista(int socket, int flags, int * codOp){ //CodOp se setea con el tipo de mensaje
+t_list *recibir_paquete_lista(int socket, int flags, int * codOp) { //CodOp se setea con el tipo de mensaje
     t_paquete * paq;
-    paq = malloc(sizeof(paq));
+    paq = malloc(sizeof(t_paquete)); //Antes: paq
     recibir_paquete(socket, paq, flags);
     t_list * listaDeContenido = list_create();
     int offset = 0;

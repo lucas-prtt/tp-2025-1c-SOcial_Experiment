@@ -13,31 +13,28 @@ t_config* iniciarConfig(char *nombreArchivoConfig) {
     return nuevoConfig;
 }
 
-int handshakeKernel(int socket_kernel, int nombreIO, t_log *logger) { //MANDA SOL DE HANDSHAKE AL KERNEL
-    int *codigo_operacion;
+int handshakeKernel(int socket_kernel, int nombreIO) { //Envia una solicitud de handshake al modulo Kernel//
+    int *codigo_operacion = malloc(sizeof(int));
     t_paquete* paquete_consult_kernel = crear_paquete(HANDSHAKE);
     agregar_a_paquete(paquete_consult_kernel, &nombreIO, sizeof(int));
     enviar_paquete(paquete_consult_kernel, socket_kernel);
-
     t_list *lista_contenido = recibir_paquete_lista(socket_kernel, MSG_WAITALL, codigo_operacion);
-
-    log_info(logger, "TAMAÑO 1: %d", *(int*)list_get(lista_contenido, 0));
-    log_info(logger, "DATO 1: %d", *(int*)list_get(lista_contenido, 1));
-
-    if(lista_contenido == NULL || list_size(lista_contenido) < 2 || codigo_operacion != HANDSHAKE) {
-        list_destroy(lista_contenido);
+    if(lista_contenido == NULL || list_size(lista_contenido) < 2 || *codigo_operacion != HANDSHAKE || *(int*)list_get(lista_contenido, 1) == -1) {
+        free(codigo_operacion);
         eliminar_paquete(paquete_consult_kernel);
+        eliminar_paquete_lista(lista_contenido);
         return -1;
     }
-
     int result = *(int*)list_get(lista_contenido, 1);
-    list_destroy(lista_contenido);
-    eliminar_paquete(paquete_consult_kernel);
 
-    return 0;
+    free(codigo_operacion);
+    eliminar_paquete(paquete_consult_kernel);
+    eliminar_paquete_lista(lista_contenido);
+    return result;
 }
 
 
+//void verificarConexionInciales(int v, )
 
 /*
 cuando se conecte al kernel, tiene que quedar en espera. Como? una espera activa con WHILE? O nada que ver
