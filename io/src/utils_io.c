@@ -13,29 +13,6 @@ t_config* iniciarConfig(char *nombreArchivoConfig) {
     return nuevoConfig;
 }
 
-int handshakeKernel(int socket_kernel, int nombreIO) { //Envia una solicitud de handshake al modulo Kernel//
-    int *codigo_operacion = malloc(sizeof(int));
-    t_paquete* paquete_consult_kernel = crear_paquete(HANDSHAKE);
-    agregar_a_paquete(paquete_consult_kernel, &nombreIO, sizeof(int));
-    enviar_paquete(paquete_consult_kernel, socket_kernel);
-    t_list *lista_contenido = recibir_paquete_lista(socket_kernel, MSG_WAITALL, codigo_operacion);
-    if(lista_contenido == NULL || list_size(lista_contenido) < 2 || *codigo_operacion != HANDSHAKE || *(int*)list_get(lista_contenido, 1) == -1) {
-        free(codigo_operacion);
-        eliminar_paquete(paquete_consult_kernel);
-        eliminar_paquete_lista(lista_contenido);
-        return -1;
-    }
-    int result = *(int*)list_get(lista_contenido, 1);
-
-    free(codigo_operacion);
-    eliminar_paquete(paquete_consult_kernel);
-    eliminar_paquete_lista(lista_contenido);
-    return result;
-}
-
-
-//void verificarConexionInciales(int v, )
-
 /*
 cuando se conecte al kernel, tiene que quedar en espera. Como? una espera activa con WHILE? O nada que ver
 
@@ -47,20 +24,29 @@ typedef struct {
     MT //una lista
 } PCB;
 
-    invento:
-typedef struct {
-    int PID
-    X timepo
-} request;
+*/
 
-recibirPeticion(PID?, tiempo?) { //recibe una request del kernel
-    carga una request en una estructura de request? (la de arriba)
+/*
+recibirPeticion(int socket_kernel, request_io &request, int n) {
+    //verificar posibles errores
+    t_list *lista_request = recibir_paquete_lista(socket_kernel, MSG_WAITALL, null); //null?
+    request.pid = *(int*)list_get(lista_request, 1);
+    request.tiempo = *(int*)list_get(lista_request, 3); //por ahora segundos 
 }
 
-ejecutarPeticion() { //recibe la request de la funcion dearriba tal vez?
-    //hace un sleep por el tiempo indicado por la request
-    /ejecuta la peticion (sera el sleep?)
-    //le informa al kernel que finalizo. Pienso en enviarle un:
-    ENUM { FINIO, DESCONEXIONIO }
+void ejecutarPeticion(t_log *logger, request_io request) {
+    log_info(logger,"## PID: %d - Inicio de IO - Tiempo: %d", request.pid, request.tiempo);
+    sleep(request.tiempo);
+    //if() - evaluar el caso de las desconexiones...
+    log_info(logger, "## PID: %d - Fin de IO", request.pid);
+}
+
+void notificarFinPeticion(int socket_kernel, int motivo) {
+    t_paquete *paquete_notif = crear_paquete(HANDSHAKE); //FIN_IO O DESCONEXION_IO
+    agregar_a_paquete(paquete_notif, &motivo, sizeof(int));
+    enviar_paquete(paquete_notif, socket_kernel);
+    eliminar_paquete(paquete_notif);
 }
 */
+
+//ENUM { FIN_IO, DESCONEXION_IO }

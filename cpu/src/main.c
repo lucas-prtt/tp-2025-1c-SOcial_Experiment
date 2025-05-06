@@ -17,6 +17,21 @@ int main(int argc, char* argv[]) {
     int conexionMemoria = conectarSocketClient(ip_memoria, puerto_memoria);
     int conexionKernelDispatch = conectarSocketClient(ip_kernel, puerto_kernel_dispatch);
     int conexionKernelInterrupt = conectarSocketClient(ip_kernel, puerto_kernel_interrupt);
+
+    
+    verificarConexionCliente(conexionMemoria, logger, "Memoria");
+    verificarConexionCliente(conexionKernelDispatch, logger, "Kernel (Dispatch)");
+    verificarConexionCliente(conexionKernelInterrupt, logger, "Kernel (Interrupt)");
+
+    //int resultHandshakeMemoria = handshakeClient(conexionMemoria, identificadorCPU);
+    int resultHandshakeKernelDispatch = handshakeClient(conexionKernelDispatch, identificadorCPU);
+    int resultHandshakeKernelInterrupt = handshakeClient(conexionKernelInterrupt, identificadorCPU);
+
+    //verificarResultadoHandshake(resultHandshakeMemoria, logger, "Memoria");
+    verificarResultadoHandshake(resultHandshakeKernelDispatch, logger, "Kernel (Dispatch)");
+    verificarResultadoHandshake(resultHandshakeKernelInterrupt, logger, "Kernel (Interrupt)");
+    
+
     
     liberarConexion(conexionMemoria);
     liberarConexion(conexionKernelDispatch);
