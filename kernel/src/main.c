@@ -27,7 +27,6 @@ int main(int argc, char* argv[]) {
     pthread_create(&ioConnect, NULL, esperarIOEscucha, &socketEscuchaIO);
     log_debug(logger, "Threads de conexion creados");
 
-    printf("Conectando modulos\nPresione enter para finalizar la etapa de conexion y comenzar a ejecutar el kernel\n");
     getchar();
 
     threadCancelAndDetach(&cpuDispatchConnect); //Envia un cancel request. No se cancela hasta que se haga shutdown (accept() es bloqueante)
@@ -47,16 +46,16 @@ int main(int argc, char* argv[]) {
     log_debug(logger, "Verificacion de conexiones realizada");
     
     if (!listoParaIniciar) {
-        printf("\nNo se pudieron realizar las conexiones necesarias:\n");        log_debug(logger, "Conexiones insuficientes");
+        log_debug(logger, "Conexiones insuficientes");
         if (!isMemoriaDisponible){
-            printf("-No se puede conectar a la memoria\n"); log_debug(logger, "-> Memoria no disponible");
+            log_debug(logger, "-> Memoria no disponible");
         }
         if (!isConexionIOyCPUDisponible){
-            printf("-No se llevaron a cabo las conexiones necesarias a IO y CPU\n"); log_debug(logger, "-> IO o CPU no disponible");
+            log_debug(logger, "-> IO o CPU no disponible");
         }
-        eliminarConexiones();                               log_debug(logger, "Conexiones Eliminadas");
-        printf("Abortando kernel: Presione enter\n");       log_debug(logger, "Abortando kernel");
-        getchar();
+        eliminarConexiones();
+        log_debug(logger, "Conexiones Eliminadas");
+        log_debug(logger, "Abortando kernel");
         cerrarKernel();
     }
     log_debug(logger, "Finalizacion etapa de conexiones exitosa");
