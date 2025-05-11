@@ -45,10 +45,12 @@ void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual,
 }
 
 t_PCB * encontrarProcesoPorPIDYLista(t_list * lista, int pid){
-    bool _PIDCoincide(void * elemento){          // Esto el VSC lo marca como error pero GCC lo permite y esta en el manual de commons/list
+    #ifndef __INTELLISENSE__ // Lo marco asi para que me deje de marcar error. El compilador lo deberia tomar bien a la hora de crear el ejecutable
+    bool _PIDCoincide(void * elemento){         // Esto el VSC lo marca como error pero GCC lo permite y esta en el manual de commons/list
         return ((t_PCB*)elemento)->PID == pid;
     }
     return list_find(lista, _PIDCoincide);
+    #endif
 }
 
 char * estadoAsString(enum estado e){
