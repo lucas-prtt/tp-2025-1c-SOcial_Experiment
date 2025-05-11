@@ -3,7 +3,7 @@
 
 
 
-char * estadoAsString(int e){
+char * estadoAsString(enum estado e){
     switch(e){
         case NEW: 
         return "NEW";
