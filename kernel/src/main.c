@@ -5,8 +5,7 @@
 int main(int argc, char* argv[]) {
     if(abrirConfigYLog("kernel.config", "kernel.log", "kernel", false)){ // Si se ejecuta con exito, devuelve 0
         abort();
-    }
-    
+    }    
     if (argc != 3){
         log_debug(logger, "Parametros insuficientes para el inicio");
         cerrarKernel();
@@ -63,7 +62,8 @@ int main(int argc, char* argv[]) {
             // A partir de este punto la variable global "conexiones" no la modifica ningun thread 
             // por lo que hay via libre para usarla
 
-
-
+    t_list * listasProcesos[7] ; // Crea vector de lista para guardar procesos
+    nuevoProceso(0, argv[1], atoi(argv[2]), listasProcesos);
+    
     return 0;
 }
