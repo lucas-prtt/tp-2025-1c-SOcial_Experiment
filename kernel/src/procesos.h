@@ -2,8 +2,8 @@
 #define PROCESOS_H
 #include <commons/collections/list.h>
 #include <stdlib.h>
-
-
+#include <stdbool.h>
+#include "utils/logConfig.h"
 enum estado{ // Para indicar el estado dentro del vector de ME y MT
     NEW = 0,
     READY = 1,
@@ -28,12 +28,17 @@ typedef struct{
 } t_PCB;
 
 t_PCB * crearPCB(int id, char * path, int size);
+
+
+
 void nuevoProceso(int id, char * path, int size, t_list * listaProcesos[]);
-
-
-
-
+void cambiarEstado(int idProceso, enum estado estadoSiguiente, t_list * listaProcesos[]); // Sin probar
 char * estadoAsString(enum estado);
 
+
+
+// Funciones auxiliares
+t_PCB * encontrarProcesoPorPIDYLista(t_list * lista, int pid);
+void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, enum estado estadoSiguiente, t_list * listaProcesos[]);
 
 #endif

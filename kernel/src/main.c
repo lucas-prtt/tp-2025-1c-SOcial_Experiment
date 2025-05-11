@@ -1,6 +1,16 @@
 #include "main.h"
 
-
+/*
+Logs:
+Syscall
+Crear proceso          -HECHO
+Cambio estado          -HECHO
+Motivo Bloqueo
+Fin IO
+Desalojo SJF/SRT
+Fin Proceso
+Metricas de estado
+*/
 
 int main(int argc, char* argv[]) {
     if(abrirConfigYLog("kernel.config", "kernel.log", "kernel", false)){ // Si se ejecuta con exito, devuelve 0
@@ -63,7 +73,7 @@ int main(int argc, char* argv[]) {
             // por lo que hay via libre para usarla
 
     t_list * listasProcesos[7] ; // Crea vector de lista para guardar procesos
-    nuevoProceso(0, argv[1], atoi(argv[2]), listasProcesos);
+    nuevoProceso(0, argv[1], atoi(argv[2]), listasProcesos); // Agrega el proceso indicado por consola a la lista NEW
     
     return 0;
 }
