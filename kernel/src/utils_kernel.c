@@ -2,7 +2,8 @@
 
 
 conexionesAModulos conexiones;
-
+t_log * logger;
+t_config * config;
 void * esperarCPUDispatch(void * socket){
     conexiones.CPUsDispatch = list_create();
     t_list * createdThreads = list_create();
@@ -152,4 +153,10 @@ void *handshakeIO(void *ioSocketEId) {
     eliminar_paquete(paquete_resp_io);
     eliminar_paquete_lista(lista_contenido);
     pthread_exit(NULL);
+}
+
+
+void cerrarKernel(){
+    cerrarConfigYLog();
+    abort();
 }

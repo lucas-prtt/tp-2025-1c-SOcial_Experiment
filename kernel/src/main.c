@@ -3,12 +3,14 @@
 
 
 int main(int argc, char* argv[]) {
-
-    t_config * config = config_create("kernel.config");
-    if (config == NULL) { abort(); }
-    t_log * logger = log_create("kernel.log", "kernel", false, log_level_from_string(config_get_string_value(config, "LOG_LEVEL")));
+    if(abrirConfigYLog("kernel.config", "kernel.log", "kernel", false)){ // Si se ejecuta con exito, devuelve 0
+        abort();
+    }
     
-    log_debug(logger, "Kernel iniciado");
+    if (argc != 3){
+        log_debug(logger, "Parametros insuficientes para el inicio");
+        cerrarKernel();
+    } 
 
     int socketCPUDispatch = crearSocketDesdeConfig(config, "PUERTO_ESCUCHA_DISPATCH");
     int socketCPUInterrupt = crearSocketDesdeConfig(config, "PUERTO_ESCUCHA_INTERRUPT");
@@ -55,7 +57,7 @@ int main(int argc, char* argv[]) {
         eliminarConexiones();                               log_debug(logger, "Conexiones Eliminadas");
         printf("Abortando kernel: Presione enter\n");       log_debug(logger, "Abortando kernel");
         getchar();
-        abort();
+        cerrarKernel();
     }
     log_debug(logger, "Finalizacion etapa de conexiones exitosa");
 
