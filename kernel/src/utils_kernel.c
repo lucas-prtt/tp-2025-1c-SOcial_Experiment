@@ -80,10 +80,10 @@ void * esperarIOEscucha(void * socket){
 int verificarModuloMemoriaDisponible(void){
     return estaConexionDisponible(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
 }
+void liberarConexionIDYSOCKET(void * ids){
+    close((*(IDySocket*)ids).SOCKET);}
 
 void eliminarConexiones(void){ // libera los sockets de CPU e IO y borra las listas de CPU
-    void liberarConexionIDYSOCKET(void * ids){
-    close((*(IDySocket*)ids).SOCKET);}
     list_iterate(conexiones.CPUsDispatch, liberarConexionIDYSOCKET);
     list_iterate(conexiones.CPUsInterrupt, liberarConexionIDYSOCKET);
     list_iterate(conexiones.IOEscucha, liberarConexionIDYSOCKET);
