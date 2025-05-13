@@ -37,13 +37,13 @@ int conectarSocketClient(char* ip, char* puerto){ //Devuelve un socket listo par
     return soc;
 }
 
-int estaConexionDisponible(char* ip, char* puerto){
+int estaConexionDisponible(char* ip, char* puerto) {
         int nuevoSocket;
         nuevoSocket = conectarSocketClient(ip, puerto);
-        if(nuevoSocket == -1){
+        if(nuevoSocket == -1) {
             return 0;
         }
-        else{
+        else {
             liberarConexion(nuevoSocket);
             return 1;
         }
@@ -57,11 +57,10 @@ void verificarConexionCliente(int socket_cliente, t_log *logger, char *nombreMod
         log_info(logger, "Conexión inicial con el modulo %s exitosamente establecido", nombreModuloCliente);
 }
 
-
-void liberarConexion(int socket){
+void liberarConexion(int socket) {
     close(socket);
 }
 
-void liberarConexionPuntero(void * socket){
+void liberarConexionPuntero(void * socket) {
     close(*(int*)socket);
 }

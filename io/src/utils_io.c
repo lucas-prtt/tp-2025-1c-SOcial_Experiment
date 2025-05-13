@@ -13,25 +13,43 @@ t_config* iniciarConfig(char *nombreArchivoConfig) {
     return nuevoConfig;
 }
 
+void cerrarIO(void) {
+    //Cerrar log y config
+    abort();
+}
+
+int handshakeKernel(int socket_kernel, char* nombre) { //Envia una solicitud de handshake al kernel//
+    int *codigo_operacion = malloc(sizeof(int));
+    t_paquete* paquete_consult_cliente = crear_paquete(HANDSHAKE);
+    agregar_a_paquete(paquete_consult_cliente, &nombre, strlen(nombre) + 1);
+    enviar_paquete(paquete_consult_cliente, socket_kernel);
+    t_list *lista_contenido = recibir_paquete_lista(socket_kernel, MSG_WAITALL, codigo_operacion);
+    if(lista_contenido == NULL || list_size(lista_contenido) < 2 || *codigo_operacion != HANDSHAKE || *(int*)list_get(lista_contenido, 1) == -1) {
+        free(codigo_operacion);
+        eliminar_paquete(paquete_consult_cliente);
+        eliminar_paquete_lista(lista_contenido);
+        return -1;
+    }
+    int result = *(int*)list_get(lista_contenido, 1);
+
+    free(codigo_operacion);
+    eliminar_paquete(paquete_consult_cliente);
+    eliminar_paquete_lista(lista_contenido);
+    return result;
+}
+
 /*
-cuando se conecte al kernel, tiene que quedar en espera. Como? una espera activa con WHILE? O nada que ver
-
-La estructura del PCB sera algo como esto?
-typedef struct {
-    int PID
-    int PC //arranca en 0
-    ME //una lista
-    MT //una lista
-} PCB;
-
-*/
-
-/*
-recibirPeticion(int socket_kernel, request_io &request, int n) {
-    //verificar posibles errores
-    t_list *lista_request = recibir_paquete_lista(socket_kernel, MSG_WAITALL, null); //null?
+int recibirPeticion(int socket_kernel, request_io &request) {
+    int *codigo_operacion;
+    t_list *lista_request = recibir_paquete_lista(socket_kernel, MSG_WAITALL, codigo_operacion);
+    if(lista_request == NULL || list_size(lista_request) < 4 || get*(int*)codigo_operacion != PETICION_IO) {
+        eliminar_paquete_lista(lista_request);
+        return 0; //
+    }
     request.pid = *(int*)list_get(lista_request, 1);
-    request.tiempo = *(int*)list_get(lista_request, 3); //por ahora segundos 
+    request.tiempo = *(int*)list_get(lista_request, 3); //por ahora segundos
+    eliminar_paquete_lista(lista_request);
+    return 1; //
 }
 
 void ejecutarPeticion(t_log *logger, request_io request) {
@@ -41,12 +59,12 @@ void ejecutarPeticion(t_log *logger, request_io request) {
     log_info(logger, "## PID: %d - Fin de IO", request.pid);
 }
 
-void notificarFinPeticion(int socket_kernel, int motivo) {
-    t_paquete *paquete_notif = crear_paquete(HANDSHAKE); //FIN_IO O DESCONEXION_IO
+void notificarMotivoFinPeticion(int socket_kernel, MOTIVO_FIN_IO motivo) {
+    t_paquete *paquete_notif = crear_paquete(n); //FIN_IO O DESCONEXION_IO, debe ser n un doigo de operacion
     agregar_a_paquete(paquete_notif, &motivo, sizeof(int));
     enviar_paquete(paquete_notif, socket_kernel);
     eliminar_paquete(paquete_notif);
 }
 */
 
-//ENUM { FIN_IO, DESCONEXION_IO }
+

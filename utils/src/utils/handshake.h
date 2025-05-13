@@ -7,6 +7,4 @@
 #include <commons/config.h>
 #include <utils/socketUtils.h>
 
-
-int handshakeClient(int socket_cliente, int identificador);
 void verificarResultadoHandshake(int result, t_log *logger, char *nombreModuloCliente);
