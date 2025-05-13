@@ -16,10 +16,11 @@ int main(int argc, char* argv[]) {
     if(abrirConfigYLog("kernel.config", "kernel.log", "kernel", false)){ // Si se ejecuta con exito, devuelve 0
         abort();
     }    
-    if (argc != 3){
+    /*
+    if (argc != 3) {
         log_debug(logger, "Parametros insuficientes para el inicio");
         cerrarKernel();
-    } 
+    } */
 
     int socketCPUDispatch = crearSocketDesdeConfig(config, "PUERTO_ESCUCHA_DISPATCH");
     int socketCPUInterrupt = crearSocketDesdeConfig(config, "PUERTO_ESCUCHA_INTERRUPT");
@@ -54,12 +55,12 @@ int main(int argc, char* argv[]) {
     bool listoParaIniciar = isConexionIOyCPUDisponible && isMemoriaDisponible;
     log_debug(logger, "Verificacion de conexiones realizada");
     
-    if (!listoParaIniciar) {
+    if(!listoParaIniciar) {
         log_debug(logger, "Conexiones insuficientes");
-        if (!isMemoriaDisponible){
+        if(!isMemoriaDisponible) {
             log_debug(logger, "-> Memoria no disponible");
         }
-        if (!isConexionIOyCPUDisponible){
+        if(!isConexionIOyCPUDisponible) {
             log_debug(logger, "-> IO o CPU no disponible");
         }
         eliminarConexiones();
@@ -72,7 +73,7 @@ int main(int argc, char* argv[]) {
             // A partir de este punto la variable global "conexiones" no la modifica ningun thread 
             // por lo que hay via libre para usarla
 
-    t_list * listasProcesos[7] ; // Crea vector de lista para guardar procesos
+    t_list * listasProcesos[7]; // Crea vector de lista para guardar procesos
     nuevoProceso(0, argv[1], atoi(argv[2]), listasProcesos); // Agrega el proceso indicado por consola a la lista NEW
     
     return 0;

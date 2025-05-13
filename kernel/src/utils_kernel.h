@@ -17,7 +17,12 @@ typedef struct {
 typedef struct {
     int ID;
     int SOCKET;
-} IDySocket;
+} IDySocket_CPU;
+
+typedef struct {
+    char* NOMBRE;
+    int SOCKET;
+} NombreySocket_IO;
 
 typedef struct {
     t_list * CPUsDispatch;
