@@ -12,13 +12,17 @@ int main(int argc, char* argv[]) {
     char* logLevel = config_get_string_value(config, "LOG_LEVEL");
 
     t_log* logger = iniciarLogger("cpu.log", "cpu", log_level_from_string(logLevel));
-    log_info(logger, "CPU %d INICIADA", identificadorCPU);
+    log_info(logger, "CPU %d iniciada", identificadorCPU);
+
+    if(argc != 2) {
+        log_debug(logger, "Parametros insuficientes para el inicio");
+        cerrarCPU();
+    }
 
     int conexionMemoria = conectarSocketClient(ip_memoria, puerto_memoria);
     int conexionKernelDispatch = conectarSocketClient(ip_kernel, puerto_kernel_dispatch);
     int conexionKernelInterrupt = conectarSocketClient(ip_kernel, puerto_kernel_interrupt);
 
-    
     verificarConexionCliente(conexionMemoria, logger, "Memoria");
     verificarConexionCliente(conexionKernelDispatch, logger, "Kernel (Dispatch)");
     verificarConexionCliente(conexionKernelInterrupt, logger, "Kernel (Interrupt)");
