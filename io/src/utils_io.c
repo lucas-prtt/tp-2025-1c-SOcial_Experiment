@@ -1,18 +1,6 @@
 #include "utils_io.h"
 
 
-t_log* iniciarLogger(char* nombreArchivo, char* nombreProceso, t_log_level logLevel) {
-    t_log* nuevoLogger = log_create(nombreArchivo, nombreProceso, false, logLevel);
-    if(nuevoLogger == NULL) { abort(); }
-    return nuevoLogger;
-}
-
-t_config* iniciarConfig(char *nombreArchivoConfig) {
-    t_config* nuevoConfig = config_create(nombreArchivoConfig);
-    if(nuevoConfig == NULL) { abort(); }
-    return nuevoConfig;
-}
-
 void cerrarIO(void) {
     //Cerrar log y config
     abort();
@@ -21,7 +9,8 @@ void cerrarIO(void) {
 int handshakeKernel(int socket_kernel, char* nombre) { //Envia una solicitud de handshake al kernel//
     int *codigo_operacion = malloc(sizeof(int));
     t_paquete* paquete_consult_cliente = crear_paquete(HANDSHAKE);
-    agregar_a_paquete(paquete_consult_cliente, &nombre, strlen(nombre) + 1);
+    agregar_a_paquete(paquete_consult_cliente, nombre, strlen(nombre)+1);
+    log_debug(logger, "PAQUETE CONTIENE: ID:%d, TAM:%d, NOMBRE:%s, TAM_NOMBRE:%d", paquete_consult_cliente->tipo_mensaje, paquete_consult_cliente->tamanio, (char*)(paquete_consult_cliente->buffer + sizeof(int)), *((int*)(paquete_consult_cliente->buffer)));
     enviar_paquete(paquete_consult_cliente, socket_kernel);
     t_list *lista_contenido = recibir_paquete_lista(socket_kernel, MSG_WAITALL, codigo_operacion);
     if(lista_contenido == NULL || list_size(lista_contenido) < 2 || *codigo_operacion != HANDSHAKE || *(int*)list_get(lista_contenido, 1) == -1) {
@@ -31,7 +20,6 @@ int handshakeKernel(int socket_kernel, char* nombre) { //Envia una solicitud de 
         return -1;
     }
     int result = *(int*)list_get(lista_contenido, 1);
-
     free(codigo_operacion);
     eliminar_paquete(paquete_consult_cliente);
     eliminar_paquete_lista(lista_contenido);

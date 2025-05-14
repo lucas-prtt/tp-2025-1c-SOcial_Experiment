@@ -4,6 +4,7 @@
 #include <utils/enums.h>
 #include <utils/paquetes.h>
 #include <utils/handshake.h>
+#include "utils/logConfig.h"
 
 
 typedef struct {
