@@ -2,8 +2,6 @@
 
 
 conexionesAModulos conexiones;
-t_log * logger;
-t_config * config;
 
 void * esperarCPUDispatch(void * socket) {
     conexiones.CPUsDispatch = list_create();
