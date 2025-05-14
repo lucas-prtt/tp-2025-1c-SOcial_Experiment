@@ -4,3 +4,5 @@
 #include <stdlib.h>
 #include "utils_cpu.h"
 #include <utils/handshake.h>
+#include "utils/logConfig.h"
+

@@ -2,16 +2,12 @@
 
 int main(int argc, char* argv[]) {
     int identificadorCPU = atoi(argv[1]);
-    
-    t_config* config = iniciarConfig("cpu.config");
+    abrirConfigYLog("cpu.config", "cpu.log", "cpu", false);
     char* ip_memoria = config_get_string_value(config, "IP_MEMORIA");
     char* puerto_memoria = config_get_string_value(config, "PUERTO_MEMORIA");
     char* ip_kernel = config_get_string_value(config, "IP_KERNEL");
     char* puerto_kernel_dispatch = config_get_string_value(config, "PUERTO_KERNEL_DISPATCH");
     char* puerto_kernel_interrupt = config_get_string_value(config, "PUERTO_KERNEL_INTERRUPT");
-    char* logLevel = config_get_string_value(config, "LOG_LEVEL");
-
-    t_log* logger = iniciarLogger("cpu.log", "cpu", log_level_from_string(logLevel));
     log_info(logger, "CPU %d iniciada", identificadorCPU);
 
     if(argc != 2) {
