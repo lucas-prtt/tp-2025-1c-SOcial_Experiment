@@ -65,7 +65,6 @@ void * esperarIOEscucha(void * socket) {
         }
         NombreySocket_IO * IONombreYSocket = malloc(sizeof(NombreySocket_IO));
         IONombreYSocket->SOCKET = nuevoSocket;
-        IONombreYSocket->NOMBRE = ""; //que le pongo?
         list_add(conexiones.IOEscucha, IONombreYSocket) ;
         pthread_t * hilo = malloc(sizeof(pthread_t));
         pthread_create(hilo, NULL, handshakeIO, IONombreYSocket);
@@ -149,12 +148,14 @@ void *handshakeIO(void *ioSocketYNombre) {
         enviar_paquete_error(socket_io, lista_contenido);
         pthread_exit(NULL);
     }
-    char* nombre = *(char**)list_get(lista_contenido, 1); //(char **)?
-    ((NombreySocket_IO*)ioSocketYNombre)->NOMBRE = nombre;
+    char* nombre = (char*)list_get(lista_contenido, 1); //char[10] = {i,m,p,r,e,s,o,r,a,\0}
+    int* tamaño = (int*)list_get(lista_contenido, 0); //10
+    ((NombreySocket_IO*)ioSocketYNombre)->NOMBRE = malloc(*tamaño); //Alocar 10 bytes en pointer nombre del struct socket y nombre
+    memcpy(((NombreySocket_IO*)ioSocketYNombre)->NOMBRE, nombre, *tamaño); //Copiar el nombre (funcionaria capaz strcpy tambien?)
     t_paquete *paquete_resp_io = crear_paquete(HANDSHAKE);
-    agregar_a_paquete(paquete_resp_io, &nombre, strlen(nombre) + 1);
+    agregar_a_paquete(paquete_resp_io, nombre, strlen(nombre) + 1);
     enviar_paquete(paquete_resp_io, socket_io);
-
+    log_debug(logger, "RECIBIDO HANDSHAKE: %s", ((NombreySocket_IO*)ioSocketYNombre)->NOMBRE);
     eliminar_paquete(paquete_resp_io);
     eliminar_paquete_lista(lista_contenido);
     pthread_exit(NULL);
