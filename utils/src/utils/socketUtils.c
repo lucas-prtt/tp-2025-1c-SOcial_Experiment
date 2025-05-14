@@ -49,14 +49,6 @@ int estaConexionDisponible(char* ip, char* puerto) {
         }
 }
 
-void verificarConexionCliente(int socket_cliente, t_log *logger, char *nombreModuloCliente) {
-    //verifica la correcta conexion del cliente, y notifica con log. Por ahora no sale
-    if(socket_cliente == -1)
-        log_info(logger, "Error al intentar establecer conexión inicial con el modulo %s", nombreModuloCliente);
-    else
-        log_info(logger, "Conexión inicial con el modulo %s exitosamente establecido", nombreModuloCliente);
-}
-
 void liberarConexion(int socket) {
     close(socket);
 }

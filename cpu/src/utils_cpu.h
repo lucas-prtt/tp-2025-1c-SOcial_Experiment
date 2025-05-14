@@ -8,5 +8,7 @@
 t_log* iniciarLogger(char* nombreArchivo, char* nombreProceso, t_log_level logLevel);
 t_config* iniciarConfig(char *nombreArchivo);
 void cerrarCPU(void);
-int handshakeClient(int socket_cliente, int identificador);
+void verificarConexionCliente(int socket_cliente, char* nombreModuloCliente);
+bool handshakeClient(int socket_cliente, int identificador);
+void verificarResultadoHandshake(bool result, char* nombreModuloCliente);
 

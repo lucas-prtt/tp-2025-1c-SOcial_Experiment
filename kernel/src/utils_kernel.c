@@ -153,7 +153,7 @@ void *handshakeIO(void *ioSocketYNombre) {
     t_paquete *paquete_resp_io = crear_paquete(HANDSHAKE);
     agregar_a_paquete(paquete_resp_io, nombre, strlen(nombre) + 1);
     enviar_paquete(paquete_resp_io, socket_io);
-    log_debug(logger, "Interrupt Handshake - NOMBRE: %s, Socket: %d", ((NombreySocket_IO*)ioSocketYNombre)->NOMBRE, ((NombreySocket_IO*)ioSocketYNombre)->SOCKET);
+    log_debug(logger, "IO Handshake - NOMBRE: %s, Socket: %d", ((NombreySocket_IO*)ioSocketYNombre)->NOMBRE, ((NombreySocket_IO*)ioSocketYNombre)->SOCKET);
     eliminar_paquete(paquete_resp_io);
     eliminar_paquete_lista(lista_contenido);
     pthread_exit(NULL);

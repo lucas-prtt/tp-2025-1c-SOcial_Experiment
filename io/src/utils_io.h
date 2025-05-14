@@ -3,13 +3,12 @@
 #include <utils/socketUtils.h>
 #include <utils/enums.h>
 #include <utils/paquetes.h>
-#include <utils/handshake.h>
 #include "utils/logConfig.h"
 
 
 typedef struct {
     int pid;
-    int tiempo; //Por ahora segundos
+    int tiempo;
 } request_io;
 
 typedef enum {
@@ -20,7 +19,9 @@ typedef enum {
 t_log* iniciarLogger(char* nombreArchivo, char* nombreProceso, t_log_level logLevel);
 t_config* iniciarConfig(char *nombreArchivo);
 void cerrarIO(void);
-int handshakeKernel(int socket_cliente, char* nombre);
+void verificarConexionKernel(int socket_cliente);
+bool handshakeKernel(int socket_kernel, char* nombre);
+void verificarResultadoHandshake_Kernel(bool result);
 
 /*
 int recibirPeticion(int socket_kernel, request_io &request);

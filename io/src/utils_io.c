@@ -6,7 +6,14 @@ void cerrarIO(void) {
     abort();
 }
 
-int handshakeKernel(int socket_kernel, char* nombre) { //Envia una solicitud de handshake al kernel//
+void verificarConexionKernel(int socket_cliente) {
+    if(socket_cliente == -1)
+        log_info(logger, "Kernel - Conexión Inicial - Error");
+    else
+        log_info(logger, "Kernel - Conexión Inicial - Exito");
+}
+
+bool handshakeKernel(int socket_kernel, char* nombre) {
     int *codigo_operacion = malloc(sizeof(int));
     t_paquete* paquete_consult_cliente = crear_paquete(HANDSHAKE);
     agregar_a_paquete(paquete_consult_cliente, nombre, strlen(nombre)+1);
@@ -17,13 +24,22 @@ int handshakeKernel(int socket_kernel, char* nombre) { //Envia una solicitud de 
         free(codigo_operacion);
         eliminar_paquete(paquete_consult_cliente);
         eliminar_paquete_lista(lista_contenido);
-        return -1;
+        return false;
     }
-    int result = *(int*)list_get(lista_contenido, 1);
+    bool result = false;
+    char* respuesta = (char*)list_get(lista_contenido, 1);
+    if(strcmp(respuesta, nombre) == 0) result = true;
     free(codigo_operacion);
     eliminar_paquete(paquete_consult_cliente);
     eliminar_paquete_lista(lista_contenido);
     return result;
+}
+
+void verificarResultadoHandshake_Kernel(bool result) {
+    if(result)
+        log_info(logger, "Kernel Handshake - Exito");
+    else
+        log_info(logger, "Kernel Handshake - Error");
 }
 
 /*

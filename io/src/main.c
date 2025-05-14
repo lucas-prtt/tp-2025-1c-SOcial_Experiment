@@ -13,10 +13,10 @@ int main(int argc, char *argv[]) {
     }
     
     int conexion = conectarSocketClient(ip_kernel, puerto_kernel);
-    verificarConexionCliente(conexion, logger, "Kernel");
+    verificarConexionKernel(conexion);
 
     int resultHandshake = handshakeKernel(conexion, nombreIO);
-    verificarResultadoHandshake(resultHandshake, logger, "Kernel");
+    verificarResultadoHandshake_Kernel(resultHandshake);
 
     /*
     //ATENDER PETICIONES DEL KERNEL// va estar activo mientras el kernel este activo, falta notificar correctamente

@@ -19,17 +19,17 @@ int main(int argc, char* argv[]) {
     int conexionKernelDispatch = conectarSocketClient(ip_kernel, puerto_kernel_dispatch);
     int conexionKernelInterrupt = conectarSocketClient(ip_kernel, puerto_kernel_interrupt);
 
-    verificarConexionCliente(conexionMemoria, logger, "Memoria");
-    verificarConexionCliente(conexionKernelDispatch, logger, "Kernel (Dispatch)");
-    verificarConexionCliente(conexionKernelInterrupt, logger, "Kernel (Interrupt)");
+    verificarConexionCliente(conexionMemoria, "Memoria");
+    verificarConexionCliente(conexionKernelDispatch, "Kernel (Dispatch)");
+    verificarConexionCliente(conexionKernelInterrupt, "Kernel (Interrupt)");
 
-    //int resultHandshakeMemoria = handshakeClient(conexionMemoria, identificadorCPU);
-    int resultHandshakeKernelDispatch = handshakeClient(conexionKernelDispatch, identificadorCPU);
-    int resultHandshakeKernelInterrupt = handshakeClient(conexionKernelInterrupt, identificadorCPU);
+    //bool resultHandshakeMemoria = handshakeClient(conexionMemoria, identificadorCPU);
+    bool resultHandshakeKernelDispatch = handshakeClient(conexionKernelDispatch, identificadorCPU);
+    bool resultHandshakeKernelInterrupt = handshakeClient(conexionKernelInterrupt, identificadorCPU);
 
-    //verificarResultadoHandshake(resultHandshakeMemoria, logger, "Memoria");
-    verificarResultadoHandshake(resultHandshakeKernelDispatch, logger, "Kernel (Dispatch)");
-    verificarResultadoHandshake(resultHandshakeKernelInterrupt, logger, "Kernel (Interrupt)");
+    //verificarResultadoHandshake(resultHandshakeMemoria, "Memoria");
+    verificarResultadoHandshake(resultHandshakeKernelDispatch, "Kernel (Dispatch)");
+    verificarResultadoHandshake(resultHandshakeKernelInterrupt, "Kernel (Interrupt)");
     
 
     
