@@ -2,14 +2,10 @@
 
 int main(int argc, char *argv[]) {
     char *nombreIO = argv[1];
-
-    t_config *config = iniciarConfig("io.config");
+    abrirConfigYLog("io.config", "io.log", "io", false);
+    log_debug(logger, "Logger iniciado: %s", nombreIO);
     char *ip_kernel = config_get_string_value(config, "IP_KERNEL");
     char *puerto_kernel = config_get_string_value(config, "PUERTO_KERNEL");
-    char *logLevel = config_get_string_value(config, "LOG_LEVEL");
-
-    t_log *logger = iniciarLogger("io.log", "io", log_level_from_string(logLevel));
-    log_info(logger, "Logger iniciado: %s", nombreIO);
 
     if (argc != 2) {
         log_debug(logger, "Parametros insuficientes para el inicio");
