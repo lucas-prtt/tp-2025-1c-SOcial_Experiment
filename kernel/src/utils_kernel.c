@@ -115,9 +115,9 @@ void *handshakeCPUDispatch(void *CPUSocketEId) {
     t_paquete *paquete_resp_cpu = crear_paquete(HANDSHAKE);
     agregar_a_paquete(paquete_resp_cpu, &id, sizeof(id));
     enviar_paquete(paquete_resp_cpu, socket_CPU_Dispatch);
-
     eliminar_paquete(paquete_resp_cpu);
     eliminar_paquete_lista(lista_contenido);
+    log_debug(logger, "Dispatch Handshake - ID:%d, Socket: %d", ((IDySocket_CPU*)CPUSocketEId)->ID, ((IDySocket_CPU*)CPUSocketEId)->SOCKET);
     pthread_exit(NULL);
 }
 
@@ -133,9 +133,9 @@ void *handshakeCPUInterrupt(void *CPUSocketEId) {
     t_paquete *paquete_resp_cpu = crear_paquete(HANDSHAKE);
     agregar_a_paquete(paquete_resp_cpu, &id, sizeof(id));
     enviar_paquete(paquete_resp_cpu, socket_CPU_Interrupt);
-
     eliminar_paquete(paquete_resp_cpu);
     eliminar_paquete_lista(lista_contenido);
+    log_debug(logger, "Interrupt Handshake - ID:%d, Socket: %d", ((IDySocket_CPU*)CPUSocketEId)->ID, ((IDySocket_CPU*)CPUSocketEId)->SOCKET);
     pthread_exit(NULL);
 }
 
@@ -153,7 +153,7 @@ void *handshakeIO(void *ioSocketYNombre) {
     t_paquete *paquete_resp_io = crear_paquete(HANDSHAKE);
     agregar_a_paquete(paquete_resp_io, nombre, strlen(nombre) + 1);
     enviar_paquete(paquete_resp_io, socket_io);
-    log_debug(logger, "RECIBIDO HANDSHAKE: %s", ((NombreySocket_IO*)ioSocketYNombre)->NOMBRE);
+    log_debug(logger, "Interrupt Handshake - NOMBRE: %s, Socket: %d", ((NombreySocket_IO*)ioSocketYNombre)->NOMBRE, ((NombreySocket_IO*)ioSocketYNombre)->SOCKET);
     eliminar_paquete(paquete_resp_io);
     eliminar_paquete_lista(lista_contenido);
     pthread_exit(NULL);
