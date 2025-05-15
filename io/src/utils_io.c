@@ -42,33 +42,32 @@ void verificarResultadoHandshake_Kernel(bool result) {
         log_info(logger, "Kernel Handshake - Error");
 }
 
-/*
-int recibirPeticion(int socket_kernel, request_io &request) {
+bool recibirPeticion(int socket_kernel, request_io *request) {
     int *codigo_operacion;
+    codigo_operacion = malloc(sizeof(int));
     t_list *lista_request = recibir_paquete_lista(socket_kernel, MSG_WAITALL, codigo_operacion);
-    if(lista_request == NULL || list_size(lista_request) < 4 || get*(int*)codigo_operacion != PETICION_IO) {
+    if(lista_request == NULL || list_size(lista_request) < 4 || *codigo_operacion != PETICION_IO) {
+        free(codigo_operacion);
         eliminar_paquete_lista(lista_request);
-        return 0; //
+        return false;
     }
-    request.pid = *(int*)list_get(lista_request, 1);
-    request.tiempo = *(int*)list_get(lista_request, 3); //por ahora segundos
+    request->pid = *(int*)list_get(lista_request, 1);
+    request->tiempo = *(int*)list_get(lista_request, 3);
+    free(codigo_operacion);
     eliminar_paquete_lista(lista_request);
-    return 1; //
+    return true;
 }
 
-void ejecutarPeticion(t_log *logger, request_io request) {
-    log_info(logger,"## PID: %d - Inicio de IO - Tiempo: %d", request.pid, request.tiempo);
-    sleep(request.tiempo);
-    //if() - evaluar el caso de las desconexiones...
-    log_info(logger, "## PID: %d - Fin de IO", request.pid);
+void ejecutarPeticion(request_io *request, MOTIVO_FIN_IO *motivo) {
+    log_info(logger,"## PID: %d - Inicio de IO - Tiempo: %d", request->pid, request->tiempo);
+    usleep(request->tiempo);
+    *motivo = IO_SUCCESS;
+    log_info(logger, "## PID: %d - Fin de IO", request->pid);
 }
 
 void notificarMotivoFinPeticion(int socket_kernel, MOTIVO_FIN_IO motivo) {
-    t_paquete *paquete_notif = crear_paquete(n); //FIN_IO O DESCONEXION_IO, debe ser n un doigo de operacion
+    t_paquete *paquete_notif = crear_paquete(RESPUESTA_PETICION_IO);
     agregar_a_paquete(paquete_notif, &motivo, sizeof(int));
     enviar_paquete(paquete_notif, socket_kernel);
     eliminar_paquete(paquete_notif);
 }
-*/
-
-

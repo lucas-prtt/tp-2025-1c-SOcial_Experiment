@@ -11,22 +11,14 @@ typedef struct {
     int tiempo;
 } request_io;
 
-typedef enum {
+typedef enum { //Capaz deberia estar en otro lugar
     IO_SUCCESS,
-    IO_DESCONNECTED,
 } MOTIVO_FIN_IO;
 
-t_log* iniciarLogger(char* nombreArchivo, char* nombreProceso, t_log_level logLevel);
-t_config* iniciarConfig(char *nombreArchivo);
 void cerrarIO(void);
 void verificarConexionKernel(int socket_cliente);
 bool handshakeKernel(int socket_kernel, char* nombre);
 void verificarResultadoHandshake_Kernel(bool result);
-
-/*
-int recibirPeticion(int socket_kernel, request_io &request);
-
-void ejecutarPeticion(t_log *logger, request_io request);
-
+bool recibirPeticion(int socket_kernel, request_io *request);
+void ejecutarPeticion(request_io *request, MOTIVO_FIN_IO *motivo);
 void notificarMotivoFinPeticion(int socket_kernel, MOTIVO_FIN_IO motivo);
-*/

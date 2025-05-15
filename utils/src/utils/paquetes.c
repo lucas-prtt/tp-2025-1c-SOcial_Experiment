@@ -43,27 +43,31 @@ int recibir_paquete_bloqueante(int socket, t_paquete* paquete){
     return recibir_paquete(socket, paquete, MSG_WAITALL);
 }
 
-int recibir_paquete(int socket, t_paquete* paquete, int flags) { //Previamente, siempre estaba en MSG_WAITALL, añadi parametro flags para que tambien pueda ser MSG_DONTWAIT u otros
+int recibir_paquete(int socket, t_paquete* paquete, int flags) {
+    //retorna 0 al haber error o cierre de la conexion, 1 si todo va bien
     int tipo_mensaje;
     int tamanio;
-    recv(socket, &tipo_mensaje, sizeof(int), flags); // guarda en tipo_mensaje el encabezado del paquete leyendo los primeros 4 bytes del socket
-    recv(socket, &tamanio, sizeof(int), flags); // guarda los siguientes 4 bytes que representan al tamanio del buffer
-    void* buffer = malloc(tamanio); // reserva memoria para el contenido
-    recv(socket, buffer, tamanio, flags); // recibe los bytes del socket y los guarda en el buffer
-    paquete->tipo_mensaje = tipo_mensaje; // se cargan los valores recibidos en el paquete que se paso como parametro
+    if(recv(socket, &tipo_mensaje, sizeof(int), flags) <= 0) return 0;
+    if(recv(socket, &tamanio, sizeof(int), flags) <= 0) return 0;
+    void* buffer = malloc(tamanio);
+    if(recv(socket, buffer, tamanio, flags) <= 0) return 0;
+    paquete->tipo_mensaje = tipo_mensaje;
     paquete->tamanio = tamanio;
     paquete->buffer = buffer;
-    return 0;
+    return 1;
 }
 
-t_list *recibir_paquete_lista(int socket, int flags, int * codOp) { //CodOp se setea con el tipo de mensaje
+t_list *recibir_paquete_lista(int socket, int flags, int* codOp) { //CodOp se setea con el tipo de mensaje
     t_paquete * paq;
-    paq = malloc(sizeof(t_paquete)); //Antes: paq
-    recibir_paquete(socket, paq, flags);
+    paq = malloc(sizeof(t_paquete));
+    if(!recibir_paquete(socket, paq, flags)) {
+        free(paq);
+        return NULL;
+    }
     t_list * listaDeContenido = list_create();
     int offset = 0;
     int * tamanioElemento;
-    if(codOp != NULL){ // Si no me interesa el codOp del paquete, le mando null
+    if(codOp != NULL) { // Si no me interesa el codOp del paquete, le mando null
         *codOp = paq->tipo_mensaje;
     }
     while(offset < paq->tamanio){
