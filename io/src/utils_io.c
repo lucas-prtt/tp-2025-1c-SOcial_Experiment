@@ -53,6 +53,7 @@ bool recibirPeticion(int socket_kernel, request_io *request) {
     }
     request->pid = *(int*)list_get(lista_request, 1);
     request->tiempo = *(int*)list_get(lista_request, 3);
+    
     free(codigo_operacion);
     eliminar_paquete_lista(lista_request);
     return true;

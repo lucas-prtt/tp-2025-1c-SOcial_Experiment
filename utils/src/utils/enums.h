@@ -9,11 +9,12 @@ typedef enum {
 } ID_MODULO;
 
 
-typedef enum { //CODIGO DE OPERACION
+typedef enum {
     HANDSHAKE = 1,
-    PETICION_IO, //INVENTADOS, NO SIRVEN PARA NADA
+    PETICION_IO,
     RESPUESTA_PETICION_IO,
-    CUATRO,
+    PETICION_EXECUTE,
+    //Capaz despues un RESPUESTA_PETICION_EXECUTE?
 } CODIGO_OP;
 
 

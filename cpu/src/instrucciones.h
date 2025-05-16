@@ -1,4 +1,12 @@
-/*
+#include <commons/collections/list.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+typedef struct {
+    int pid;
+    int pc;
+} PIDyPC_instr;
+
 typedef enum {
     INSTR_NOOP,
     INSTR_WHITE,
@@ -11,8 +19,8 @@ typedef enum {
     INSTR_EXIT,
 } TIPO_INSTRUCCION;
 
-*/
 
+/*
 NOOP
 WRITE 0 EJEMPLO_DE_ENUNCIADO
 READ 0 20
@@ -22,3 +30,5 @@ IO IMPRESORA 25000
 INIT_PROC preceso1 256
 DUMP_MEMORY
 EXIT
+
+*/

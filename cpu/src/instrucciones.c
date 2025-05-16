@@ -1,26 +1,42 @@
-///////////////////////
+#include <instrucciones.h>
 
 /*
-void atenderPeticionKernel(void) { //queda en while esperando cosas, cuando le llega una cosa (que recibira con recibirPIDyPC)
+void atenderPeticionKernel(void) {
     while(true) {
-        struct x { pid pc }
-        recibirPIDyPC(x)
-        solicitudInstruccionMemoria()
-        solicitud = recibirSolicitudMemoria()
+        PIDyPC *proc_AEjecutar = recibirPIDyPC_kernel();
+        bool fin_ejecucion = false;
 
-        while(!termino)
-            ejecutarProximaInstruccion(x)
+        while(proc_AEjecutar && !fin_ejecucion) {
+            ejecutarInstruccion(proc_AEjecutar, fin_ejecucion); //que cambie fin_ejecucion?
+        }
         
     }
 }
 
-//recibirPIDyPC(&x) //supongo que recibe un paquete de Kernel que contenga pid y pc, luego los cargo a la estructura
-//solicitudInstruccionMemoria() //Envia un paquete a memoria con un codeOp "SOL_INSTRUCCION" ¿que me devuelve memoria?
-//recibirSolicitudMemoria() //espera la respuesta de la memoria a la peticion
+PIDyPC *recibirPIDyPC_kernel(int socket_kernel) { //y si iniciamos el socket aca adentro? En revision
+    int *codigo_operacion = malloc(sizeof(int));
+    t_list *lista_PIDyPC = recibir_paquete_lista(socket_kernel, MSG_WAITALL, codigo_operacion);
+    if(lista_PIDyPC || list_size(lista_PIDyPC) < 4 || *codigo_operacion != PETICION_EXECUTE) {
+        free(codigo_operacion);
+        eliminar_paquete_lista(LISTA_PIDyPC);
+        return NULL;
+    }
+    PIDyPC x = malloc(sizeof(PIDyPC));
+    x.pid = *(int*)list_get(lista_PIDyPC, 1);
+    x.pc = *(int*)list_get(lista_PIDyPC, 3);
 
-//ejecutarProximaInstruccion(pc) { //Es enorme, con cases, y puedo llegar a llamar a: traducirDireccionLogica()
-    int tipo_instruccion = interpretarInstruccion();
-    switch(tipo_instruccion) { //lo de traduccir sera tambien una instruccion
+    free(codigo_operacion);
+    eliminar_paquete_lista(lista_PIDyPC);
+    return x;
+}
+
+void ejecutarInstruccion(PIDyPC proc_AEjecutar, bool fin_ejecucion) {
+    pedirInstruccionAMemoria(proc_AEjecutar->pc); //y sI inicio memoria aca?
+    instr = recibirInstruccionMemoria()
+
+    TIPO_INSTRUCCION tipoInstr = interpretarInstruccion(proc_AEjecutar); //devuelve el tipo de instruccion
+
+    switch(tipoInstr) {
         case INSTR_NOOP:
 
         case INSTR_WHITE:
@@ -39,26 +55,8 @@ void atenderPeticionKernel(void) { //queda en while esperando cosas, cuando le l
     }
 }
 
-//interpretarInstruccion //devuelve el tipo de isntrucccion?
 //traducirDireccionLogica
 
 //actualizarProgramCounter
-
-/////////////////posibles instruccciones///////
-NOOP
-WRITE 0 EJEMPLO_DE_ENUNCIADO
-READ 0 20
-GOTO 0
-////////las siguientes se concideran syscalls
-IO IMPRESORA 25000
-INIT_PROC preceso1 256
-DUMP_MEMORY
-EXIT
-
-
-
-
-
-
 
 */
