@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
 
             // A partir de este punto la variable global "conexiones" no la modifica ningun thread 
             // por lo que hay via libre para usarla
-
+    procesos_c_inicializarVariables();
     nuevoProceso(0, argv[1], atoi(argv[2]), listasProcesos); // Agrega el proceso indicado por consola a la lista NEW
     
     return 0;

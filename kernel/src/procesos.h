@@ -8,11 +8,18 @@
 #include "utils/logConfig.h"
 #include "utils/socketUtils.h"
 
+typedef struct{
+    char * nombre;
+    sem_t sem_peticiones;
+    t_list * cola;
+} PeticionesIO;
+
+
+
 extern t_list * listasProcesos[7]; // Vector de lista para guardar procesos
 
 
-
-
+void procesos_c_inicializarVariables(); // Necesaria para inicializar listas y semaforos globales
 
 
 #endif
