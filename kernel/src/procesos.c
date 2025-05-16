@@ -5,13 +5,15 @@ t_list * listasProcesos[7]; // Vector de lista para guardar procesos
 // SEMAFOROS:
 pthread_mutex_t mutex_listasProcesos;   // MUTEX para interactuar con listasProcesos[7]
 sem_t sem_procesos_en_ready;            // Semeforo contador: Cantidad de procesos en READY
+sem_t sem_ordenar_cola_ready;
 ///////////////
 
 void procesos_c_inicializarSemaforos(){
     sem_init(&sem_procesos_en_ready, 0, 0);
+    sem_init(&sem_ordenar_cola_ready, 0, 0);
 }
 
-void * dispatcher(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de la interaccion con las CPU a traves del socket dispatch
+void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de la interaccion con las CPU a traves del socket dispatch
 
     IDySocket_CPU * cpu = (IDySocket_CPU*) IDYSOCKETDISPATCH;
     int codOp;
@@ -48,3 +50,16 @@ void * dispatcher(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de la inte
     }
 }
 
+void * orderThread(void * _){
+    char config_key_algoritmo[30];
+    sprintf(config_key_algoritmo, "%s", "ALGORITMO_CORTO_PLAZO");
+    char * algoritmo = config_get_string_value(config, config_key_algoritmo);
+    enum algoritmo algoritmo_enum = algoritmoStringToEnum(algoritmo);
+    while(1){
+        wait(&sem_ordenar_cola_ready);
+        pthread_mutex_lock(&mutex_listasProcesos);
+        ordenar_cola_ready(listasProcesos, algoritmo_enum);
+        pthread_mutex_unlock(&mutex_listasProcesos);
+        sem_post(&sem_procesos_en_ready);
+    }
+}

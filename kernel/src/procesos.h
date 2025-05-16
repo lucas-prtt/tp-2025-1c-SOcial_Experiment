@@ -6,7 +6,6 @@
 #include "utils_kernel.h"
 #include "utils/socketUtils.h"
 #include "utils/logConfig.h"
-
 extern t_list * listasProcesos[7]; // Vector de lista para guardar procesos
 
 

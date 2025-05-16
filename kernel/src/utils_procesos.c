@@ -73,3 +73,43 @@ char * estadoAsString(enum estado e){
         return "N/A";
     }
 }
+
+enum algoritmo algoritmoStringToEnum(char * algoritmo){
+    if(!strcmp(algoritmo, "FIFO")){
+        return FIFO;
+    }
+    if(!strcmp(algoritmo, "SJF")){
+        return SJF;
+    }
+    if(!strcmp(algoritmo, "SRT")){
+        return SRT;
+    }
+    if(!strcmp(algoritmo, "PMCP")){
+        return PMCP;
+    }
+    return ERROR_NO_ALGORITMO;
+}
+
+void ordenar_cola_ready(t_list * listaProcesos[], enum algoritmo algoritmo){
+    switch (algoritmo)
+    {
+    case FIFO: // Dejar como esta
+        break;
+    case SJF: // Ordenar por SJF
+        break;
+    case SRT: // Ordenar por SRT
+        break;
+    default:
+        // ERROR
+        break;
+    }
+    return;
+}
+
+bool verificarDesalojo(t_list * listasProcesos[]){ // Solo para STR
+    bool desalojar = false;
+    // Buscar en lista de EXEC si algun proceso tiene menos tiempo que el menor tiempo de Ready
+    // Si READY esta vacio: no desalojar (No deberia ocurrir)
+    return desalojar;
+}
+

@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "utils/logConfig.h"
+#include <string.h>
+
+
+
 enum estado{ // Para indicar el estado dentro del vector de ME y MT
     NEW = 0,
     READY = 1,
@@ -12,6 +16,14 @@ enum estado{ // Para indicar el estado dentro del vector de ME y MT
     BLOCKED = 4,
     SUSP_BLOCKED = 5,
     SUSP_READY = 6
+};
+
+enum algoritmo{
+    FIFO = 0,
+    SJF = 1,
+    SRT = 2,
+    PMCP = 3,
+    ERROR_NO_ALGORITMO = -1
 };
 
 typedef struct{
@@ -34,8 +46,8 @@ t_PCB * crearPCB(int id, char * path, int size);
 void nuevoProceso(int id, char * path, int size, t_list * listaProcesos[]);
 void cambiarEstado(int idProceso, enum estado estadoSiguiente, t_list * listaProcesos[]); // Sin probar
 char * estadoAsString(enum estado);
-
-
+enum algoritmo algoritmoStringToEnum(char * algoritmo);
+void ordenar_cola_ready(t_list * listaProcesos[], enum algoritmo algoritmo);
 
 // Funciones auxiliares
 t_PCB * encontrarProcesoPorPIDYLista(t_list * lista, int pid);
