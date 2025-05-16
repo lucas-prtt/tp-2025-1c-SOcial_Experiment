@@ -113,3 +113,11 @@ bool verificarDesalojo(t_list * listasProcesos[]){ // Solo para STR
     return desalojar;
 }
 
+void * procesoMasCorto(void * p1, void * p2){
+    if (((t_PCB*)p1)->SIZE <= ((t_PCB*)p2)->SIZE)
+        return p1;
+    return p2;
+}
+
+
+

@@ -48,6 +48,7 @@ void cambiarEstado(int idProceso, enum estado estadoSiguiente, t_list * listaPro
 char * estadoAsString(enum estado);
 enum algoritmo algoritmoStringToEnum(char * algoritmo);
 void ordenar_cola_ready(t_list * listaProcesos[], enum algoritmo algoritmo);
+void * procesoMasCorto(void * p1, void * p2);
 
 // Funciones auxiliares
 t_PCB * encontrarProcesoPorPIDYLista(t_list * lista, int pid);
