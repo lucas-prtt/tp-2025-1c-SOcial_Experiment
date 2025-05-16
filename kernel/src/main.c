@@ -73,7 +73,6 @@ int main(int argc, char* argv[]) {
             // A partir de este punto la variable global "conexiones" no la modifica ningun thread 
             // por lo que hay via libre para usarla
 
-    t_list * listasProcesos[7]; // Crea vector de lista para guardar procesos
     nuevoProceso(0, argv[1], atoi(argv[2]), listasProcesos); // Agrega el proceso indicado por consola a la lista NEW
     
     return 0;
