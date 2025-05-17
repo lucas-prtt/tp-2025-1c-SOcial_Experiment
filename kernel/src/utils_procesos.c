@@ -63,7 +63,7 @@ void nuevoProceso(int id, char * path, int size, t_list * listaProcesos[]){
     list_add(listaProcesos[NEW], nuevoProceso);
     nuevoProceso->ME[NEW]++;
     timeDifferenceStart(&(nuevoProceso->tiempoEnEstado));
-    log_info(logger, "(%d) Se crea el proceso - Estado:NEW", id);
+    log_info(logger, "## (%d) Se crea el proceso - Estado:NEW", id);
 }
 
 void cambiarEstado(int idProceso, enum estado estadoSiguiente, t_list * listaProcesos[]){
@@ -89,8 +89,9 @@ void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual,
     proceso->ME[estadoSiguiente]++;
     timeDifferenceStart(&(proceso->tiempoEnEstado));
 
-    log_info(logger, "(%d) Pasa del estado %s al estado %s", idProceso, estadoAsString(estadoActual), estadoAsString(estadoSiguiente));
+    log_info(logger, "## (%d) Pasa del estado %s al estado %s", proceso->PID, estadoAsString(estadoActual), estadoAsString(estadoSiguiente));
     if(estadoSiguiente == EXIT){
+        log_info(logger, "## (%d) - Finaliza el proceso", proceso->PID);
         loguearMetricasDeEstado_PorPCB(proceso, listaProcesos);
     }
 }
@@ -186,4 +187,24 @@ void encolarPeticionIO(int PID, char * nombreIO, int milisegundos, t_list * list
     list_add(io->cola, peticion);
     sem_post(&(io->sem_peticiones));
     return;
+}
+
+char * syscallAsString(CODIGO_OP syscall){
+    switch(syscall){
+        case SYSCALL_DUMP_MEMORY:
+        return "DUMP_MEMORY";
+        break;
+        case SYSCALL_EXIT:
+        return "EXIT";
+        break;
+        case SYSCALL_INIT_PROC:
+        return "INIT_PROC";
+        break;
+        case SYSCALL_IO:
+        return "IO";
+        break;
+        default:
+        return "ERROR - No es SYSCALL";
+        break;
+    }
 }

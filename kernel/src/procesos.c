@@ -66,7 +66,9 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
 
             // Las metricas (MT y ME) se actualizan solas en cambiarDeEstado()
             // cambiarDeEstado() tambien maneja los inicios y finalizaciones de los "timers" para cada estado
-
+            if (codOp != INTERRUPT_ACKNOWLEDGE){
+                log_info(logger, "## (%d) - Solicitó syscall: %s", proceso->PID, syscallAsString(codOp));
+            }
             switch (codOp)//TODO: Cada caso con su logica: En funcion de codOp se hace cada syscall
             {
             case SYSCALL_EXIT:
@@ -74,7 +76,6 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 // TODO: pedirle a memoria que libere el espacio
-                log_info(logger, "(%d) - Finaliza el proceso", proceso->PID);
                 sem_post(&sem_introducir_proceso_a_ready); 
                 break;
             case SYSCALL_INIT_PROC:
@@ -86,7 +87,6 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_lock(&mutex_listasProcesos);
                 nuevoProceso(pidNuevo, path, size, listasProcesos);
                 pthread_mutex_unlock(&mutex_listasProcesos);
-                log_info(logger, "(%d) Se crea el proceso - Estado: NEW", pidNuevo);
                 sem_post(&sem_introducir_proceso_a_ready);
                 continuar_mismo_proceso = 1;
                 break;
@@ -100,7 +100,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_lock(&mutex_peticionesIO);
                 encolarPeticionIO(proceso->PID, nombreIO, milisegundos, lista_peticionesIO); // Tambien hace señal a su semaforo
                 pthread_mutex_unlock(&mutex_peticionesIO);
-                log_info(logger, "(%d) - Bloqueado por IO: %s", proceso->PID, nombreIO);
+                log_info(logger, "## (%d) - Bloqueado por IO: %s", proceso->PID, nombreIO);
                 break;
             }
             eliminar_paquete_lista(paqueteRespuesta);
@@ -229,6 +229,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado_EstadoActualConocido(peticion->PID, BLOCKED, READY, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
+            log_info(logger, "## (%d) finalizo IO y pasa a READY", peticion->PID);
             }
         }
         free(peticion); // Libera la peticion sacada de la cola

@@ -2,14 +2,14 @@
 
 /*
 Logs:
-Syscall
+Syscall                -HECHO
 Crear proceso          -HECHO
 Cambio estado          -HECHO
-Motivo Bloqueo
-Fin IO
+Motivo Bloqueo         -HECHO
+Fin IO                 -HECHO
 Desalojo SJF/SRT
-Fin Proceso
-Metricas de estado
+Fin Proceso            -HECHO
+Metricas de estado     -HECHO
 */
 
 int main(int argc, char* argv[]) {

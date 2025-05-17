@@ -22,7 +22,8 @@ typedef enum { //CODIGO DE OPERACION / PAQUETE
     SOLICITUD_MEMORIA_NUEVO_PROCESO = 10, // 3 Parametros: PID, PATH, TAMAÑO
     SOLICITUD_MEMORIA_CARGA_SWAP = 11,    // 1 Parametro: PID
     RESPUESTA_MEMORIA_PROCESO_CARGADO = 12, // No necesita parametros 
-    RESPUESTA_MEMORIA_NO_HAY_MEMORIA_SUFICIENTE = 13 // No necesita parametros
+    RESPUESTA_MEMORIA_NO_HAY_MEMORIA_SUFICIENTE = 13, // No necesita parametros
+    INTERRUPT_ACKNOWLEDGE = 14 // No necesita parametros. Lo envia al socket dispatch el CPU cuando se recibe un interrupt 
 } CODIGO_OP;
 
 
