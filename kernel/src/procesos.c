@@ -272,6 +272,7 @@ void * confirmDumpMemoryThread(void * Params){
             liberarMemoria(infoDump->PID);
     }
     free(infoDump);
+    liberarConexion(infoDump->socket);
     pthread_exit(NULL);
     //TODO: Actualizar cuando este el hilo para suspender
 }
