@@ -125,7 +125,7 @@ void * newProcessThread(void * _){
     int socketMemoria;
     int respuesta;
     t_PCB * proceso;
-    char config_key_algoritmo[] = "ALGORITMO_COLA_NEW";
+    char config_key_algoritmo[] = "ALGORITMO_INGRESO_A_READY";
     enum algoritmo algoritmo = algoritmoStringToEnum(config_get_string_value(config, config_key_algoritmo));
     while(1){
         sem_wait(&sem_introducir_proceso_a_ready);
