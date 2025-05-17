@@ -75,7 +75,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
                 pthread_mutex_unlock(&mutex_listasProcesos);
-                // TODO: pedirle a memoria que libere el espacio
+                liberarMemoria(proceso->PID); // Envia mensaje a Memoria para liberar el espacio
                 sem_post(&sem_introducir_proceso_a_ready); 
                 break;
             case SYSCALL_INIT_PROC:

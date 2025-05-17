@@ -45,7 +45,7 @@ typedef struct{
 
 t_PCB * crearPCB(int id, char * path, int size);
 
-
+void liberarMemoria(int PID);
 char * syscallAsString(CODIGO_OP syscall);
 void nuevoProceso(int id, char * path, int size, t_list * listaProcesos[]);
 void cambiarEstado(int idProceso, enum estado estadoSiguiente, t_list * listaProcesos[]); // Sin probar

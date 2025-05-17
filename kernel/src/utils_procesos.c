@@ -208,3 +208,12 @@ char * syscallAsString(CODIGO_OP syscall){
         break;
     }
 }
+
+void liberarMemoria(int PID){
+    int socketMemoria = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
+    t_paquete * paq = crear_paquete(PROCESO_FINALIZADO_LIBERAR_MEMORIA);
+    agregar_a_paquete(paq, &PID, sizeof(PID));
+    enviar_paquete(paq, socketMemoria);
+    liberarConexion(socketMemoria);
+}
+
