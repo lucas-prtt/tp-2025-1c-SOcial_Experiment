@@ -123,8 +123,10 @@ void * orderThread(void * _){
 
 void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
     int socketMemoria;
-    int respuesta;
+    int r;
     enum estado listaQueImporta;
+    t_paquete * solicitud;
+    t_list * respuesta;
     t_PCB * proceso;
     char config_key_algoritmo[] = "ALGORITMO_INGRESO_A_READY";
     enum algoritmo algoritmo = algoritmoStringToEnum(config_get_string_value(config, config_key_algoritmo));
@@ -148,16 +150,28 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
                 break;
             }
         pthread_mutex_unlock(&mutex_listasProcesos);
-        socketMemoria = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
-        // TODO: Enviar peticion para entrar proceso
-            // La peticion debe contener PID, PATH, TAMAÑO
-        // TODO: Enviar peticion para mover de SWAP a Memoria
+        {   //Enviar solicitud a memoria
+            socketMemoria = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
+            if(listaQueImporta == NEW)
+            {
+            solicitud = crear_paquete(SOLICITUD_MEMORIA_NUEVO_PROCESO);
+            agregar_a_paquete(solicitud, &(proceso->PID), sizeof(proceso->PID));
+            agregar_a_paquete(solicitud, proceso->PATH, strlen(proceso->PATH)+1);
+            agregar_a_paquete(solicitud, &(proceso->SIZE), sizeof(proceso->SIZE));
+            }
+            else
+            {
+            solicitud = crear_paquete(SOLICITUD_MEMORIA_CARGA_SWAP);
+            agregar_a_paquete(solicitud, &(proceso->PID), sizeof(proceso->PID));
+            }
+            enviar_paquete(solicitud, socketMemoria);
+        }
+        respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &r);
+        eliminar_paquete_lista(respuesta); // El contenido del paquete es vacio: Solo importa el codOp
 
-        // TODO: Recibir respuesta
-            // Sera un paquete con solo un int (enum?)
-        respuesta = 1; // 1: Hay espacio y se introdujo, 0: No hay espacio y no se introdujo
+        r = 1; // 1: Hay espacio y se introdujo, 0: No hay espacio y no se introdujo
         liberarConexion(socketMemoria);
-        if(respuesta){
+        if(r){
             pthread_mutex_lock(&mutex_listasProcesos);
             if(listaQueImporta == NEW)
                 cambiarEstado_EstadoActualConocido(proceso->PID, NEW, READY, listasProcesos);
@@ -224,3 +238,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
     }
 
 }
+
+
+
+

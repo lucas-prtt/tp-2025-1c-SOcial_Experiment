@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include "utils_kernel.h"
 typedef struct t_timeDifference{
     struct timespec inicio;
     struct timespec fin;
