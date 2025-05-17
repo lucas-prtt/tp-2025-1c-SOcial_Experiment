@@ -43,8 +43,13 @@ typedef struct{
                                      // Se lo inicia al crear el proceso y resetea por cada cambio de estado, sumandose el tiempo medido en el estado correspondiente
 } t_PCB;
 
-t_PCB * crearPCB(int id, char * path, int size);
+typedef struct{
+    int PID;
+    int socket;
+}PIDySocket;
 
+t_PCB * crearPCB(int id, char * path, int size);
+void enviarSolicitudDumpMemory(int PID, int * socketMemoria);
 void liberarMemoria(int PID);
 char * syscallAsString(CODIGO_OP syscall);
 void nuevoProceso(int id, char * path, int size, t_list * listaProcesos[]);

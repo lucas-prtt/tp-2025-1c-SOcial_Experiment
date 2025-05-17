@@ -102,6 +102,20 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_unlock(&mutex_peticionesIO);
                 log_info(logger, "## (%d) - Bloqueado por IO: %s", proceso->PID, nombreIO);
                 break;
+            case SYSCALL_DUMP_MEMORY:
+
+                PIDySocket * infoDump;
+                infoDump = malloc(sizeof(infoDump));
+                infoDump->PID = proceso->PID;
+                enviarSolicitudDumpMemory(proceso->PID, &(infoDump->socket));
+                pthread_mutex_lock(&mutex_listasProcesos);
+                //TODO: CHECKPOINT 3: TEMPORIZADOR
+                cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
+                pthread_mutex_unlock(&mutex_listasProcesos);
+                pthread_t hiloConfirmacion;
+                pthread_create(hiloConfirmacion, NULL, confirmDumpMemoryThread, infoDump);
+                pthread_detach(hiloConfirmacion);
+                break;
             }
             eliminar_paquete_lista(paqueteRespuesta);
         }while(continuar_mismo_proceso);
@@ -224,6 +238,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
                 pthread_mutex_lock(&mutex_peticionesIO);
                 cambiarEstado(peticion->PID, EXIT, listasProcesos);
                 pthread_mutex_unlock(&mutex_peticionesIO);
+                liberarMemoria(peticion->PID);
             }else{                  // Si no se pierde la conexion, liberar el paquete y continuar a ready o susp_ready
             eliminar_paquete_lista(respuesta);
             pthread_mutex_lock(&mutex_listasProcesos);
@@ -241,6 +256,24 @@ void * IOThread(void * NOMBREYSOCKETIO)
 
 }
 
-
+void * confirmDumpMemoryThread(void * Params){
+    PIDySocket * infoDump = (PIDySocket*)Params;
+    int resultado;
+    t_list * paq = recibir_paquete_lista(infoDump->socket, MSG_WAITALL, &resultado);
+    eliminar_paquete_lista(paq);
+    if(resultado == RESPUESTA_DUMP_COMPLETADO){
+        pthread_mutex_lock(&mutex_listasProcesos);
+        cambiarEstado_EstadoActualConocido(infoDump->PID, BLOCKED, READY, listasProcesos);
+        pthread_mutex_unlock(&mutex_listasProcesos);
+    }else{
+            pthread_mutex_lock(&mutex_listasProcesos);
+            cambiarEstado_EstadoActualConocido(infoDump->PID, BLOCKED, EXIT, listasProcesos);
+            pthread_mutex_unlock(&mutex_listasProcesos);
+            liberarMemoria(infoDump->PID);
+    }
+    free(infoDump);
+    pthread_exit(NULL);
+    //TODO: Actualizar cuando este el hilo para suspender
+}
 
 
