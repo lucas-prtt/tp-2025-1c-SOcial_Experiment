@@ -17,7 +17,8 @@ typedef enum { //CODIGO DE OPERACION / PAQUETE
     SYSCALL_IO = 5, // 2 Parametros: Nombre_IO, Tiempo_Milisegundos
     PETICION_IO = 6,
     PETICION_EXECUTE = 7,
-    RESPUESTA_PETICION = 8
+    RESPUESTA_PETICION = 8,
+    ASIGNACION_PROCESO_CPU = 9
 } CODIGO_OP;
 
 

@@ -32,6 +32,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
     IDySocket_CPU * cpu = (IDySocket_CPU*) IDYSOCKETDISPATCH;
     int codOp;
     t_list * paqueteRespuesta;
+    t_paquete * paqueteEnviado;
     t_PCB * proceso;
     int continuar_mismo_proceso;
     while(1){
@@ -45,7 +46,11 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
         continuar_mismo_proceso = 0;
         do{
 
-            //TODO: ENVIAR PAQUETE DISPATCH
+            paqueteEnviado = crear_paquete(ASIGNACION_PROCESO_CPU);
+            agregar_a_paquete(paqueteEnviado, &(proceso->PID), sizeof(proceso->PID));
+            agregar_a_paquete(paqueteEnviado, &(proceso->PC), sizeof(proceso->PC));
+            enviar_paquete(paqueteEnviado, cpu->SOCKET);
+            eliminar_paquete(paqueteEnviado);
 
             paqueteRespuesta = recibir_paquete_lista(cpu->SOCKET, MSG_WAITALL, &codOp);
             
@@ -56,6 +61,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 log_error(logger, "(%d) - Finaliza el proceso. Conexion con CPU (%d) perdida", proceso->PID, cpu->ID);
                 pthread_exit(NULL);
             }
+            
             int deltaPC = *(int*)list_get(paqueteRespuesta, 1);
             proceso->PC += deltaPC;
 
@@ -181,8 +187,8 @@ void * IOThread(void * NOMBREYSOCKETIO)
         {
             //Emviar Peticion
             paquete = crear_paquete(PETICION_IO);
-            agregar_a_paquete(paquete, &(peticion->PID), sizeof(int));
-            agregar_a_paquete(paquete, &(peticion->milisegundos), sizeof(int));
+            agregar_a_paquete(paquete, &(peticion->PID), sizeof(peticion->PID));
+            agregar_a_paquete(paquete, &(peticion->milisegundos), sizeof(peticion->milisegundos));
             enviar_paquete(paquete, io->SOCKET);
             eliminar_paquete(paquete);
         }
