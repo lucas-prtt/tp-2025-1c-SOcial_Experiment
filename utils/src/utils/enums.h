@@ -15,7 +15,9 @@ typedef enum { //CODIGO DE OPERACION / PAQUETE
     SYSCALL_INIT_PROC = 3, // 2 Parametros: Nombre_Archivo_Pseudocodigo, Tamaño_Proceso
     SYSCALL_DUMP_MEMORY = 4, // No necesita parametros
     SYSCALL_IO = 5, // 2 Parametros: Nombre_IO, Tiempo_Milisegundos
-    PETICION_IO = 6
+    PETICION_IO = 6,
+    PETICION_EXECUTE = 7,
+    RESPUESTA_PETICION = 8
 } CODIGO_OP;
 
 
