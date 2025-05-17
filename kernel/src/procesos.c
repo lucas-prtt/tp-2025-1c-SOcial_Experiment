@@ -1,13 +1,17 @@
 #include "procesos.h"
 
+
 // VARIABLES GLOBALES: 
 t_list * listasProcesos[7];      // Vector de lista para guardar procesos
 t_list * lista_peticionesIO;     // Lista donde se guarda por cada IO su nombre, cola de peticiones y un Semaforo. La cola se maneja por FIFO
+int last_PID = 1;                //
 ///////////////////////////////////
 
 // SEMAFOROS:
 pthread_mutex_t mutex_listasProcesos;   // MUTEX para interactuar con listasProcesos[7]
 pthread_mutex_t mutex_peticionesIO;     // MUTEX para acceder a lista_peticionesIO
+pthread_mutex_t mutex_last_PID;         // MUTEX para acceder a last_PID
+                                        // Los mutex podrian ser particulares de cada elemento de la lista en algunos casos, pero es complicarse de más
 sem_t sem_procesos_en_ready;            // Semeforo contador: Cantidad de procesos en READY
 sem_t sem_ordenar_cola_ready;           // Representa peticion para ordenar la cola de ready y luego hacer signal a procesos en cola de ready (ya que se ejecuta al entrar un proceso nuevo)
 sem_t sem_introducir_proceso_a_ready;   // Semaforo binario: Intenta mandar un proceso a memoria y a ready
@@ -29,6 +33,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
     int codOp;
     t_list * paqueteRespuesta;
     t_PCB * proceso;
+    int continuar_mismo_proceso;
     while(1){
         {  // Extraer proceso de lista de READY, pasarlo a EXEC
             sem_wait(&sem_procesos_en_ready);
@@ -37,26 +42,63 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             cambiarEstado_EstadoActualConocido(proceso->PID, READY, EXEC, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
         }
-        
-        //TODO: ENVIAR PAQUETE DISPATCH
+        continuar_mismo_proceso = 0;
+        do{
 
-        paqueteRespuesta = recibir_paquete_lista(cpu->SOCKET, MSG_WAITALL, &codOp);
-        
-        if (paqueteRespuesta == NULL){ // Si se cierra la conexion con el CPU, se cierra el hilo y se termina el proceso
-            cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
-            log_error(logger, "(%d) - Finaliza el proceso. Conexion con CPU (%d) perdida", proceso->PID, cpu->ID);
-            pthread_exit(NULL);
-        }
-        
-        //TODO: ACTUALIZAR PCB DEL KERNEL
+            //TODO: ENVIAR PAQUETE DISPATCH
 
-        switch (codOp)//TODO: Cada caso con su logica: En funcion de codOp se hace cada syscall
-        {
-        case 0:
-            break;
-        }
+            paqueteRespuesta = recibir_paquete_lista(cpu->SOCKET, MSG_WAITALL, &codOp);
+            
+            if (paqueteRespuesta == NULL){ // Si se cierra la conexion con el CPU, se cierra el hilo y se termina el proceso
+                pthread_mutex_lock(&mutex_listasProcesos);
+                cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
+                pthread_mutex_unlock(&mutex_listasProcesos);
+                log_error(logger, "(%d) - Finaliza el proceso. Conexion con CPU (%d) perdida", proceso->PID, cpu->ID);
+                pthread_exit(NULL);
+            }
+            int deltaPC = *(int*)list_get(paqueteRespuesta, 1);
+            proceso->PC += deltaPC;
 
-        eliminar_paquete_lista(paqueteRespuesta);
+            // TODO: ACTUALIZAR METRICAS DE ESTADO
+
+            switch (codOp)//TODO: Cada caso con su logica: En funcion de codOp se hace cada syscall
+            {
+            case SYSCALL_EXIT:
+                pthread_mutex_lock(&mutex_listasProcesos);
+                cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
+                pthread_mutex_unlock(&mutex_listasProcesos);
+                // TODO: pedirle a memoria que libere el espacio
+                log_info(logger, "(%d) - Finaliza el proceso", proceso->PID);
+                sem_post(&sem_introducir_proceso_a_ready); 
+                break;
+            case SYSCALL_INIT_PROC:
+                char * path = list_get(paqueteRespuesta, 3);
+                int size = *(int*)list_get(paqueteRespuesta, 5);
+                pthread_mutex_lock(&mutex_last_PID);
+                int pidNuevo = ++last_PID;
+                pthread_mutex_unlock(&mutex_last_PID);
+                pthread_mutex_lock(&mutex_listasProcesos);
+                nuevoProceso(pidNuevo, path, size, listasProcesos);
+                pthread_mutex_unlock(&mutex_listasProcesos);
+                log_info(logger, "(%d) Se crea el proceso - Estado: NEW", pidNuevo);
+                sem_post(&sem_introducir_proceso_a_ready);
+                continuar_mismo_proceso = 1;
+                break;
+            case SYSCALL_IO:
+                char * nombreIO = list_get(paqueteRespuesta, 3);
+                int milisegundos = *(int*)list_get(paqueteRespuesta, 5);
+                pthread_mutex_lock(&mutex_listasProcesos);
+                cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
+                pthread_mutex_unlock(&mutex_listasProcesos);
+                // TODO: CHECKPOINT 3: TEMPORIZADOR
+                pthread_mutex_lock(&mutex_peticionesIO);
+                encolarPeticionIO(proceso->PID, nombreIO, milisegundos, lista_peticionesIO); // Tambien hace señal a su semaforo
+                pthread_mutex_unlock(&mutex_peticionesIO);
+                log_info(logger, "(%d) - Bloqueado por IO: %s", proceso->PID, nombreIO);
+                break;
+            }
+            eliminar_paquete_lista(paqueteRespuesta);
+        }while(continuar_mismo_proceso);
     }
 }
 

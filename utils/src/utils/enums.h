@@ -10,10 +10,11 @@ typedef enum {
 
 
 typedef enum { //CODIGO DE OPERACION
-    HANDSHAKE = 1,
-    //PETICION_IO, //INVENTADOS, NO SIRVEN PARA NADA
-    TRES,
-    CUATRO,
+    HANDSHAKE = 1, // Parametros: ID o Nombre (CPU/IO)
+    SYSCALL_EXIT = 2, // No necesita parametros
+    SYSCALL_INIT_PROC = 3, // 2 Parametros: Nombre_Archivo_Pseudocodigo, Tamaño_Proceso
+    SYSCALL_DUMP_MEMORY = 4, // No necesita parametros
+    SYSCALL_IO = 5 // 2 Parametros: Nombre_IO, Tiempo_Milisegundos
 } CODIGO_OP;
 
 

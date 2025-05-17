@@ -119,5 +119,19 @@ void * procesoMasCorto(void * p1, void * p2){
     return p2;
 }
 
-
-
+PeticionesIO * encontrarPeticionesDeIOPorNombre(t_list * lista, char * nombreIO){
+    #ifndef __INTELLISENSE__ // Lo marco asi para que me deje de marcar error. El compilador lo deberia tomar bien a la hora de crear el ejecutable
+    bool _PIDCoincide(void * elemento){         // Esto el VSC lo marca como error pero GCC lo permite y esta en el manual de commons/list
+        return !strcmp(((PeticionesIO*)elemento)->nombre, nombreIO);
+    }
+    return list_find(lista, _PIDCoincide);
+    #endif
+}
+void encolarPeticionIO(int PID, char * nombreIO, int milisegundos, t_list * lista_peticiones){
+    PeticionesIO * io = encontrarPeticionesDeIOPorNombre(lista_peticiones, nombreIO);
+    int * pid_cola = malloc(sizeof(int));
+    (*pid_cola)= PID;
+    list_add(io->cola, pid_cola);
+    sem_post(&(io->sem_peticiones));
+    return;
+}

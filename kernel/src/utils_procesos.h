@@ -5,7 +5,8 @@
 #include <stdbool.h>
 #include "utils/logConfig.h"
 #include <string.h>
-
+#include "procesos.h"
+#include <semaphore.h>
 
 
 enum estado{ // Para indicar el estado dentro del vector de ME y MT
@@ -49,6 +50,7 @@ char * estadoAsString(enum estado);
 enum algoritmo algoritmoStringToEnum(char * algoritmo);
 void ordenar_cola_ready(t_list * listaProcesos[], enum algoritmo algoritmo);
 void * procesoMasCorto(void * p1, void * p2);
+void encolarPeticionIO(int PID, char * nombreIO, int milisegundos, t_list * lista_peticiones);
 
 // Funciones auxiliares
 t_PCB * encontrarProcesoPorPIDYLista(t_list * lista, int pid);
