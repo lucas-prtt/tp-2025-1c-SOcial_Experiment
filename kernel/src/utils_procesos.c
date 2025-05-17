@@ -49,7 +49,7 @@ t_PCB * crearPCB(int id, char * path, int size){
     pcb->PATH = path;
     pcb->EJC_ANT = 0;
     pcb->EJC_ACT = 0;
-    pcb->EST_ANT = 0;
+    pcb->EST = 0;
     pcb->PC = 0;
     for (int i = 0; i<7; i++){
     pcb->ME[i] = 0;
@@ -85,7 +85,8 @@ void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual,
     list_add(listaProcesos[estadoSiguiente], proceso);
 
     timeDifferenceStop(&(proceso->tiempoEnEstado));
-    proceso->MT[estadoActual] += proceso->tiempoEnEstado.mDelta;
+    int tiempoASumar = proceso->tiempoEnEstado.mDelta;
+    proceso->MT[estadoActual] += tiempoASumar;
     proceso->ME[estadoSiguiente]++;
     timeDifferenceStart(&(proceso->tiempoEnEstado));
 
@@ -93,6 +94,11 @@ void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual,
     if(estadoSiguiente == EXIT){
         log_info(logger, "## (%d) - Finaliza el proceso", proceso->PID);
         loguearMetricasDeEstado_PorPCB(proceso, listaProcesos);
+    }
+    if(estadoActual == EXEC)
+        proceso->EJC_ACT += tiempoASumar;
+    if(estadoActual == EXEC && estadoSiguiente == READY){ // Unico caso es en interrupt
+        log_info(logger, "## (%d) Desalojado por algoritmo SJF/SRT", proceso->PID);
     }
 }
 
@@ -148,14 +154,76 @@ void ordenar_cola_ready(t_list * listaProcesos[], enum algoritmo algoritmo){
     case FIFO: // Dejar como esta
         break;
     case SJF: // Ordenar por SJF
+        //TODO: Checkpoint 3
         break;
     case SRT: // Ordenar por SRT
+        //TODO: Checkpoint 3
         break;
     default:
         // ERROR
         break;
     }
     return;
+}
+int duracionProceso(t_PCB * proceso){ //Valido para procesos que no se esten ejecutando en CPU, ya que EJC_ACT se actualiza al interrumpir
+    return proceso->EST - proceso->EJC_ACT;
+}
+int duracionProcesoEnEjecucion(t_PCB * proceso){
+    return proceso->EST - proceso->EJC_ACT - milisegundosDesde(proceso->tiempoEnEstado.inicio); // tiempo actual desde que se cambio al estado en ejecucion
+}
+void * menorDuracionProcesoEXEC(void *p1, void *p2){
+    if(duracionProcesoEnEjecucion(p1) <= duracionProcesoEnEjecucion(p2))
+        return p1;
+    else 
+        return p2;
+}
+void * menorDuracionProceso(void * p1, void * p2){
+    if(duracionProceso(p1) <= duracionProceso(p2))
+        return p1;
+    else 
+        return p2;
+}
+void * mayorDuracionProcesoEXEC(void *p1, void *p2){
+    if(duracionProcesoEnEjecucion(p1) >= duracionProcesoEnEjecucion(p2))
+        return p1;
+    else 
+        return p2;
+}
+void * mayorDuracionProceso(void * p1, void * p2){
+    if(duracionProceso(p1) >= duracionProceso(p2))
+        return p1;
+    else 
+        return p2;
+}
+t_PCB * procesoMasBreve(t_list * listaProcesos[], enum estado est){
+    if(est == EXEC)
+        return list_get_minimum(listaProcesos[est], menorDuracionProcesoEXEC);
+    else
+        return list_get_minimum(listaProcesos[est], menorDuracionProceso);
+}
+
+t_PCB * procesoMasDuradero(t_list * listaProcesos[], enum estado est){
+    if(est == EXEC)
+        return list_get_maximum(listaProcesos[est], menorDuracionProcesoEXEC);
+    else
+        return list_get_maximum(listaProcesos[est], menorDuracionProceso);
+}
+t_PCB * procesoADesalojar(t_list * listasProcesos[], enum algoritmo alg){
+    if(alg == FIFO || alg == SJF || list_is_empty(listasProcesos[READY])){
+        return NULL;
+    }else{
+        t_PCB * pLargoExec = procesoMasDuradero(listasProcesos, EXEC);
+        t_PCB * pBreveReady = procesoMasBreve(listasProcesos, READY);
+        if(duracionProceso(pBreveReady)<duracionProcesoEnEjecucion(pLargoExec))
+            return pLargoExec;
+        else
+            return NULL;
+    }
+}
+void actualizarEstimacion(t_PCB * proceso, float alfa){ // Siempre ejecutar luego de cambiar el estado (lo que modifica EJC_ACT al tiempo total de ejecucion)
+    proceso->EJC_ANT = proceso->EJC_ACT;
+    proceso->EJC_ACT = 0;
+    proceso->EST = proceso->EJC_ANT * alfa + proceso->EST * (1-alfa);
 }
 
 bool verificarDesalojo(t_list * listasProcesos[]){ // Solo para STR
@@ -217,11 +285,11 @@ void liberarMemoria(int PID){
     liberarConexion(socketMemoria);
 }
 
-enviarSolicitudDumpMemory(int PID, int * socketMemoria){
+void enviarSolicitudDumpMemory(int PID, int * socketMemoria){
     (*socketMemoria) = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
     t_paquete * paq = crear_paquete(SOLICITUD_MEMORIA_DUMP_MEMORY);
     agregar_a_paquete(paq, &PID, sizeof(PID));
-    enviar_paquete(paq, socketMemoria);
+    enviar_paquete(paq, (*socketMemoria));
     // No cierra conexion: requiere confirmacion de que finalizo
 }
 

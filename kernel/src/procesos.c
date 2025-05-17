@@ -35,6 +35,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
     t_paquete * paqueteEnviado;
     t_PCB * proceso;
     int continuar_mismo_proceso;
+    float alfa = atof(config_get_string_value(config, "ALFA"));
     while(1){
         {  // Extraer proceso de lista de READY, pasarlo a EXEC
             sem_wait(&sem_procesos_en_ready);
@@ -45,7 +46,6 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
         }
         continuar_mismo_proceso = 0;
         do{
-            
             paqueteEnviado = crear_paquete(ASIGNACION_PROCESO_CPU);
             agregar_a_paquete(paqueteEnviado, &(proceso->PID), sizeof(proceso->PID));
             agregar_a_paquete(paqueteEnviado, &(proceso->PC), sizeof(proceso->PC));
@@ -57,15 +57,19 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
                 pthread_mutex_unlock(&mutex_listasProcesos);
+                liberarMemoria(proceso->PID);
                 log_error(logger, "(%d) - Finaliza el proceso. Conexion con CPU (%d) perdida", proceso->PID, cpu->ID);
                 pthread_exit(NULL);
             }
-            
             int deltaPC = *(int*)list_get(paqueteRespuesta, 1);
             proceso->PC += deltaPC;
 
             // Las metricas (MT y ME) se actualizan solas en cambiarDeEstado()
-            // cambiarDeEstado() tambien maneja los inicios y finalizaciones de los "timers" para cada estado
+            // cambiarDeEstado() tambien maneja los inicios y finalizaciones de los "timers" para cada estado y actualiza Ejecucion actual
+            // Los auxiliares de Estimacion, Ejecucion actual y anterior se actualizan con actualizarEstimacion()
+            // actualizarEstimacion debe ejecutarse despues de cambiarDeEstado()
+            // Se podria hacer que no se ejecute actualizarEstimacion si el algoritmo es FIFO
+
             if (codOp != INTERRUPT_ACKNOWLEDGE){
                 log_info(logger, "## (%d) - Solicitó syscall: %s", proceso->PID, syscallAsString(codOp));
             }
@@ -100,6 +104,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_lock(&mutex_peticionesIO);
                 encolarPeticionIO(proceso->PID, nombreIO, milisegundos, lista_peticionesIO); // Tambien hace señal a su semaforo
                 pthread_mutex_unlock(&mutex_peticionesIO);
+                actualizarEstimacion(proceso, alfa);
                 log_info(logger, "## (%d) - Bloqueado por IO: %s", proceso->PID, nombreIO);
                 break;
             case SYSCALL_DUMP_MEMORY:
@@ -111,9 +116,10 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_lock(&mutex_listasProcesos);
                 //TODO: CHECKPOINT 3: TEMPORIZADOR
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
+                actualizarEstimacion(proceso, alfa);
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 pthread_t hiloConfirmacion;
-                pthread_create(hiloConfirmacion, NULL, confirmDumpMemoryThread, infoDump);
+                pthread_create(&hiloConfirmacion, NULL, confirmDumpMemoryThread, infoDump);
                 pthread_detach(hiloConfirmacion);
                 break;
             }
@@ -130,6 +136,10 @@ void * orderThread(void * _){
         sem_wait(&sem_ordenar_cola_ready);
         pthread_mutex_lock(&mutex_listasProcesos);
         ordenar_cola_ready(listasProcesos, algoritmo_enum);
+        t_PCB * procesoInterrumpido = procesoADesalojar(listasProcesos, algoritmo_enum);
+        if(procesoInterrumpido != NULL){
+            //TODO: CHECKPOINT 3: interrumpir el proceso, reordenar
+        }
         pthread_mutex_unlock(&mutex_listasProcesos);
         sem_post(&sem_procesos_en_ready);
     }
