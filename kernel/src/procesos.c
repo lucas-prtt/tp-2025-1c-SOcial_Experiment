@@ -121,30 +121,37 @@ void * orderThread(void * _){
     }
 }
 
-void * newProcessThread(void * _){
+void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
     int socketMemoria;
     int respuesta;
+    enum estado listaQueImporta;
     t_PCB * proceso;
     char config_key_algoritmo[] = "ALGORITMO_INGRESO_A_READY";
     enum algoritmo algoritmo = algoritmoStringToEnum(config_get_string_value(config, config_key_algoritmo));
     while(1){
         sem_wait(&sem_introducir_proceso_a_ready);
         pthread_mutex_lock(&mutex_listasProcesos);
+        if(list_is_empty(listasProcesos[SUSP_READY]))
+            listaQueImporta = NEW; // Introduce nuevo proceso
+        else
+            listaQueImporta = SUSP_READY; // Dessuspende el proceso
+        
         switch(algoritmo){
-        case FIFO:
-            proceso = list_get(listasProcesos[NEW], 0);
-            break;
-        case PMCP:
-            proceso = list_get_minimum(listasProcesos[NEW], procesoMasCorto);
-            break;
-        default: 
-            // ERROR
-            break;
-        }
+            case FIFO:
+                proceso = list_get(listasProcesos[listaQueImporta], 0);
+                break;
+            case PMCP:
+                proceso = list_get_minimum(listasProcesos[listaQueImporta], procesoMasCorto);
+                break;
+            default: 
+                log_error(logger, "Error: Archivo de configuracion no detalla un algoritmo de introduccion de proceso a ready valido.");
+                break;
+            }
         pthread_mutex_unlock(&mutex_listasProcesos);
         socketMemoria = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
         // TODO: Enviar peticion para entrar proceso
             // La peticion debe contener PID, PATH, TAMAÑO
+        // TODO: Enviar peticion para mover de SWAP a Memoria
 
         // TODO: Recibir respuesta
             // Sera un paquete con solo un int (enum?)
@@ -152,10 +159,13 @@ void * newProcessThread(void * _){
         liberarConexion(socketMemoria);
         if(respuesta){
             pthread_mutex_lock(&mutex_listasProcesos);
-            cambiarEstado_EstadoActualConocido(proceso->PID, NEW, READY, listasProcesos);
+            if(listaQueImporta == NEW)
+                cambiarEstado_EstadoActualConocido(proceso->PID, NEW, READY, listasProcesos);
+            else
+                cambiarEstado_EstadoActualConocido(proceso->PID, SUSP_READY, READY, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
             sem_post(&sem_ordenar_cola_ready);
-            if(!list_is_empty(listasProcesos[NEW])) // Si quedan procesos pruebo meter otro
+            if(!list_is_empty(listasProcesos[NEW]) || !list_is_empty(listasProcesos[SUSP_READY])) // Si quedan procesos pruebo meter otro
                 sem_post(&sem_introducir_proceso_a_ready);
         }
     }
