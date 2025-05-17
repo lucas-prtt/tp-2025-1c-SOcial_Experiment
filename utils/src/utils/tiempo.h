@@ -11,7 +11,7 @@ typedef struct t_timeDifference{
     long long int mDelta;
 } t_timeDifference;
 
-
+int milisegundosDesde(struct timespec time);
 void timeDifferenceStart(t_timeDifference * cantidadDeTiempo);
 void timeDifferenceStop(t_timeDifference * cantidadDeTiempo);
 

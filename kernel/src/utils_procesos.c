@@ -3,6 +3,45 @@
 
 
 
+
+bool procesoEnExit(t_PCB * proceso, t_list * listasProcesos[]){
+    #ifndef __INTELLISENSE__ 
+    bool punterosIguales(void *puntero){
+        return proceso == puntero;
+    }
+    return list_any_satisfy(listasProcesos[EXIT], punterosIguales);
+    #endif
+
+}
+void loguearMetricasDeEstado_PorPCB(t_PCB * proceso, t_list * listasProcesos[]){
+    int tiempoExit = proceso->MT[EXIT];
+    if(procesoEnExit(proceso, listasProcesos)){
+    tiempoExit += milisegundosDesde(proceso->tiempoEnEstado.inicio);
+    }
+    log_debug(logger, 
+        "(%d) - Métricas de estado: "
+        "NEW (%d) (%d), "
+        "READY (%d) (%d), "
+        "EXEC (%d) (%d), "
+        "EXIT (%d) (%d), "
+        "BLOCKED (%d) (%d), "
+        "SUSP_BLOCKED (%d) (%d), "
+        "SUSP_READY (%d) (%d)",
+        proceso->PID,
+        proceso->ME[NEW], proceso->MT[NEW],
+        proceso->ME[READY], proceso->MT[READY],
+        proceso->ME[EXEC], proceso->MT[EXEC],
+        proceso->ME[EXIT], tiempoExit,
+        proceso->ME[BLOCKED], proceso->MT[BLOCKED],
+        proceso->ME[SUSP_BLOCKED], proceso->MT[SUSP_BLOCKED],
+        proceso->ME[SUSP_READY], proceso->MT[SUSP_READY]
+    );
+}
+
+
+
+
+
 t_PCB * crearPCB(int id, char * path, int size){
     t_PCB * pcb = malloc(sizeof(pcb));
     pcb->PID = id;
@@ -51,6 +90,9 @@ void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual,
     timeDifferenceStart(&(proceso->tiempoEnEstado));
 
     log_info(logger, "(%d) Pasa del estado %s al estado %s", idProceso, estadoAsString(estadoActual), estadoAsString(estadoSiguiente));
+    if(estadoSiguiente == EXIT){
+        loguearMetricasDeEstado_PorPCB(proceso, listaProcesos);
+    }
 }
 
 t_PCB * encontrarProcesoPorPIDYLista(t_list * lista, int pid){

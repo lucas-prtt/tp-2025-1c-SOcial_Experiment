@@ -17,6 +17,13 @@ void calcularDiferencia(t_timeDifference * ct){
     ct->uDelta = ct->nDelta / 1000;
     ct->mDelta = ct->uDelta / 1000;
 }
+
+int milisegundosDesde(struct timespec time){
+    struct timespec ahora;
+    clock_gettime(CLOCK_MONOTONIC, &ahora);
+    return (ahora.tv_nsec + ahora.tv_sec * 1000000000 - time.tv_nsec - time.tv_sec * 1000000000)/1000000;
+}
+    
 void timeDifferenceStart(t_timeDifference * cantidadDeTiempo){
     clock_gettime(CLOCK_MONOTONIC, &(cantidadDeTiempo->inicio));
 }
