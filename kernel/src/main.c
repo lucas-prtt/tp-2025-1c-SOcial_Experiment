@@ -16,11 +16,11 @@ int main(int argc, char* argv[]) {
     if(abrirConfigYLog("kernel.config", "kernel.log", "kernel", false)){ // Si se ejecuta con exito, devuelve 0
         abort();
     }    
-    /*
+    
     if (argc != 3) {
         log_debug(logger, "Parametros insuficientes para el inicio");
         cerrarKernel();
-    } */
+    }
 
     int socketCPUDispatch = crearSocketDesdeConfig(config, "PUERTO_ESCUCHA_DISPATCH");
     int socketCPUInterrupt = crearSocketDesdeConfig(config, "PUERTO_ESCUCHA_INTERRUPT");
