@@ -217,22 +217,23 @@ void * IOThread(void * NOMBREYSOCKETIO)
             eliminar_paquete(paquete);
         }
         {
-            // Recibir peticion
+            // Recibir respuesta
             respuesta = recibir_paquete_lista(io->SOCKET, MSG_WAITALL, NULL);
-            if(respuesta == NULL){
+            if(respuesta == NULL){ // Si se pierde la conexion, se termina el proceso
                 log_error(logger, "Se perdio la conexion con IO: %s", io->NOMBRE);
-                // TODO: EXIT al proceso actual y todos los procesos con peticiones
-                free(peticion);
-                pthread_exit(NULL);
-            }
+                pthread_mutex_lock(&mutex_peticionesIO);
+                cambiarEstado(peticion->PID, EXIT, listasProcesos);
+                pthread_mutex_unlock(&mutex_peticionesIO);
+            }else{                  // Si no se pierde la conexion, liberar el paquete y continuar a ready o susp_ready
             eliminar_paquete_lista(respuesta);
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado_EstadoActualConocido(peticion->PID, BLOCKED, READY, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
+            }
         }
-        // TODO: Actualizar metricas de estado
-        free(peticion);
+        free(peticion); // Libera la peticion sacada de la cola
         sem_post(&sem_ordenar_cola_ready);    
+        //TODO: CHECKPOINT 3:
         // Cuando se suspendan, hay que ver si esta suspendido o no para mandar señal a un proceso de desuspender
         // Cuando se implemente temporizador de suspension, eliminar el temporizador
     }
