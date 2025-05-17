@@ -14,7 +14,10 @@ typedef struct{
     t_list * cola;
 } PeticionesIO;
 
-
+typedef struct {
+    int PID;
+    int milisegundos;
+} Peticion;
 
 extern t_list * listasProcesos[7]; // Vector de lista para guardar procesos
 

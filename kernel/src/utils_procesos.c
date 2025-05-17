@@ -129,9 +129,10 @@ PeticionesIO * encontrarPeticionesDeIOPorNombre(t_list * lista, char * nombreIO)
 }
 void encolarPeticionIO(int PID, char * nombreIO, int milisegundos, t_list * lista_peticiones){
     PeticionesIO * io = encontrarPeticionesDeIOPorNombre(lista_peticiones, nombreIO);
-    int * pid_cola = malloc(sizeof(int));
-    (*pid_cola)= PID;
-    list_add(io->cola, pid_cola);
+    Peticion * peticion = malloc(sizeof(Peticion));
+    peticion->PID = PID;
+    peticion->milisegundos = milisegundos;
+    list_add(io->cola, peticion);
     sem_post(&(io->sem_peticiones));
     return;
 }

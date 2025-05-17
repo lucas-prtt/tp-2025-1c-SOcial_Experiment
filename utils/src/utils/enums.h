@@ -9,12 +9,13 @@ typedef enum {
 } ID_MODULO;
 
 
-typedef enum { //CODIGO DE OPERACION
+typedef enum { //CODIGO DE OPERACION / PAQUETE
     HANDSHAKE = 1, // Parametros: ID o Nombre (CPU/IO)
     SYSCALL_EXIT = 2, // No necesita parametros
     SYSCALL_INIT_PROC = 3, // 2 Parametros: Nombre_Archivo_Pseudocodigo, Tamaño_Proceso
     SYSCALL_DUMP_MEMORY = 4, // No necesita parametros
-    SYSCALL_IO = 5 // 2 Parametros: Nombre_IO, Tiempo_Milisegundos
+    SYSCALL_IO = 5, // 2 Parametros: Nombre_IO, Tiempo_Milisegundos
+    PETICION_IO = 6
 } CODIGO_OP;
 
 

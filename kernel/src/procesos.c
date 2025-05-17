@@ -158,6 +158,9 @@ void * newProcessThread(void * _){
 
 void * IOThread(void * NOMBREYSOCKETIO)
 {   
+    t_paquete * paquete;
+    Peticion * peticion;
+    t_list * respuesta;
     NombreySocket_IO * io = (NombreySocket_IO*)NOMBREYSOCKETIO;
     PeticionesIO * peticiones = malloc(sizeof(PeticionesIO));
     peticiones->nombre = malloc(strlen(io->NOMBRE)+1);
@@ -168,12 +171,39 @@ void * IOThread(void * NOMBREYSOCKETIO)
     list_add(lista_peticionesIO, peticiones);
     pthread_mutex_unlock(&mutex_peticionesIO);
     while(1){
-        sem_wait(&(peticiones->sem_peticiones));
-        // Enviar solicitud a IO
-        // Recibir respuesta de IO
-        // Desbloquear proceso
-        // Sacar de cola
-        sem_post(&sem_ordenar_cola_ready);    // Cuando se suspendan, hay que ver si esta suspendido o no para mandar señal a un proceso de desuspender
+        {
+            // Obtener peticion
+            sem_wait(&peticiones->sem_peticiones);
+            pthread_mutex_lock(&mutex_peticionesIO);
+            peticion = list_remove(peticiones->cola,0);
+            pthread_mutex_unlock(&mutex_peticionesIO);
+        }
+        {
+            //Emviar Peticion
+            paquete = crear_paquete(PETICION_IO);
+            agregar_a_paquete(paquete, &(peticion->PID), sizeof(int));
+            agregar_a_paquete(paquete, &(peticion->milisegundos), sizeof(int));
+            enviar_paquete(paquete, io->SOCKET);
+            eliminar_paquete(paquete);
+        }
+        {
+            // Recibir peticion
+            respuesta = recibir_paquete_lista(io->SOCKET, MSG_WAITALL, NULL);
+            if(respuesta == NULL){
+                log_error(logger, "Se perdio la conexion con IO: %s", io->NOMBRE);
+                // TODO: EXIT al proceso actual y todos los procesos con peticiones
+                free(peticion);
+                pthread_exit(NULL);
+            }
+            eliminar_paquete_lista(respuesta);
+            pthread_mutex_lock(&mutex_listasProcesos);
+            cambiarEstado_EstadoActualConocido(peticion->PID, BLOCKED, READY, listasProcesos);
+            pthread_mutex_unlock(&mutex_listasProcesos);
+        }
+        // TODO: Actualizar metricas de estado
+        free(peticion);
+        sem_post(&sem_ordenar_cola_ready);    
+        // Cuando se suspendan, hay que ver si esta suspendido o no para mandar señal a un proceso de desuspender
         // Cuando se implemente temporizador de suspension, eliminar el temporizador
     }
 
