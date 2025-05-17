@@ -45,15 +45,14 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
         }
         continuar_mismo_proceso = 0;
         do{
-
+            
             paqueteEnviado = crear_paquete(ASIGNACION_PROCESO_CPU);
             agregar_a_paquete(paqueteEnviado, &(proceso->PID), sizeof(proceso->PID));
             agregar_a_paquete(paqueteEnviado, &(proceso->PC), sizeof(proceso->PC));
             enviar_paquete(paqueteEnviado, cpu->SOCKET);
             eliminar_paquete(paqueteEnviado);
-
             paqueteRespuesta = recibir_paquete_lista(cpu->SOCKET, MSG_WAITALL, &codOp);
-            
+
             if (paqueteRespuesta == NULL){ // Si se cierra la conexion con el CPU, se cierra el hilo y se termina el proceso
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
@@ -65,7 +64,8 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             int deltaPC = *(int*)list_get(paqueteRespuesta, 1);
             proceso->PC += deltaPC;
 
-            // TODO: ACTUALIZAR METRICAS DE ESTADO
+            // Las metricas (MT y ME) se actualizan solas en cambiarDeEstado()
+            // cambiarDeEstado() tambien maneja los inicios y finalizaciones de los "timers" para cada estado
 
             switch (codOp)//TODO: Cada caso con su logica: En funcion de codOp se hace cada syscall
             {

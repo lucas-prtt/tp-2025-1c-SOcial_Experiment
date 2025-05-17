@@ -1,0 +1,19 @@
+#ifndef TIEMPO_H
+#define TIEMPO_H
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include "utils_kernel.h"
+typedef struct t_timeDifference{
+    struct timespec inicio;
+    struct timespec fin;
+    long long int nDelta;
+    long long int uDelta;
+    long long int mDelta;
+} t_timeDifference;
+
+
+void timeDifferenceStart(t_timeDifference * cantidadDeTiempo);
+void timeDifferenceStop(t_timeDifference * cantidadDeTiempo);
+
+#endif

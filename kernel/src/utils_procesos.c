@@ -9,7 +9,7 @@ t_PCB * crearPCB(int id, char * path, int size){
     pcb->SIZE = size;
     pcb->PATH = path;
     pcb->EJC_ANT = 0;
-    pcb->EST_ACT = 0;
+    pcb->EJC_ACT = 0;
     pcb->EST_ANT = 0;
     pcb->PC = 0;
     for (int i = 0; i<7; i++){
@@ -20,7 +20,10 @@ t_PCB * crearPCB(int id, char * path, int size){
 }
 
 void nuevoProceso(int id, char * path, int size, t_list * listaProcesos[]){
-    list_add(listaProcesos[NEW], crearPCB(id, path, size));
+    t_PCB * nuevoProceso = crearPCB(id, path, size);
+    list_add(listaProcesos[NEW], nuevoProceso);
+    nuevoProceso->ME[NEW]++;
+    timeDifferenceStart(&(nuevoProceso->tiempoEnEstado));
     log_info(logger, "(%d) Se crea el proceso - Estado:NEW", id);
 }
 
@@ -41,6 +44,12 @@ void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual,
     t_PCB * proceso;
     proceso = (t_PCB*)list_remove_element(listaProcesos[estadoActual], encontrarProcesoPorPIDYLista(listaProcesos[estadoActual], idProceso));
     list_add(listaProcesos[estadoSiguiente], proceso);
+
+    timeDifferenceStop(&(proceso->tiempoEnEstado));
+    proceso->MT[estadoActual] += proceso->tiempoEnEstado.mDelta;
+    proceso->ME[estadoSiguiente]++;
+    timeDifferenceStart(&(proceso->tiempoEnEstado));
+
     log_info(logger, "(%d) Pasa del estado %s al estado %s", idProceso, estadoAsString(estadoActual), estadoAsString(estadoSiguiente));
 }
 
