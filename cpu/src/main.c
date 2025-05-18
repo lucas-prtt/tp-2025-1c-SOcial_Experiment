@@ -12,34 +12,27 @@ int main(int argc, char* argv[]) {
     char* ip_kernel = config_get_string_value(config, "IP_KERNEL");
     char* puerto_kernel_dispatch = config_get_string_value(config, "PUERTO_KERNEL_DISPATCH");
     char* puerto_kernel_interrupt = config_get_string_value(config, "PUERTO_KERNEL_INTERRUPT");
-    log_info(logger, "CPU_%d - Iniciada", identificadorCPU);
 
     if(argc != 2) {
         log_debug(logger, "Parametros insuficientes para el inicio");
         cerrarCPU();
     }
 
-    int conexionMemoria = conectarSocketClient(ip_memoria, puerto_memoria);
-    int conexionKernelDispatch = conectarSocketClient(ip_kernel, puerto_kernel_dispatch);
-    int conexionKernelInterrupt = conectarSocketClient(ip_kernel, puerto_kernel_interrupt);
+    int socket_memoria = generarSocket(ip_memoria, puerto_memoria, "Memoria");
+    int socket_kernel_dispatch = generarSocket(ip_kernel, puerto_kernel_dispatch, "Kernel (Dispatch)");
+    int socket_kernel_interrupt = generarSocket(ip_kernel, puerto_kernel_interrupt, "Kernel (Interrupt)");
+    
+    realizarHandshake(socket_memoria, identificadorCPU, "Memoria");
+    realizarHandshake(socket_memoria, identificadorCPU, "Kernel (Dispatch)");
+    realizarHandshake(socket_memoria, identificadorCPU, "Kernel (INterrupt)");
 
-    verificarConexionCliente(conexionMemoria, "Memoria");
-    verificarConexionCliente(conexionKernelDispatch, "Kernel (Dispatch)");
-    verificarConexionCliente(conexionKernelInterrupt, "Kernel (Interrupt)");
-
-    //bool resultHandshakeMemoria = handshakeClient(conexionMemoria, identificadorCPU);
-    bool resultHandshakeKernelDispatch = handshakeClient(conexionKernelDispatch, identificadorCPU);
-    bool resultHandshakeKernelInterrupt = handshakeClient(conexionKernelInterrupt, identificadorCPU);
-
-    //verificarResultadoHandshake(resultHandshakeMemoria, "Memoria");
-    verificarResultadoHandshake(resultHandshakeKernelDispatch, "Kernel (Dispatch)");
-    verificarResultadoHandshake(resultHandshakeKernelInterrupt, "Kernel (Interrupt)");
     
 
+
     
-    liberarConexion(conexionMemoria);
-    liberarConexion(conexionKernelDispatch);
-    liberarConexion(conexionKernelInterrupt);
+    liberarConexion(socket_memoria);
+    liberarConexion(socket_kernel_dispatch);
+    liberarConexion(socket_kernel_interrupt);
     //Capaz deberian ir en cerrarCPU()//
 	log_destroy(logger);
     free(nombre_log);

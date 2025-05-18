@@ -67,7 +67,7 @@ void ejecutarPeticion(request_io *request, MOTIVO_FIN_IO *motivo) {
 }
 
 void notificarMotivoFinPeticion(int socket_kernel, MOTIVO_FIN_IO motivo) {
-    t_paquete *paquete_notif = crear_paquete(RESPUESTA_PETICION_IO);
+    t_paquete *paquete_notif = crear_paquete(RESPUESTA_PETICION);
     agregar_a_paquete(paquete_notif, &motivo, sizeof(int));
     enviar_paquete(paquete_notif, socket_kernel);
     eliminar_paquete(paquete_notif);
