@@ -4,6 +4,7 @@
 #include <utils/enums.h>
 #include <utils/paquetes.h>
 #include <utils/logConfig.h>
+#include <instrucciones.h>
 
 void cerrarCPU(void);
 int generarSocket(char* ip_cliente, char* puerto_cliente, char* modulo_cliente);
