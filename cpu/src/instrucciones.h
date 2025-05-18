@@ -10,10 +10,15 @@
 #include <utils/threads.h>
 #include <utils/paquetes.h>
 
+// VARIABLES GLOBALES:
+bool hayInterrupcion = false;
+pthread_mutex_t mutexInterrupcion;      // MUTEX para acceder a hayInterrupcion
+
 typedef struct {
     int pid;
     int pc;
-} PIDyPC_instr;
+    t_list *instrucciones;
+} PCB_cpu;
 
 typedef enum {
     INSTR_NOOP,
@@ -27,10 +32,7 @@ typedef enum {
     INSTR_EXIT,
 } TIPO_INSTRUCCION;
 
-
 void *atenderKernelDispatch(void *socket);
-bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PIDyPC_instr *proc_AEjecutar);
-void ejecutarInstruccion(PIDyPC_instr *proc_AEjecutar, bool fin_ejecucion);
 void *atenderKernelInterrupt(void *socket);
 
 /*

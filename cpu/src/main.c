@@ -29,13 +29,20 @@ int main(int argc, char* argv[]) {
 
     
     
-    pthread_t atenderKernel_D, atenderKernel_I;
+    pthread_t atenderKernel_D, atenderKernel_I; //crear un hilo para pedir a memoria
     pthread_create(&atenderKernel_D, NULL, atenderKernelDispatch, socket_kernel_dispatch);
     pthread_create(&atenderKernel_I, NULL, atenderKernelInterrupt, socket_kernel_interrupt);
 
 
+    //getchar(); //TODO
+
+
     threadCancelAndDetach(&atenderKernel_D);
     threadCancelAndDetach(&atenderKernel_I);
+
+
+
+
 
     liberarConexion(socket_memoria);
     liberarConexion(*socket_kernel_dispatch);
