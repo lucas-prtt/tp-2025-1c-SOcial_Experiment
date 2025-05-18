@@ -43,7 +43,7 @@ void loguearMetricasDeEstado_PorPCB(t_PCB * proceso, t_list * listasProcesos[]){
 
 
 t_PCB * crearPCB(int id, char * path, int size){
-    t_PCB * pcb = malloc(sizeof(pcb));
+    t_PCB * pcb = malloc(sizeof(t_PCB));
     pcb->PID = id;
     pcb->SIZE = size;
     pcb->PATH = path;
