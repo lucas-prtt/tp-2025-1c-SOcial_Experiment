@@ -6,14 +6,25 @@ void cerrarCPU(void) {
     abort();
 }
 
-void verificarConexionCliente(int socket_cliente, char* nombreModuloCliente) {
+int generarSocket(char* ip_cliente, char* puerto_cliente, char* modulo_cliente) {
+    int socket = conectarSocketClient(ip_cliente, puerto_cliente);
+    verificarConexionCliente(socket, modulo_cliente);
+    return socket;
+}
+
+void verificarConexionCliente(int socket_cliente, char* nombreModuloCliente) { //TODO
     if(socket_cliente == -1)
         log_info(logger, "%s - Conexión Inicial - Error", nombreModuloCliente);
     else
         log_info(logger, "%s - Conexión Inicial - Exito", nombreModuloCliente);
 }
 
-bool handshakeClient(int socket_cliente, int identificador) { //Envia una solicitud de handshake al modulo X//
+void realizarHandshake(int socket_cliente, int identificadorCPU, char* modulo_cliente) {
+    bool resultHandshake = handshakeCliente(socket_cliente, identificadorCPU);
+    verificarResultadoHandshake(resultHandshake, modulo_cliente);
+}
+
+bool handshakeCliente(int socket_cliente, int identificador) {
     int *codigo_operacion = malloc(sizeof(int));
     t_paquete* paquete_consult_cliente = crear_paquete(HANDSHAKE);
     agregar_a_paquete(paquete_consult_cliente, &identificador, sizeof(int));

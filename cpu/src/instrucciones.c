@@ -1,62 +1,64 @@
 #include <instrucciones.h>
 
-/*
-void atenderPeticionKernel(void) {
-    while(true) {
-        PIDyPC *proc_AEjecutar = recibirPIDyPC_kernel();
-        bool fin_ejecucion = false;
 
-        while(proc_AEjecutar && !fin_ejecucion) {
-            ejecutarInstruccion(proc_AEjecutar, fin_ejecucion); //que cambie fin_ejecucion?
+
+// VARIABLES GLOBALES: 
+bool hayInterrupcion = false;
+pthread_mutex_t mutexInterrupcion; // MUTEX para acceder a hayInterrupcion
+
+
+
+void *atenderKernelDispatch(void *socket) {
+    int socket_kernel_dispatch = *(int*)socket;
+    while(true) {
+        PIDyPC_instr proc_AEjecutar;
+        if(recibirPIDyPC_kernel(socket_kernel_dispatch, &proc_AEjecutar)) {
+            bool fin_ejecucion = false;
+            while(!fin_ejecucion)
+                ejecutarInstruccion(&proc_AEjecutar, fin_ejecucion); //TODO: CAMBIAR fin_ejecucion dentro de ejecutarInstruccion
         }
-        
+        else break; //TODO
     }
+    free(socket);
+    return NULL; //TODO
 }
 
-PIDyPC *recibirPIDyPC_kernel(int socket_kernel) { //y si iniciamos el socket aca adentro? En revision
+bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PIDyPC_instr *proc_AEjecutar) {
     int *codigo_operacion = malloc(sizeof(int));
-    t_list *lista_PIDyPC = recibir_paquete_lista(socket_kernel, MSG_WAITALL, codigo_operacion);
-    if(lista_PIDyPC || list_size(lista_PIDyPC) < 4 || *codigo_operacion != PETICION_EXECUTE) {
+    t_list *lista_PIDyPC = recibir_paquete_lista(socket_kernel_dispatch, MSG_WAITALL, codigo_operacion);
+    if(lista_PIDyPC == NULL || list_size(lista_PIDyPC) < 4 || *codigo_operacion != ASIGNACION_PROCESO_CPU) {
         free(codigo_operacion);
-        eliminar_paquete_lista(LISTA_PIDyPC);
-        return NULL;
+        eliminar_paquete_lista(lista_PIDyPC);
+        return false;
     }
-    PIDyPC x = malloc(sizeof(PIDyPC));
-    x.pid = *(int*)list_get(lista_PIDyPC, 1);
-    x.pc = *(int*)list_get(lista_PIDyPC, 3);
-
+    proc_AEjecutar->pid = *(int*)list_get(lista_PIDyPC, 1);
+    proc_AEjecutar->pc = *(int*)list_get(lista_PIDyPC, 3);
     free(codigo_operacion);
     eliminar_paquete_lista(lista_PIDyPC);
-    return x;
+    return true;
 }
 
-void ejecutarInstruccion(PIDyPC proc_AEjecutar, bool fin_ejecucion) {
-    pedirInstruccionAMemoria(proc_AEjecutar->pc); //y sI inicio memoria aca?
-    instr = recibirInstruccionMemoria()
+void controlarInterrupciones(void) {
+    pthread_mutex_lock(&mutexInterrupcion);
+    if(hayInterrupcion) {
+        hayInterrupcion = false;
+        pthread_mutex_unlock(&mutexInterrupcion);
 
-    TIPO_INSTRUCCION tipoInstr = interpretarInstruccion(proc_AEjecutar); //devuelve el tipo de instruccion
+        log_info(logger, "Interrupción activa: devuelvo el proceso al Kernel");
+        devolverProcesoAlKernel(); //Falta implementar
+    }
+    pthread_mutex_unlock(&mutexInterrupcion);
+}
 
-    switch(tipoInstr) {
-        case INSTR_NOOP:
+void *atenderKernelInterrupt(void *socket) {
+    int socket_kernel_interrupt = *(int*)socket;
+    while(true) {
+        if(recibirInterrupcion(socket_kernel_interrupt)) { //No implementada por ahora
+            pthread_mutex_lock(&mutexInterrupcion);
+            hayInterrupcion = true;
+            pthread_mutex_unlock(&mutexInterrupcion);
 
-        case INSTR_WHITE:
-        
-        case INSTR_READ:
-        
-        case INSTR_GOTO:
-    
-        case INSTR_IO:
-        
-        case INSTR_INIT_PROC:
-        
-        case INSTR_DUMP_MEMORY:
-        
-        case INSTR_EXIT:
+            log_info(logger, "## Llega interrupción al puerto Interrupt");
+        }
     }
 }
-
-//traducirDireccionLogica
-
-//actualizarProgramCounter
-
-*/

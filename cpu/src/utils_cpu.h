@@ -4,9 +4,12 @@
 #include <utils/enums.h>
 #include <utils/paquetes.h>
 #include <utils/logConfig.h>
+#include <instrucciones.h>
 
 void cerrarCPU(void);
+int generarSocket(char* ip_cliente, char* puerto_cliente, char* modulo_cliente);
 void verificarConexionCliente(int socket_cliente, char* nombreModuloCliente);
-bool handshakeClient(int socket_cliente, int identificador);
+void realizarHandshake(int socket_cliente, int identificadorCPU, char* modulo_cliente);
+bool handshakeCliente(int socket_cliente, int identificador);
 void verificarResultadoHandshake(bool result, char* nombreModuloCliente);
 

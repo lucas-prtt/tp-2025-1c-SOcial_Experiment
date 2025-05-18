@@ -12,34 +12,34 @@ int main(int argc, char* argv[]) {
     char* ip_kernel = config_get_string_value(config, "IP_KERNEL");
     char* puerto_kernel_dispatch = config_get_string_value(config, "PUERTO_KERNEL_DISPATCH");
     char* puerto_kernel_interrupt = config_get_string_value(config, "PUERTO_KERNEL_INTERRUPT");
-    log_info(logger, "CPU_%d - Iniciada", identificadorCPU);
 
     if(argc != 2) {
         log_debug(logger, "Parametros insuficientes para el inicio");
         cerrarCPU();
     }
 
-    int conexionMemoria = conectarSocketClient(ip_memoria, puerto_memoria);
-    int conexionKernelDispatch = conectarSocketClient(ip_kernel, puerto_kernel_dispatch);
-    int conexionKernelInterrupt = conectarSocketClient(ip_kernel, puerto_kernel_interrupt);
-
-    verificarConexionCliente(conexionMemoria, "Memoria");
-    verificarConexionCliente(conexionKernelDispatch, "Kernel (Dispatch)");
-    verificarConexionCliente(conexionKernelInterrupt, "Kernel (Interrupt)");
-
-    //bool resultHandshakeMemoria = handshakeClient(conexionMemoria, identificadorCPU);
-    bool resultHandshakeKernelDispatch = handshakeClient(conexionKernelDispatch, identificadorCPU);
-    bool resultHandshakeKernelInterrupt = handshakeClient(conexionKernelInterrupt, identificadorCPU);
-
-    //verificarResultadoHandshake(resultHandshakeMemoria, "Memoria");
-    verificarResultadoHandshake(resultHandshakeKernelDispatch, "Kernel (Dispatch)");
-    verificarResultadoHandshake(resultHandshakeKernelInterrupt, "Kernel (Interrupt)");
+    int socket_memoria = generarSocket(ip_memoria, puerto_memoria, "Memoria");
+    int *socket_kernel_dispatch = malloc(sizeof(int)); *socket_kernel_dispatch = generarSocket(ip_kernel, puerto_kernel_dispatch, "Kernel (Dispatch)");
+    int *socket_kernel_interrupt = malloc(sizeof(int)); *socket_kernel_interrupt = generarSocket(ip_kernel, puerto_kernel_interrupt, "Kernel (Interrupt)");
     
+    
+    //realizarHandshake(socket_memoria, identificadorCPU, "Memoria");
+    realizarHandshake(*socket_kernel_dispatch, identificadorCPU, "Kernel (Dispatch)");
+    realizarHandshake(*socket_kernel_interrupt, identificadorCPU, "Kernel (INterrupt)");
 
     
-    liberarConexion(conexionMemoria);
-    liberarConexion(conexionKernelDispatch);
-    liberarConexion(conexionKernelInterrupt);
+    
+    pthread_t atenderKernel_D, atenderKernel_I;
+    pthread_create(&atenderKernel_D, NULL, atenderKernelDispatch, socket_kernel_dispatch);
+    pthread_create(&atenderKernel_I, NULL, atenderKernelInterrupt, socket_kernel_interrupt);
+
+
+    threadCancelAndDetach(&atenderKernel_D);
+    threadCancelAndDetach(&atenderKernel_I);
+
+    liberarConexion(socket_memoria);
+    liberarConexion(*socket_kernel_dispatch);
+    liberarConexion(*socket_kernel_interrupt);
     //Capaz deberian ir en cerrarCPU()//
 	log_destroy(logger);
     free(nombre_log);

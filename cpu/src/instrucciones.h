@@ -1,6 +1,14 @@
 #include <commons/collections/list.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "utils/logConfig.h"
+#include <string.h>
+#include <semaphore.h>
+#include "utils/tiempo.h"
+#include "utils/enums.h"
+#include <sys/socket.h>
+#include <utils/threads.h>
+#include <utils/paquetes.h>
 
 typedef struct {
     int pid;
@@ -19,6 +27,11 @@ typedef enum {
     INSTR_EXIT,
 } TIPO_INSTRUCCION;
 
+
+void *atenderKernelDispatch(void *socket);
+bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PIDyPC_instr *proc_AEjecutar);
+void ejecutarInstruccion(PIDyPC_instr *proc_AEjecutar, bool fin_ejecucion);
+void *atenderKernelInterrupt(void *socket);
 
 /*
 NOOP
