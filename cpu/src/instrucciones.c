@@ -1,6 +1,13 @@
 #include <instrucciones.h>
 
 
+
+// VARIABLES GLOBALES: 
+bool hayInterrupcion = false;
+pthread_mutex_t mutexInterrupcion; // MUTEX para acceder a hayInterrupcion
+
+
+
 void *atenderKernelDispatch(void *socket) {
     int socket_kernel_dispatch = *(int*)socket;
     while(true) {
@@ -31,9 +38,27 @@ bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PIDyPC_instr *proc_AEjecut
     return true;
 }
 
+void controlarInterrupciones(void) {
+    pthread_mutex_lock(&mutexInterrupcion);
+    if(hayInterrupcion) {
+        hayInterrupcion = false;
+        pthread_mutex_unlock(&mutexInterrupcion);
+
+        log_info(logger, "Interrupción activa: devuelvo el proceso al Kernel");
+        devolverProcesoAlKernel(); //Falta implementar
+    }
+    pthread_mutex_unlock(&mutexInterrupcion);
+}
 
 void *atenderKernelInterrupt(void *socket) {
+    int socket_kernel_interrupt = *(int*)socket;
     while(true) {
-        //TODO: ESPERA UNA INTERRUPCION
+        if(recibirInterrupcion(socket_kernel_interrupt)) { //No implementada por ahora
+            pthread_mutex_lock(&mutexInterrupcion);
+            hayInterrupcion = true;
+            pthread_mutex_unlock(&mutexInterrupcion);
+
+            log_info(logger, "## Llega interrupción al puerto Interrupt");
+        }
     }
 }
