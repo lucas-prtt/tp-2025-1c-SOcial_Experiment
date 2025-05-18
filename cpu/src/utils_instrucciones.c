@@ -16,6 +16,38 @@ bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar) {
     return true;
 }
 
+void crear_PCB_cpu(PCB_cpu *proc_AEjecutar) { // Si despues necesita mas cosas del PCB se inician acá
+    proc_AEjecutar = NULL;
+}
+
+enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion) {
+    if(!strcmp(nombreInstruccion, "NOOP")) {
+        return INSTR_NOOP;
+    }
+    if(!strcmp(nombreInstruccion, "WRITE")) {
+        return INSTR_WRITE;
+    }
+    if(!strcmp(nombreInstruccion, "READ")) {
+        return INSTR_READ;
+    }
+    if(!strcmp(nombreInstruccion, "GOTO")) {
+        return INSTR_GOTO;
+    }
+    if(!strcmp(nombreInstruccion, "IO")) {
+        return INSTR_IO;
+    }
+    if(!strcmp(nombreInstruccion, "INIT_PROC")) {
+        return INSTR_INIT_PROC;
+    }
+    if(!strcmp(nombreInstruccion, "DUMP_MEMORY")) {
+        return INSTR_DUMP_MEMORY;
+    }
+    if(!strcmp(nombreInstruccion, "EXIT")) {
+        return INSTR_EXIT;
+    }
+    return ERROR_NO_INSTR;
+}
+
 void controlarInterrupciones(void) {
     pthread_mutex_lock(&mutexInterrupcion);
     if(hayInterrupcion) {

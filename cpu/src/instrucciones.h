@@ -20,9 +20,9 @@ typedef struct {
     t_list *instrucciones;
 } PCB_cpu;
 
-typedef enum {
+enum TIPO_INSTRUCCION{
     INSTR_NOOP,
-    INSTR_WHITE,
+    INSTR_WRITE,
     INSTR_READ,
     INSTR_GOTO,
     //Las sigueintes instrucciones se consideran syscalls//
@@ -30,7 +30,8 @@ typedef enum {
     INSTR_INIT_PROC,
     INSTR_DUMP_MEMORY,
     INSTR_EXIT,
-} TIPO_INSTRUCCION;
+    ERROR_NO_INSTR,
+} type_instr;
 
 void *atenderKernelDispatch(void *socket);
 void *atenderKernelInterrupt(void *socket);

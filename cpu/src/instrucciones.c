@@ -8,6 +8,8 @@ void *atenderKernelDispatch(void *socket) {
         PCB_cpu proc_AEjecutar;
         if(recibirPIDyPC_kernel(socket_kernel_dispatch, &proc_AEjecutar)) {
             bool fin_ejecucion = false;
+
+            preparar_PCB_cpu(&proc_AEjecutar);
             while(!fin_ejecucion)
                 ejecutarInstruccion(&proc_AEjecutar, fin_ejecucion); //TODO: CAMBIAR fin_ejecucion dentro de ejecutarInstruccion
         }
@@ -16,8 +18,6 @@ void *atenderKernelDispatch(void *socket) {
     free(socket);
     return NULL; //TODO
 }
-
-
 
 void *atenderKernelInterrupt(void *socket) {
     int socket_kernel_interrupt = *(int*)socket;

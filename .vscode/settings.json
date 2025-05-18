@@ -2,6 +2,7 @@
     "files.associations": {
         "stdio.h": "c",
         "utils_procesos.h": "c",
-        "procesos.h": "c"
+        "procesos.h": "c",
+        "utils_instrucciones.h": "c"
     }
 }
