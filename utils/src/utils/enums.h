@@ -30,6 +30,9 @@ typedef enum { //CODIGO DE OPERACION / PAQUETE
     RESPUESTA_DUMP_COMPLETADO = 18,          // Ningun parametro 
     RESPUESTA_DUMP_ERROR = 19,                  // No deberia pasar nunca, lo dejo programado por las dudas- Ningun parametro
     PETICION_INSTRUCCION_MEMORIA,
+    PETICION_ESCRIBIR_EN_MEMORIA,
+    PETICION_LEER_DE_MEMORIA,
+    NOTIFICAR_SYSCALL_A_KERNEL,
 } CODIGO_OP;
 
 

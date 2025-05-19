@@ -10,9 +10,8 @@ void *atenderKernelDispatch(void *sockets) {
         PCB_cpu proc_AEjecutar;
         if(recibirPIDyPC_kernel(socket_kernel_dispatch, &proc_AEjecutar)) {
             bool fin_ejecucion = false;
-            //preparar_PCB_cpu(&proc_AEjecutar);
             while(!fin_ejecucion)
-                ejecutarInstruccion(socket_memoria, &proc_AEjecutar, &fin_ejecucion); //TODO: CAMBIAR fin_ejecucion dentro de ejecutarInstruccion
+                ejecutarCicloInstruccion(socket_memoria, socket_kernel_dispatch, &proc_AEjecutar, &fin_ejecucion); // TODO: CAMBIAR fin_ejecucion dentro de ejecutarInstruccion
         }
         else break; //TODO
     }
