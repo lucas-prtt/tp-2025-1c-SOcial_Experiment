@@ -38,3 +38,8 @@ void pedirInstruccionAMemoria(int socket_memoria, PCB_cpu *proc_AEjecutar) ;
 t_list *recibirInstruccionMemoria(int socket_memoria);
 enum TIPO_INSTRUCCION interpretarInstruccion(char *nombreInstruccion);
 void controlarInterrupciones(void);
+
+typedef struct {
+    enum TIPO_INSTRUCCION tipo;
+    bool esDireccion;
+} tipoYconDireccion;
