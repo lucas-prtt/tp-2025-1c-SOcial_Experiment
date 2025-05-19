@@ -28,7 +28,8 @@ typedef enum { //CODIGO DE OPERACION / PAQUETE
     PROCESO_SUSPENDIDO_ENVIAR_A_SWAP = 16, // CHECKPOINT 3: Requiere el PID solamente
     SOLICITUD_MEMORIA_DUMP_MEMORY = 17,     // 1 Parametro: PID
     RESPUESTA_DUMP_COMPLETADO = 18,          // Ningun parametro 
-    RESPUESTA_DUMP_ERROR = 19                  // No deberia pasar nunca, lo dejo programado por las dudas- Ningun parametro
+    RESPUESTA_DUMP_ERROR = 19,                  // No deberia pasar nunca, lo dejo programado por las dudas- Ningun parametro
+    PETICION_INSTRUCCION_MEMORIA,
 } CODIGO_OP;
 
 

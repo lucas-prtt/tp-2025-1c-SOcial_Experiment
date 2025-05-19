@@ -9,42 +9,5 @@
 #include <sys/socket.h>
 #include <utils/threads.h>
 #include <utils/paquetes.h>
-
-// VARIABLES GLOBALES:
-bool hayInterrupcion = false;
-pthread_mutex_t mutexInterrupcion;      // MUTEX para acceder a hayInterrupcion
-
-typedef struct {
-    int pid;
-    int pc;
-    t_list *instrucciones;
-} PCB_cpu;
-
-enum TIPO_INSTRUCCION{
-    INSTR_NOOP,
-    INSTR_WRITE,
-    INSTR_READ,
-    INSTR_GOTO,
-    //Las sigueintes instrucciones se consideran syscalls//
-    INSTR_IO,
-    INSTR_INIT_PROC,
-    INSTR_DUMP_MEMORY,
-    INSTR_EXIT,
-    ERROR_NO_INSTR,
-} type_instr;
-
-void *atenderKernelDispatch(void *socket);
-void *atenderKernelInterrupt(void *socket);
-
-/*
-NOOP
-WRITE 0 EJEMPLO_DE_ENUNCIADO
-READ 0 20
-GOTO 0
-////////las siguientes se concideran syscalls
-IO IMPRESORA 25000
-INIT_PROC preceso1 256
-DUMP_MEMORY
-EXIT
-
-*/
+#include "utils_cpu.h"
+#include "utils_instrucciones.h"

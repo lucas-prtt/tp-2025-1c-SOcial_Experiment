@@ -1,6 +1,13 @@
 #include "utils_instrucciones.h"
 
 
+
+// VARIABLES GLOBALES:
+bool hayInterrupcion = false;
+pthread_mutex_t mutexInterrupcion;      // MUTEX para acceder a hayInterrupcion
+
+
+
 bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar) {
     int *codigo_operacion = malloc(sizeof(int));
     t_list *lista_PIDyPC = recibir_paquete_lista(socket_kernel_dispatch, MSG_WAITALL, codigo_operacion);
@@ -16,11 +23,27 @@ bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar) {
     return true;
 }
 
-void crear_PCB_cpu(PCB_cpu *proc_AEjecutar) { // Si despues necesita mas cosas del PCB se inician acá
-    proc_AEjecutar = NULL;
+void preparar_PCB_cpu(PCB_cpu *proc_AEjecutar) {}
+
+
+
+void pedirInstruccionAMemoria(int socket_memoria, int programCounter) {
+    t_paquete *paquete_peticion_instr = crear_paquete(PETICION_INSTRUCCION_MEMORIA);
+    agregar_a_paquete(paquete_peticion_instr, &programCounter, sizeof(programCounter));
+    enviar_paquete(paquete_peticion_instr, socket_memoria);
+    eliminar_paquete(paquete_peticion_instr);
 }
 
-enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion) {
+t_list *recibirInstruccionMemoria(int socket_memoria) {
+    int *codigo_operacion;
+    codigo_operacion = malloc(sizeof(codigo_operacion));
+    t_list *instruccion = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
+    if(instruccion == NULL || *codigo_operacion != RESPUESTA_PETICION) {} //TODO
+    free(codigo_operacion);
+    return instruccion;
+}
+
+enum TIPO_INSTRUCCION interpretarInstruccion(char *nombreInstruccion) {
     if(!strcmp(nombreInstruccion, "NOOP")) {
         return INSTR_NOOP;
     }
@@ -55,7 +78,7 @@ void controlarInterrupciones(void) {
         pthread_mutex_unlock(&mutexInterrupcion);
 
         log_info(logger, "Interrupción activa: devuelvo el proceso al Kernel");
-        devolverProcesoAlKernel(); //TODO
+        //devolverProcesoAlKernel(); //TODO
     }
     pthread_mutex_unlock(&mutexInterrupcion);
 }

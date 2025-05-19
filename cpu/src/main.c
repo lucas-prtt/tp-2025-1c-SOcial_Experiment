@@ -27,10 +27,10 @@ int main(int argc, char* argv[]) {
     realizarHandshake(*socket_kernel_dispatch, identificadorCPU, "Kernel (Dispatch)");
     realizarHandshake(*socket_kernel_interrupt, identificadorCPU, "Kernel (INterrupt)");
 
-    
+    sockets_dispatcher *sockets_for_dispatch = prepararSocketsDispatcher(socket_memoria, *socket_kernel_dispatch);
     
     pthread_t atenderKernel_D, atenderKernel_I; //crear un hilo para pedir a memoria
-    pthread_create(&atenderKernel_D, NULL, atenderKernelDispatch, socket_kernel_dispatch);
+    pthread_create(&atenderKernel_D, NULL, atenderKernelDispatch, sockets_for_dispatch);
     pthread_create(&atenderKernel_I, NULL, atenderKernelInterrupt, socket_kernel_interrupt);
 
 

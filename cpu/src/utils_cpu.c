@@ -50,3 +50,10 @@ void verificarResultadoHandshake(bool result, char* nombreModuloCliente) {
     else
         log_info(logger, "%s Handshake - Error", nombreModuloCliente);
 }
+
+sockets_dispatcher *prepararSocketsDispatcher(int socket_memoria, int socket_kernel_dispatch) {
+    sockets_dispatcher *sockets_d = malloc(sizeof(sockets_dispatcher));
+    sockets_d->socket_memoria = socket_memoria;
+    sockets_d->socket_kernel_dispatch = socket_kernel_dispatch;
+    return sockets_d;
+}
