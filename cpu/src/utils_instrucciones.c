@@ -29,7 +29,7 @@ void ejecutarInstruccion(int socket_memoria, PCB_cpu *proc_AEjecutar, bool *fin_
     // CICLO DE INSTRUCCION //
 
     // FETCH: busca la instrucción a memoria //
-    pedirInstruccionAMemoria(socket_memoria, proc_AEjecutar->pc);
+    pedirInstruccionAMemoria(socket_memoria, proc_AEjecutar);
     t_list *instruccion = recibirInstruccionMemoria(socket_memoria); // Bloqueante: memoria le responde con un paquete en forma de lista (INSTRUCCION)
 
     // DECODE: interpreta la instruccion recibida como 'string' y la convierte en 'enum' //
@@ -91,9 +91,10 @@ void ejecutarInstruccion(int socket_memoria, PCB_cpu *proc_AEjecutar, bool *fin_
 }
 
 
-void pedirInstruccionAMemoria(int socket_memoria, int programCounter) {
+void pedirInstruccionAMemoria(int socket_memoria, PCB_cpu *proc_AEjecutar) {
     t_paquete *paquete_peticion_instr = crear_paquete(PETICION_INSTRUCCION_MEMORIA);
-    agregar_a_paquete(paquete_peticion_instr, &programCounter, sizeof(programCounter));
+    agregar_a_paquete(paquete_peticion_instr, &(proc_AEjecutar->pid), sizeof(proc_AEjecutar->pid));
+    agregar_a_paquete(paquete_peticion_instr, &(proc_AEjecutar->pc), sizeof(proc_AEjecutar->pc));
     enviar_paquete(paquete_peticion_instr, socket_memoria);
     eliminar_paquete(paquete_peticion_instr);
 }

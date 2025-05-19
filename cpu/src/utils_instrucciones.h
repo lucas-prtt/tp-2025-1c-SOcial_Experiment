@@ -34,7 +34,7 @@ enum TIPO_INSTRUCCION {
 
 bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar);
 void ejecutarInstruccion(int socket_memoria, PCB_cpu *proc_AEjecutar, bool *fin_ejecucion);
-void pedirInstruccionAMemoria(int socket_memoria, int programCounter) ;
+void pedirInstruccionAMemoria(int socket_memoria, PCB_cpu *proc_AEjecutar) ;
 t_list *recibirInstruccionMemoria(int socket_memoria);
 enum TIPO_INSTRUCCION interpretarInstruccion(char *nombreInstruccion);
 void controlarInterrupciones(void);
