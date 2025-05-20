@@ -29,6 +29,8 @@ typedef enum { //CODIGO DE OPERACION / PAQUETE
     SOLICITUD_MEMORIA_DUMP_MEMORY = 17,     // 1 Parametro: PID
     RESPUESTA_DUMP_COMPLETADO = 18,          // Ningun parametro 
     RESPUESTA_DUMP_ERROR = 19,                  // No deberia pasar nunca, lo dejo programado por las dudas- Ningun parametro
+    RESPUESTA_MEMORIA_LIBERADA_EXITOSAMENTE = 20,
+    RESPUESTA_MEMORIA_PROCESO_ENVIADO_A_SWAP = 21,
     PETICION_INSTRUCCION_MEMORIA,
     PETICION_ESCRIBIR_EN_MEMORIA,
     PETICION_LEER_DE_MEMORIA,
