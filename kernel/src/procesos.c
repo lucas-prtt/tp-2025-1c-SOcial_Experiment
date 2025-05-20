@@ -43,6 +43,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             proceso = list_get(listasProcesos[READY], 0);
             cambiarEstado_EstadoActualConocido(proceso->PID, READY, EXEC, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
+            log_debug(logger, "Se eligio el proceso (%d) para ejecutar", proceso->PID);
         }
         continuar_mismo_proceso = 0;
         do{
@@ -154,6 +155,7 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
     t_PCB * proceso;
     char config_key_algoritmo[] = "ALGORITMO_INGRESO_A_READY";
     enum algoritmo algoritmo = algoritmoStringToEnum(config_get_string_value(config, config_key_algoritmo));
+    log_debug(logger, "Entrando a algoritmo introducir_proceso_a_ready");
     while(1){
         sem_wait(&sem_introducir_proceso_a_ready);
         pthread_mutex_lock(&mutex_listasProcesos);
@@ -173,11 +175,14 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
                 log_error(logger, "Error: Archivo de configuracion no detalla un algoritmo de introduccion de proceso a ready valido.");
                 break;
             }
+        log_debug(logger, "Proceso elegido para pasar a READY: (%d)", proceso->PID);
         pthread_mutex_unlock(&mutex_listasProcesos);
         {   //Enviar solicitud a memoria
             socketMemoria = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
+            log_debug(logger, "Socket memoria: %d", socketMemoria);
             if(listaQueImporta == NEW)
             {
+            log_debug(logger, "Pido a memoria cargar un proceso de NEW");
             solicitud = crear_paquete(SOLICITUD_MEMORIA_NUEVO_PROCESO);
             agregar_a_paquete(solicitud, &(proceso->PID), sizeof(proceso->PID));
             agregar_a_paquete(solicitud, proceso->PATH, strlen(proceso->PATH)+1);
@@ -185,6 +190,7 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
             }
             else
             {
+            log_debug(logger, "Pido a memoria desuspender un proceso");
             solicitud = crear_paquete(SOLICITUD_MEMORIA_CARGA_SWAP);
             agregar_a_paquete(solicitud, &(proceso->PID), sizeof(proceso->PID));
             }
@@ -192,10 +198,11 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
         }
         respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &r);
         eliminar_paquete_lista(respuesta); // El contenido del paquete es vacio: Solo importa el codOp
-
-        r = 1; // 1: Hay espacio y se introdujo, 0: No hay espacio y no se introdujo
+        
+        //r = 1; // 1: Hay espacio y se introdujo, 0: No hay espacio y no se introdujo
         liberarConexion(socketMemoria);
         if(r){
+            log_debug(logger, "Hay espacio en memoria: Pasando (%d) a READY", proceso->PID);
             pthread_mutex_lock(&mutex_listasProcesos);
             if(listaQueImporta == NEW)
                 cambiarEstado_EstadoActualConocido(proceso->PID, NEW, READY, listasProcesos);
@@ -207,7 +214,6 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
                 sem_post(&sem_introducir_proceso_a_ready);
         }
     }
-
 }
 
 void * IOThread(void * NOMBREYSOCKETIO)
@@ -287,4 +293,5 @@ void * confirmDumpMemoryThread(void * Params){
     //TODO: Actualizar cuando este el hilo para suspender
 }
 
+void post_sem_introducirAReady(){sem_post(&sem_introducir_proceso_a_ready);}
 

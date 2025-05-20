@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     bool listoParaIniciar = isConexionIOyCPUDisponible && isMemoriaDisponible;
     log_debug(logger, "Verificacion de conexiones realizada");
     
-    if(!listoParaIniciar) {
+    if(/*!*/listoParaIniciar) {
         log_debug(logger, "Conexiones insuficientes");
         if(!isMemoriaDisponible) {
             log_debug(logger, "-> Memoria no disponible");
@@ -72,8 +72,20 @@ int main(int argc, char* argv[]) {
 
             // A partir de este punto la variable global "conexiones" no la modifica ningun thread 
             // por lo que hay via libre para usarla
-    procesos_c_inicializarVariables();
-    nuevoProceso(0, argv[1], atoi(argv[2]), listasProcesos); // Agrega el proceso indicado por consola a la lista NEW
     
+    procesos_c_inicializarVariables();
+
+    t_list * hilos = list_create();
+    pthread_t var_orderThread, var_ingresoAReadyThread;
+    pthread_create(&var_orderThread, NULL, orderThread, NULL);
+    pthread_create(&var_ingresoAReadyThread, NULL, ingresoAReadyThread, NULL);
+    int cantidadDeIos = list_size(conexiones.IOEscucha);
+    int cantidadDeCpus = list_size(conexiones.CPUsDispatch); // = conexiones a interrupt
+    log_debug(logger, "Cantidad de IOs: %d, Cantidad de CPUs: %d", cantidadDeIos, cantidadDeCpus);
+    generarHilos(hilos, cantidadDeIos, IOThread, conexiones.IOEscucha);
+    generarHilos(hilos, cantidadDeCpus, dispatcherThread, conexiones.CPUsDispatch);
+    nuevoProceso(0, argv[1], atoi(argv[2]), listasProcesos); // Agrega el proceso indicado por consola a la lista NEW
+    post_sem_introducirAReady();
+    getchar();
     return 0;
 }

@@ -25,5 +25,9 @@ extern t_list * listasProcesos[7]; // Vector de lista para guardar procesos
 
 void procesos_c_inicializarVariables(); // Necesaria para inicializar listas y semaforos globales
 void * confirmDumpMemoryThread(void * Params);
-
+void * IOThread(void * NOMBREYSOCKETIO);
+void * ingresoAReadyThread(void * _);
+void * orderThread(void * _);
+void * dispatcherThread(void * IDYSOCKETDISPATCH);
+void post_sem_introducirAReady(); // Para marcar el inicio desde main
 #endif

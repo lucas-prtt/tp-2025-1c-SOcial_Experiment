@@ -39,6 +39,7 @@ void * esperarIOEscucha(void * socket);
 int verificarModuloMemoriaDisponible();
 void eliminarConexiones(void);
 int crearSocketDesdeConfig(t_config * config, char opcion[]);
+void generarHilos(t_list * hilos, int cantidad, void * func(void *), t_list * parametros);
 
 void *handshakeCPUInterrupt(void * socket);
 void *handshakeCPUDispatch(void * socket);

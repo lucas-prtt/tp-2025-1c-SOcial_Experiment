@@ -79,11 +79,13 @@ void cambiarEstado(int idProceso, enum estado estadoSiguiente, t_list * listaPro
 }
 
 void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, enum estado estadoSiguiente, t_list * listaProcesos[])
-{
+{   
+    log_debug(logger, "Peticion cambio de estado recibida");
     t_PCB * proceso;
-    proceso = (t_PCB*)list_remove_element(listaProcesos[estadoActual], encontrarProcesoPorPIDYLista(listaProcesos[estadoActual], idProceso));
+    proceso = encontrarProcesoPorPIDYLista(listaProcesos[estadoActual], idProceso);
+    list_remove_element(listaProcesos[estadoActual], proceso);
     list_add(listaProcesos[estadoSiguiente], proceso);
-
+    log_debug(logger, "Proceso movido");
     timeDifferenceStop(&(proceso->tiempoEnEstado));
     int tiempoASumar = proceso->tiempoEnEstado.mDelta;
     proceso->MT[estadoActual] += tiempoASumar;
@@ -105,6 +107,7 @@ void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual,
 t_PCB * encontrarProcesoPorPIDYLista(t_list * lista, int pid){
     #ifndef __INTELLISENSE__ // Lo marco asi para que me deje de marcar error. El compilador lo deberia tomar bien a la hora de crear el ejecutable
     bool _PIDCoincide(void * elemento){         // Esto el VSC lo marca como error pero GCC lo permite y esta en el manual de commons/list
+        log_debug(logger, "Busco el proceso (%d) en %p", pid, elemento);
         return ((t_PCB*)elemento)->PID == pid;
     }
     return list_find(lista, _PIDCoincide);

@@ -163,3 +163,17 @@ void cerrarKernel() {
     cerrarConfigYLog();
     abort();
 }
+
+void generarHilos(t_list * hilos, int cantidad, void * func(void *), t_list * parametros){
+    pthread_t * nuevoHilo;
+    log_debug(logger, "Inicio de generacion de hilos");
+    for (int i; i<cantidad; i++){
+        nuevoHilo = malloc(sizeof(pthread_t));
+        if (parametros == NULL)
+        pthread_create(nuevoHilo, NULL, func, NULL);
+        else
+        pthread_create(nuevoHilo, NULL, func, list_get(parametros, i));
+        list_add(hilos, nuevoHilo);
+        log_debug(logger, "   -Se inicio el hilo: %p", nuevoHilo);
+    }
+}
