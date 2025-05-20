@@ -78,9 +78,11 @@ int verificarModuloMemoriaDisponible(void) {
     int socketMemoria = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
     int error = 0;
     if (socketMemoria == -1){
+        log_debug(logger, "verificarModuloMemoriaDisponible tiene socket = %d", socketMemoria);
         error = 1;
     }else{
         error = handshakeMemoria(socketMemoria);
+        log_debug(logger, "Resultado de handshake: %d", error);
         liberarConexion(socketMemoria);
     }
     return error;
@@ -189,15 +191,20 @@ void generarHilos(t_list * hilos, int cantidad, void * func(void *), t_list * pa
 
 int handshakeMemoria(int socketMemoria){
     t_paquete * saludo = crear_paquete(SOYKERNEL);
+    log_debug(logger, "Enviando hadshake a memoria en socket: %d", socketMemoria);
     int rta;
     enviar_paquete(saludo, socketMemoria);
+    log_debug(logger, "Paquete %p enviado", saludo);
     eliminar_paquete(saludo);
-    t_list * respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &rta);
+    t_list * respuesta;
+    respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &rta);
+    log_debug(logger, "Paquete recibido, pointer = %p", respuesta);
     if(respuesta == NULL || rta != SOYMEMORIA){
         eliminar_paquete_lista(respuesta);
         return -1;
     }
     else{
+            log_debug(logger, "Handshake valido");
         eliminar_paquete_lista(respuesta);
         return 0;
     }

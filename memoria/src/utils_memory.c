@@ -32,25 +32,27 @@ void* aceptarConexiones(void* socketPtr) {
 
         // Por el momento no voy a atender la conexion hasta que utilizemos handshake, acepto las conexiones pero todavia no detecto que modulo se esta conectando
 
-        // pthread_t hiloCliente;
-        // int* socketClientePtr = malloc(sizeof(int));
-        // *socketClientePtr = socketCliente;
+        pthread_t hiloCliente;
+        int* socketClientePtr = malloc(sizeof(int));
+        *socketClientePtr = socketCliente;
 
-        // pthread_create(&hiloCliente, NULL, atenderConexion, socketClientePtr);
-        // pthread_detach(hiloCliente);
+        pthread_create(&hiloCliente, NULL, atenderConexion, socketClientePtr);
+        pthread_detach(hiloCliente);
 
     }
     return NULL;
 }
 
 void* atenderConexion(void* socketPtr) {
-    int socket = *(int*)socketPtr;
-    ID_MODULO id;
-    t_list * paqueteRecibido = recibir_paquete_lista(socket, MSG_WAITALL, &id);
+    log_debug(logger, "Hilo de conexion creado para socket %d", *(int*)socketPtr);
+    int id;
+    t_list * paqueteRecibido = recibir_paquete_lista(*(int*)socketPtr, MSG_WAITALL, &id);
+    log_debug(logger, "Paquete recibido: codOp = %d, pointer paquete = %p", id, paqueteRecibido);
     if (paqueteRecibido == NULL) {
         log_error(logger, "Se cerró la conexión");
-        close(socket);
+        close(*(int*)socketPtr);
         return NULL;}
+    log_debug(logger, "El paquete no es nulo");
     switch (id) {
         case SOYKERNEL:
             log_info(logger, "Se conectó el Kernel.");
@@ -63,9 +65,9 @@ void* atenderConexion(void* socketPtr) {
             break;
         default:
             log_error(logger, "Modulo desconocido.");
-            close(socket);
+            close(*(int*)socket);
             return NULL;
     }
-    close(socket);
+    close(*(int*)socket);
     return NULL;
 }
