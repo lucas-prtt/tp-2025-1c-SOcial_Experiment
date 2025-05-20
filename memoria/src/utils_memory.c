@@ -55,7 +55,7 @@ void* atenderConexion(void* socketPtr) {
     log_debug(logger, "El paquete no es nulo");
     switch (id) {
         case SOYKERNEL:
-            log_info(logger, "Se conectó el Kernel.");
+            log_info(logger, "## Kernel Conectado - FD del socket: %d", *(int*)socketPtr);
             pthread_t hiloKernel;
             pthread_create(&hiloKernel, NULL, atenderKernel, socketPtr);
             pthread_detach(hiloKernel);

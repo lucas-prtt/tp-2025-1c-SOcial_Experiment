@@ -23,8 +23,8 @@ void * atenderKernel(void * socketPtr){
     switch (codOp)
     {
     case SOLICITUD_MEMORIA_DUMP_MEMORY:
-
         PID = list_get(pedido, 1);
+        log_debug(logger, "## PID: %d, Memory Dump solicitado", *PID);
 
         //TODO: DUMP MEMORY
 
@@ -53,6 +53,8 @@ void * atenderKernel(void * socketPtr){
         PID = list_get(pedido, 1);
         PATH = list_get(pedido, 3);
         TAMAÑO = list_get(pedido, 5);
+
+        log_info(logger, "## PID: %d - Proceso Creado - Tamaño: %d", *PID, *TAMAÑO);
 
         // TODO: cargar de archivo pseudocodigo a memoria
         
