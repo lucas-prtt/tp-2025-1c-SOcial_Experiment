@@ -46,7 +46,7 @@ void *handshakeCPUDispatch(void * socket);
 void * handshakeIO(void * socket);
 
 void cerrarKernel();
-
+int handshakeMemoria(int socketMemoria);
 
 
 

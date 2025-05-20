@@ -290,6 +290,7 @@ void liberarMemoria(int PID){
 
 void enviarSolicitudDumpMemory(int PID, int * socketMemoria){
     (*socketMemoria) = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
+    handshakeMemoria(*socketMemoria);
     t_paquete * paq = crear_paquete(SOLICITUD_MEMORIA_DUMP_MEMORY);
     agregar_a_paquete(paq, &PID, sizeof(PID));
     enviar_paquete(paq, (*socketMemoria));

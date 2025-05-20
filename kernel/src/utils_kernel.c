@@ -75,7 +75,15 @@ void * esperarIOEscucha(void * socket) {
 }
 
 int verificarModuloMemoriaDisponible(void) {
-    return estaConexionDisponible(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
+    int socketMemoria = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
+    int error = 0;
+    if (socketMemoria == -1){
+        error = 1;
+    }else{
+        error = handshakeMemoria(socketMemoria);
+        liberarConexion(socketMemoria);
+    }
+    return error;
 }
 
 void liberarConexion_IDYSOCKET_CPU(void * ids) {
@@ -175,5 +183,22 @@ void generarHilos(t_list * hilos, int cantidad, void * func(void *), t_list * pa
         pthread_create(nuevoHilo, NULL, func, list_get(parametros, i));
         list_add(hilos, nuevoHilo);
         log_debug(logger, "   -Se inicio el hilo: %p", nuevoHilo);
+    }
+}
+
+
+int handshakeMemoria(int socketMemoria){
+    t_paquete * saludo = crear_paquete(SOYKERNEL);
+    ID_MODULO rta;
+    enviar_paquete(saludo, socketMemoria);
+    eliminar_paquete(saludo);
+    t_list * respuesta = recibir_paquete_lista(socket, MSG_WAITALL, &rta);
+    if(respuesta == NULL || rta != SOYMEMORIA){
+        eliminar_paquete_lista(respuesta);
+        return -1;
+    }
+    else{
+        eliminar_paquete_lista(respuesta);
+        return 0;
     }
 }

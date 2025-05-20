@@ -180,6 +180,7 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
         {   //Enviar solicitud a memoria
             socketMemoria = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
             log_debug(logger, "Socket memoria: %d", socketMemoria);
+            handshakeMemoria(socketMemoria);
             if(listaQueImporta == NEW)
             {
             log_debug(logger, "Pido a memoria cargar un proceso de NEW");
