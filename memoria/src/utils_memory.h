@@ -4,6 +4,7 @@
 #include <commons/config.h>
 #include <utils/socketUtils.h>
 #include <utils/enums.h>
+#include <arpa/inet.h>
 
 typedef struct
 {

@@ -39,7 +39,6 @@ void* aceptarConexiones(void* socketPtr) {
         // pthread_create(&hiloCliente, NULL, atenderConexion, socketClientePtr);
         // pthread_detach(hiloCliente);
 
-        close(socketCliente);
     }
     return NULL;
 }
