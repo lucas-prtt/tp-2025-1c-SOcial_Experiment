@@ -2,10 +2,10 @@
 #define ENUM_H
 
 typedef enum {
-    SOYKERNEL,
-    SOYCPU,
-    SOYMEMORIA,
-    SOYIO
+    SOYKERNEL = 0,
+    SOYCPU = 1,
+    SOYMEMORIA = 2,
+    SOYIO = 3
 } ID_MODULO;
 
 
