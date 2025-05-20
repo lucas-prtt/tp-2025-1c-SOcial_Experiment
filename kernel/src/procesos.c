@@ -202,7 +202,7 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
         
         //r = 1; // 1: Hay espacio y se introdujo, 0: No hay espacio y no se introdujo
         liberarConexion(socketMemoria);
-        if(r){
+        if(r == RESPUESTA_MEMORIA_PROCESO_CARGADO){
             log_debug(logger, "Hay espacio en memoria: Pasando (%d) a READY", proceso->PID);
             pthread_mutex_lock(&mutex_listasProcesos);
             if(listaQueImporta == NEW)

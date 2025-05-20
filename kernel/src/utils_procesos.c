@@ -285,6 +285,13 @@ void liberarMemoria(int PID){
     t_paquete * paq = crear_paquete(PROCESO_FINALIZADO_LIBERAR_MEMORIA);
     agregar_a_paquete(paq, &PID, sizeof(PID));
     enviar_paquete(paq, socketMemoria);
+    eliminar_paquete(paq);
+    int codOp;
+    t_list * respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &codOp);
+    eliminar_paquete_lista(respuesta);
+    if(codOp !=RESPUESTA_MEMORIA_LIBERADA_EXITOSAMENTE){
+        //ERROR
+    }
     liberarConexion(socketMemoria);
 }
 
@@ -294,6 +301,8 @@ void enviarSolicitudDumpMemory(int PID, int * socketMemoria){
     t_paquete * paq = crear_paquete(SOLICITUD_MEMORIA_DUMP_MEMORY);
     agregar_a_paquete(paq, &PID, sizeof(PID));
     enviar_paquete(paq, (*socketMemoria));
-    // No cierra conexion: requiere confirmacion de que finalizo
+    eliminar_paquete(paq);
+
+    //
 }
 
