@@ -45,17 +45,18 @@ void* aceptarConexiones(void* socketPtr) {
 
 void* atenderConexion(void* socketPtr) {
     int socket = *(int*)socketPtr;
-    free(socketPtr);
     ID_MODULO id;
-    int bytesRecibidos = recv(socket, &id, sizeof(ID_MODULO), 0);
-    if (bytesRecibidos <= 0) {
-        log_error(logger, "No se recibió ningún handshake (o se cerró la conexión)");
+    t_list * paqueteRecibido = recibir_paquete_lista(socket, MSG_WAITALL, &id);
+    if (paqueteRecibido == NULL) {
+        log_error(logger, "Se cerró la conexión");
         close(socket);
-        return NULL;
-    }
+        return NULL;}
     switch (id) {
         case SOYKERNEL:
             log_info(logger, "Se conectó el Kernel.");
+            pthread_t hiloKernel;
+            pthread_create(&hiloKernel, NULL, atenderKernel, socketPtr);
+            pthread_detach(hiloKernel);
             break;
         case SOYCPU:
             log_info(logger, "Se conectó una CPU.");
