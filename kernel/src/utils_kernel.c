@@ -189,10 +189,10 @@ void generarHilos(t_list * hilos, int cantidad, void * func(void *), t_list * pa
 
 int handshakeMemoria(int socketMemoria){
     t_paquete * saludo = crear_paquete(SOYKERNEL);
-    ID_MODULO rta;
+    int rta;
     enviar_paquete(saludo, socketMemoria);
     eliminar_paquete(saludo);
-    t_list * respuesta = recibir_paquete_lista(socket, MSG_WAITALL, &rta);
+    t_list * respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &rta);
     if(respuesta == NULL || rta != SOYMEMORIA){
         eliminar_paquete_lista(respuesta);
         return -1;
