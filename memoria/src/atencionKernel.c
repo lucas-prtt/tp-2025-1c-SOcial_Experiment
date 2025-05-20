@@ -1,6 +1,7 @@
 #include <atencionKernel.h>
 
 void * atenderKernel(void * socketPtr){
+    log_debug(logger, "Hilo atenderKernel creado, atendiendo socket %d", *(int*)socketPtr);
     int socket = *(int*)socketPtr;
     int * PID;
     char * PATH;
@@ -10,10 +11,12 @@ void * atenderKernel(void * socketPtr){
 
     t_paquete * respuesta = crear_paquete(SOYMEMORIA);
     enviar_paquete(respuesta, socket);
+    log_debug(logger, "Paquete enviado (pointer = %p)", respuesta);
     eliminar_paquete(respuesta);
 
-    int codOp;
+    int codOp=-42;
     t_list * pedido = recibir_paquete_lista(socket, MSG_WAITALL, &codOp);
+    log_debug(logger, "Paquete recibido (socket = %d, pointer = %p, codOp = %d)", *(int*)socketPtr, pedido, codOp);
     if (pedido == NULL)
     {
         pthread_exit(NULL);

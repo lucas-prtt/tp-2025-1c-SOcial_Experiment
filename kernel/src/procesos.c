@@ -195,6 +195,7 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
             solicitud = crear_paquete(SOLICITUD_MEMORIA_CARGA_SWAP);
             agregar_a_paquete(solicitud, &(proceso->PID), sizeof(proceso->PID));
             }
+            log_debug(logger, "codOp = %d", solicitud->tipo_mensaje);
             enviar_paquete(solicitud, socketMemoria);
         }
         respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &r);

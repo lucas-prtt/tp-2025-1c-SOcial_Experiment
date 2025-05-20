@@ -50,9 +50,9 @@ int recibir_paquete(int socket, t_paquete* paquete, int flags) {
     if(recv(socket, &tipo_mensaje, sizeof(int), flags) <= 0) return 0;
     if(recv(socket, &tamanio, sizeof(int), flags) <= 0) return 0;
     void* buffer = NULL;
-    if(tamanio>0)
+    if(tamanio>0){
     buffer = malloc(tamanio);
-    if(recv(socket, buffer, tamanio, flags) <= 0) return 0;
+    if(recv(socket, buffer, tamanio, flags) <= 0) return 0;}
     paquete->tipo_mensaje = tipo_mensaje;
     paquete->tamanio = tamanio;
     paquete->buffer = buffer;
@@ -62,19 +62,19 @@ int recibir_paquete(int socket, t_paquete* paquete, int flags) {
 t_list *recibir_paquete_lista(int socket, int flags, int* codOp) { //CodOp se setea con el tipo de mensaje
     t_paquete * paq;
     paq = malloc(sizeof(t_paquete));
-    if(paq->tamanio == 0){
-        return list_create();
-    }
     if(!recibir_paquete(socket, paq, flags)) {
         free(paq);
         return NULL;
     }
-    t_list * listaDeContenido = list_create();
-    int offset = 0;
-    int * tamanioElemento;
     if(codOp != NULL) { // Si no me interesa el codOp del paquete, le mando null
         *codOp = paq->tipo_mensaje;
     }
+    if(paq->tamanio == 0){
+        return list_create();
+    }
+    t_list * listaDeContenido = list_create();
+    int offset = 0;
+    int * tamanioElemento;
     while(offset < paq->tamanio){
         tamanioElemento = malloc(sizeof(int));
         memcpy(tamanioElemento, paq->buffer + offset, sizeof(int)); // Copia el tamaño de el dato serializado que va a leer
