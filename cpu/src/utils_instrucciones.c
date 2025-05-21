@@ -185,6 +185,16 @@ void execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
             enviar_paquete(paquete_peticion_io, socket_kernel);
         }
         case INSTR_INIT_PROC:
+        {
+            char *path = strtok(NULL, " ");
+            int tamanio = atoi(strtok(NULL, " "));
+
+            t_paquete *paquete_peticion_init_proc = crear_paquete(SYSCALL_INIT_PROC);
+            agregar_a_paquete(paquete_peticion_init_proc, &(pcb->pc), sizeof(pcb->pc));
+            agregar_a_paquete(paquete_peticion_init_proc, path, strlen(path) + 1);
+            agregar_a_paquete(paquete_peticion_init_proc, &tamanio, sizeof(tamanio));
+            enviar_paquete(paquete_peticion_init_proc, socket_kernel);
+        }
         case INSTR_DUMP_MEMORY:
         case INSTR_EXIT:
         {
