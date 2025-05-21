@@ -174,6 +174,16 @@ void execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
             return; // no deberia ser void entonces
         }
         case INSTR_IO:
+        {
+            char *dispositivo = strtok(NULL, " ");
+            int tiempo = atoi(strtok(NULL, " "));
+
+            t_paquete *paquete_peticion_io = crear_paquete(SYSCALL_IO);
+            agregar_a_paquete(paquete_peticion_io, &(pcb->pc), sizeof(pcb->pc));
+            agregar_a_paquete(paquete_peticion_io, dispositivo, sizeof(strlen(dispositivo) + 1));
+            agregar_a_paquete(paquete_peticion_io, &tiempo, sizeof(tiempo));
+            enviar_paquete(paquete_peticion_io, socket_kernel);
+        }
         case INSTR_INIT_PROC:
         case INSTR_DUMP_MEMORY:
         case INSTR_EXIT:
