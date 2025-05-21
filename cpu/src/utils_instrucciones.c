@@ -196,6 +196,11 @@ void execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
             enviar_paquete(paquete_peticion_init_proc, socket_kernel);
         }
         case INSTR_DUMP_MEMORY:
+        {
+            t_paquete *paquete_peticion_dump_memory = crear_paquete(SYSCALL_DUMP_MEMORY);
+            agregar_a_paquete(paquete_peticion_dump_memory, &(pcb->pc), sizeof(pcb->pc));
+            enviar_paquete(paquete_peticion_dump_memory, socket_kernel);
+        }
         case INSTR_EXIT:
         {
             t_paquete *paquete = crear_paquete(NOTIFICAR_SYSCALL_A_KERNEL);
