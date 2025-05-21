@@ -183,6 +183,7 @@ void execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
             agregar_a_paquete(paquete_peticion_io, dispositivo, sizeof(strlen(dispositivo) + 1));
             agregar_a_paquete(paquete_peticion_io, &tiempo, sizeof(tiempo));
             enviar_paquete(paquete_peticion_io, socket_kernel);
+            eliminar_paquete(paquete_peticion_io);
         }
         case INSTR_INIT_PROC:
         {
@@ -194,19 +195,21 @@ void execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
             agregar_a_paquete(paquete_peticion_init_proc, path, strlen(path) + 1);
             agregar_a_paquete(paquete_peticion_init_proc, &tamanio, sizeof(tamanio));
             enviar_paquete(paquete_peticion_init_proc, socket_kernel);
+            eliminar_paquete(paquete_peticion_init_proc);
         }
         case INSTR_DUMP_MEMORY:
         {
             t_paquete *paquete_peticion_dump_memory = crear_paquete(SYSCALL_DUMP_MEMORY);
             agregar_a_paquete(paquete_peticion_dump_memory, &(pcb->pc), sizeof(pcb->pc));
             enviar_paquete(paquete_peticion_dump_memory, socket_kernel);
+            eliminar_paquete(paquete_peticion_dump_memory);
         }
         case INSTR_EXIT:
         {
             t_paquete *paquete = crear_paquete(NOTIFICAR_SYSCALL_A_KERNEL);
-            agregar_a_paquete(paquete, &(instr_info.tipo_instruccion), sizeof(enum TIPO_INSTRUCCION));
-            agregar_a_paquete(paquete, &instruccion, strlen(instruccion) + 1);
-            agregar_a_paquete(paquete, &pcb, sizeof(int));
+            agregar_a_paquete(paquete, &(instr_info.tipo_instruccion), sizeof(enum TIPO_INSTRUCCION)); //
+            agregar_a_paquete(paquete, &instruccion, strlen(instruccion) + 1); //
+            agregar_a_paquete(paquete, &pcb, sizeof(int)); //
             enviar_paquete(paquete, socket_kernel);
             eliminar_paquete(paquete);
             if(instr_info.tipo_instruccion == INSTR_EXIT) {
