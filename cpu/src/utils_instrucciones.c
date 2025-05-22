@@ -50,14 +50,14 @@ char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar) {
         eliminar_paquete_lista(lista_respuesta);
         return NULL;
     }
-    char *instruccion = strdup((char *)list_get(lista_respuesta, 1)); //
+    char *instruccion = strdup((char *)list_get(lista_respuesta, 1));
 
     free(codigo_operacion);
     eliminar_paquete_lista(lista_respuesta);
     return instruccion;
 }
 
-instruccionInfo decode(char *instruccion) { // es necesario pcb?
+instruccionInfo decode(char *instruccion) {
     char *nombre_instruccion = devolverOperacion(instruccion);
     enum TIPO_INSTRUCCION tipo = instrucciones_string_to_enum(nombre_instruccion);
     instruccionInfo instr_info;
@@ -111,13 +111,13 @@ enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion) {
 }
 
 bool execute(int socket_memoria, int socket_kernel, char *instruccion, instruccionInfo instr_info, PCB_cpu *pcb) {
-    char *copia_de_instruccion = strdup(instruccion); // Para no modificar la original
+    char *copia_de_instruccion = strdup(instruccion);
     char *operacion = strtok(copia_de_instruccion, " ");
-    uint32_t direccion_fisica;
+    int direccion_fisica;
 
     if (instr_info.requiere_traduccion) {
         // Traduce la memoria logica a memoria fisica //
-        char *direccion_logica = strtok(NULL, " ");                // habria que hacer un atoi?
+        int direccion_logica = atoi(strtok(NULL, " "));
         //direccion_fisica = transDeLogicaAFisica(direccion_logica); // TODO:
     }
 
@@ -135,7 +135,7 @@ bool execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
 
             t_paquete *paquete_peticion_write = crear_paquete(PETICION_ESCRIBIR_EN_MEMORIA);
             agregar_a_paquete(paquete_peticion_write, &pcb->pid, sizeof(int));
-            agregar_a_paquete(paquete_peticion_write, &direccion_fisica, sizeof(uint32_t)); // uint32_t?
+            agregar_a_paquete(paquete_peticion_write, &direccion_fisica, sizeof(int));
             agregar_a_paquete(paquete_peticion_write, datos, strlen(datos) + 1);
             enviar_paquete(paquete_peticion_write, socket_memoria);
             setProgramCounter(pcb, pcb->pc + 1);
@@ -149,7 +149,7 @@ bool execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
 
             t_paquete *paquete_peticion_read = crear_paquete(PETICION_LEER_DE_MEMORIA);
             agregar_a_paquete(paquete_peticion_read, &pcb->pid, sizeof(int));
-            agregar_a_paquete(paquete_peticion_read, &direccion_fisica, sizeof(uint32_t));
+            agregar_a_paquete(paquete_peticion_read, &direccion_fisica, sizeof(int));
             agregar_a_paquete(paquete_peticion_read, &tam, sizeof(int));
             enviar_paquete(paquete_peticion_read, socket_memoria);
             eliminar_paquete(paquete_peticion_read);
