@@ -24,15 +24,14 @@ bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar) {
     return true;
 }
 
-void ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *proc_AEjecutar, bool *fin_ejecucion) {
-    // TODO: VALIDAR CADA PASO
+bool ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *proc_AEjecutar) {
     char *instruccion = fetch(socket_memoria, proc_AEjecutar);
     instruccionInfo instr_info = decode(instruccion);
-    execute(socket_memoria, socket_kernel, instruccion, instr_info, proc_AEjecutar, fin_ejecucion); //pasar fin_ejecucion
+    bool fin_proceso = execute(socket_memoria, socket_kernel, instruccion, instr_info, proc_AEjecutar);
     //checkInterrupt();
-
     free(instruccion);
 
+    return fin_proceso;
 }
 
 char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar) {
@@ -111,7 +110,7 @@ enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion) {
     return ERROR_NO_INSTR;
 }
 
-void execute(int socket_memoria, int socket_kernel, char *instruccion, instruccionInfo instr_info, PCB_cpu *pcb, bool *fin_ejecucion) {
+bool execute(int socket_memoria, int socket_kernel, char *instruccion, instruccionInfo instr_info, PCB_cpu *pcb) {
     char *copia_de_instruccion = strdup(instruccion); // Para no modificar la original
     char *operacion = strtok(copia_de_instruccion, " ");
     uint32_t direccion_fisica;
@@ -127,6 +126,7 @@ void execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
         case INSTR_NOOP:
         {
             sleep(1); // Simula ciclo de CPU
+            setProgramCounter(pcb, pcb->pc + 1);
             break;
         }
         case INSTR_WRITE:
@@ -135,19 +135,21 @@ void execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
 
             t_paquete *paquete_peticion_write = crear_paquete(PETICION_ESCRIBIR_EN_MEMORIA);
             agregar_a_paquete(paquete_peticion_write, &pcb->pid, sizeof(int));
-            agregar_a_paquete(paquete_peticion_write, &direccion_fisica, sizeof(int)); // uint32_t?
+            agregar_a_paquete(paquete_peticion_write, &direccion_fisica, sizeof(uint32_t)); // uint32_t?
             agregar_a_paquete(paquete_peticion_write, datos, strlen(datos) + 1);
             enviar_paquete(paquete_peticion_write, socket_memoria);
+            setProgramCounter(pcb, pcb->pc + 1);
+
             eliminar_paquete(paquete_peticion_write);
             break;
         }
-        case INSTR_READ:
+        case INSTR_READ: // TODO: que pasa si hay eror al recibir la lista?
         {
-            char *tamanio = strtok(NULL, " ");
-            int tam = atoi(tamanio);
-            t_paquete *paquete_peticion_read = crear_paquete(PETICION_LEER_DE_MEMORIA); // Enum que debe existir
+            int tam = atoi(strtok(NULL, " "));
+
+            t_paquete *paquete_peticion_read = crear_paquete(PETICION_LEER_DE_MEMORIA);
             agregar_a_paquete(paquete_peticion_read, &pcb->pid, sizeof(int));
-            agregar_a_paquete(paquete_peticion_read, &direccion_fisica, sizeof(int)); //antes de direccion_logica
+            agregar_a_paquete(paquete_peticion_read, &direccion_fisica, sizeof(uint32_t));
             agregar_a_paquete(paquete_peticion_read, &tam, sizeof(int));
             enviar_paquete(paquete_peticion_read, socket_memoria);
             eliminar_paquete(paquete_peticion_read);
@@ -157,9 +159,10 @@ void execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
             if(lista == NULL || *cod_op != RESPUESTA_PETICION || list_size(lista) < 1) {
                 free(cod_op);
                 eliminar_paquete_lista(lista);
-                return NULL; // deberia dar error o algo asi supongo? y deberia liberar copia_de_instruccion
+                // break; // Como deberia manejarlo? Deberia salir y avanzar a la siguiente instruccion?
             }
-            char *leido = strdup((char *)list_get(lista, 0)); // Que significa?
+            // char *leido = strdup((char *)list_get(lista, 0)); // No se usa
+            setProgramCounter(pcb, pcb->pc + 1);
 
             free(cod_op);
             eliminar_paquete_lista(lista);
@@ -168,10 +171,8 @@ void execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
         case INSTR_GOTO:
         {
             char *valor = strtok(NULL, " ");
-            pcb->pc = atoi(valor);
-            free(copia_de_instruccion);
-            // Sale para no sumar 1 al PC (ya fue actualizado) //
-            return; // no deberia ser void entonces
+            setProgramCounter(pcb, atoi(valor));
+            break;
         }
         case INSTR_IO:
         {
@@ -183,7 +184,10 @@ void execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
             agregar_a_paquete(paquete_peticion_io, dispositivo, sizeof(strlen(dispositivo) + 1));
             agregar_a_paquete(paquete_peticion_io, &tiempo, sizeof(tiempo));
             enviar_paquete(paquete_peticion_io, socket_kernel);
+            setProgramCounter(pcb, pcb->pc + 1);
+
             eliminar_paquete(paquete_peticion_io);
+            break;
         }
         case INSTR_INIT_PROC:
         {
@@ -195,40 +199,45 @@ void execute(int socket_memoria, int socket_kernel, char *instruccion, instrucci
             agregar_a_paquete(paquete_peticion_init_proc, path, strlen(path) + 1);
             agregar_a_paquete(paquete_peticion_init_proc, &tamanio, sizeof(tamanio));
             enviar_paquete(paquete_peticion_init_proc, socket_kernel);
+            setProgramCounter(pcb, pcb->pc + 1);
+
             eliminar_paquete(paquete_peticion_init_proc);
+            break;
         }
         case INSTR_DUMP_MEMORY:
         {
             t_paquete *paquete_peticion_dump_memory = crear_paquete(SYSCALL_DUMP_MEMORY);
             agregar_a_paquete(paquete_peticion_dump_memory, &(pcb->pc), sizeof(pcb->pc));
             enviar_paquete(paquete_peticion_dump_memory, socket_kernel);
+            setProgramCounter(pcb, pcb->pc + 1);
+
             eliminar_paquete(paquete_peticion_dump_memory);
+            break;
         }
         case INSTR_EXIT:
         {
-            t_paquete *paquete = crear_paquete(NOTIFICAR_SYSCALL_A_KERNEL);
-            agregar_a_paquete(paquete, &(instr_info.tipo_instruccion), sizeof(enum TIPO_INSTRUCCION)); //
-            agregar_a_paquete(paquete, &instruccion, strlen(instruccion) + 1); //
-            agregar_a_paquete(paquete, &pcb, sizeof(int)); //
-            enviar_paquete(paquete, socket_kernel);
-            eliminar_paquete(paquete);
-            if(instr_info.tipo_instruccion == INSTR_EXIT) {
-                free(copia_de_instruccion);
-                return true; // Finalizó ejecución // devuelve bool???
-            }
-            break;
+            t_paquete *paquete_instr_exit = crear_paquete(SYSCALL_EXIT);
+            agregar_a_paquete(paquete_instr_exit, &(pcb->pc), sizeof(pcb->pc)); //
+            enviar_paquete(paquete_instr_exit, socket_kernel);
+            setProgramCounter(pcb, pcb->pc + 1);
+
+            eliminar_paquete(paquete_instr_exit);
+            free(copia_de_instruccion);
+            return true;
         }
         default:
         {
-            log_error(logger, "Instrucción no reconocida: %s", operacion); // error o algo
-            free(copia_de_instruccion);
+            log_error(logger, "Instrucción no reconocida: %s", operacion); // error o algo //AUMENTA EL PC?
             break;
         }
     }
-    // Program Counter es actualizado al no ser modifficado por GOTO //
-    pcb->pc++;
-    // fin_ejecucion = true;
+
     free(copia_de_instruccion);
+    return false;
+}
+
+void setProgramCounter(PCB_cpu *pcb, int newProgramCounter) {
+    pcb->pc = newProgramCounter;
 }
 
 void controlarInterrupciones(void) {
@@ -238,7 +247,7 @@ void controlarInterrupciones(void) {
         pthread_mutex_unlock(&mutexInterrupcion);
 
         log_info(logger, "Interrupción activa: devuelvo el proceso al Kernel");
-        // devolverProcesoAlKernel(); TODO
+        // devolverProcesoAlKernel(); // TODO
     }
     pthread_mutex_unlock(&mutexInterrupcion);
 }

@@ -38,11 +38,12 @@ typedef struct {
 } instruccionInfo;
 
 bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar);
-void ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *proc_AEjecutar, bool *fin_ejecucion);
+bool ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *proc_AEjecutar);
 char* fetch(int socket_memoria, PCB_cpu *proc_AEjecutar);
 instruccionInfo decode(char *instruccion);
 char *devolverOperacion(char *instruccion);
 enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion);
-void execute(int socket_memoria, int socket_kernel, char *instruccion, instruccionInfo instr_info, PCB_cpu *pcb, bool *fin_ejecucion);
+bool execute(int socket_memoria, int socket_kernel, char *instruccion, instruccionInfo instr_info, PCB_cpu *pcb);
+void setProgramCounter(PCB_cpu *pcb, int newProgramCounter);
 void controlarInterrupciones(void);
 

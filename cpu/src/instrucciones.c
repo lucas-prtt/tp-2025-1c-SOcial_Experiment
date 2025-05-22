@@ -9,12 +9,13 @@ void *atenderKernelDispatch(void *sockets) {
     while(true) {
         PCB_cpu proc_AEjecutar;
         if(recibirPIDyPC_kernel(socket_kernel_dispatch, &proc_AEjecutar)) {
-            bool fin_ejecucion = false;
-            while(!fin_ejecucion)
-                ejecutarCicloInstruccion(socket_memoria, socket_kernel_dispatch, &proc_AEjecutar, &fin_ejecucion); // TODO: CAMBIAR fin_ejecucion dentro de ejecutarInstruccion
+            for(;;) {
+                bool fin_proceso = ejecutarCicloInstruccion(socket_memoria, socket_kernel_dispatch, &proc_AEjecutar);
+                if(fin_proceso) break;
+            }
         }
-        else break; //TODO
     }
+
     free(sockets);
     return NULL; //TODO
 }
