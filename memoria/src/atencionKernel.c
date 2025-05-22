@@ -1,35 +1,55 @@
 #include <atencionKernel.h>
 
+/////////////////////////////////////////////
+//               ATENCION                  //
+/////////////////////////////////////////////
+
+// Deje puesto todos los casos de peticiones posibles. 
+// No todas importan para la entrega 2, 
+// para poder probarlo seria solo cargar y eliminar procesos de memoria, es decir...
+// case:  SOLICITUD_MEMORIA_NUEVO_PROCESO
+// case: PROCESO_FINALIZADO_LIBERAR_MEMORIA 
+// y default (tirar un error)
+
+
 void * atenderKernel(void * socketPtr){
-    log_debug(logger, "Hilo atenderKernel creado, atendiendo socket %d", *(int*)socketPtr);
     int socket = *(int*)socketPtr;
+    log_debug(logger, "Hilo atenderKernel creado, atendiendo socket %d", socket);
+    free (socketPtr); // Libero el socket del heap, lo guardé en el stack
+
     int * PID;
     char * PATH;
     int * TAMAÑO;
-
-    int error = 0;
+    int error = 0; // Actua como booleano, para utilizar en el futuro
+                   // al implementar la logica de las peticiones del kernel
 
     t_paquete * respuesta = crear_paquete(SOYMEMORIA);
     enviar_paquete(respuesta, socket);
     log_debug(logger, "Paquete enviado (pointer = %p)", respuesta);
     eliminar_paquete(respuesta);
+    // Envio un paquete que completa el handshake
 
-    int codOp=-42;
+    int codOp=-42; // Nunca deberia tomar este valor. Si loguea codOp = -42, es que no asigno codOp al recibir el paquete
     t_list * pedido = recibir_paquete_lista(socket, MSG_WAITALL, &codOp);
     log_debug(logger, "Paquete recibido (socket = %d, pointer = %p, codOp = %d)", *(int*)socketPtr, pedido, codOp);
+    // Recibo un paquete con el pedido
+
     if (pedido == NULL)
     {
+        // Si se cerro la conexion, finalizar el hilo
+        liberarConexion(socket);
         pthread_exit(NULL);
     }
 
 
-    switch (codOp)
+    switch (codOp) // Segun la operacion que me pida:
     {
     case SOLICITUD_MEMORIA_DUMP_MEMORY:
         PID = list_get(pedido, 1);
         log_debug(logger, "## PID: %d, Memory Dump solicitado", *PID);
 
         //TODO: DUMP MEMORY
+        // (modifica el valor de error)
 
         if (!error)
         respuesta = crear_paquete(RESPUESTA_DUMP_COMPLETADO);
@@ -43,6 +63,7 @@ void * atenderKernel(void * socketPtr){
         PID = list_get(pedido, 1);
 
         // TODO: cargar de swap a memoria
+        // (modifica el valor de error)
 
         if (!error)
         respuesta = crear_paquete(RESPUESTA_MEMORIA_PROCESO_CARGADO);
@@ -60,7 +81,10 @@ void * atenderKernel(void * socketPtr){
         log_info(logger, "## PID: %d - Proceso Creado - Tamaño: %d", *PID, *TAMAÑO);
 
         // TODO: cargar de archivo pseudocodigo a memoria
-        
+        // (modifica el valor de error (si no hay espacio, no lo carga))
+        // Tal vez se podria agregar una respuesta si no existe el archivo
+        // Pero seria mejor para proximas entregas
+
         if (!error)
         respuesta = crear_paquete(RESPUESTA_MEMORIA_PROCESO_CARGADO);
         else 
@@ -73,7 +97,8 @@ void * atenderKernel(void * socketPtr){
         PID = list_get(pedido, 1);
 
         // TODO: liberar la memoria
-        
+        // No puede tirar error
+
         respuesta = crear_paquete(RESPUESTA_MEMORIA_LIBERADA_EXITOSAMENTE);
         enviar_paquete(respuesta,socket);
         eliminar_paquete(respuesta);
@@ -83,13 +108,15 @@ void * atenderKernel(void * socketPtr){
         PID = list_get(pedido, 1);
 
         // TODO: pasar de memoria a swap
+        // No deberia poder tirar error, solo si se acaba el espacio de disco
         
         respuesta = crear_paquete(RESPUESTA_MEMORIA_PROCESO_ENVIADO_A_SWAP);
         enviar_paquete(respuesta,socket);
         eliminar_paquete(respuesta);
         break;
     default:
-        // ERROR
+        // ERROR, se hizo una peticion que no correspondia 
+        // (o no esta implementada en un case)
         break;
     }
     eliminar_paquete_lista(pedido);
