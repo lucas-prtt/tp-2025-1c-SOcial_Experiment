@@ -75,7 +75,7 @@ void* atenderConexion(void* socketPtr) {
         log_error(logger, "Se cerró la conexión");
         close(*(int*)socketPtr);
         return NULL;
-        }
+    }
     // Si el paquete si se recibio...
     log_debug(logger, "El paquete no es nulo");
 
@@ -95,8 +95,10 @@ void* atenderConexion(void* socketPtr) {
         case SOYCPU:
             // Si el ID del paquete indica que es una CPU
             log_info(logger, "Se conectó una CPU.");
+            pthread_t hiloCPU;
             // Creo un thread para atender la CPU y le mando el socket de la conexion
-            // TODO: HACER EL HILO atencionCPU (por consistencia, en un archivo separado)
+            pthread_create(&hiloCPU, NULL, atenderCPU, socketPtr);
+            pthread_detach(hiloCPU);
             break;
         default:
             // Si el ID no es ni de CPU ni de Kernel:

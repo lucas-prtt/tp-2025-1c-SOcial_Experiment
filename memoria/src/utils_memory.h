@@ -10,6 +10,8 @@
 #include <arpa/inet.h>
 #include "utils/paquetes.h"
 #include "atencionKernel.h"
+#include "atencionCPU.h"
+
 typedef struct
 {
     t_list* socketModulo;
