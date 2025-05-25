@@ -23,4 +23,11 @@ int crearSocketConfig(t_config* config, char opcion[]);
 void* aceptarConexiones(void* socketPtr); 
 void* atenderConexion(void* socketPtr);
 
+typedef struct {
+    uint32_t pid;
+    t_list* instrucciones;
+} t_instrucciones_por_pid;
+
+extern t_list* lista_instrucciones;
+
 #endif

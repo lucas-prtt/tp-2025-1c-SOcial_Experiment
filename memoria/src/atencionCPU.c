@@ -23,22 +23,30 @@ void *atenderCPU(void *socketPtr) {
 
     switch(codigo_operacion) // Segun la operacion que me pida:
     {
-        case PETICION_INSTRUCCION_MEMORIA:
+    case PETICION_INSTRUCCION_MEMORIA:
         {
-            int *pid = (int*)list_get(pedido, 1); //
-            int *pc = (int*)list_get(pedido, 3); //
+            int *pid = (int*)list_get(pedido, 1);
+            int *pc = (int*)list_get(pedido, 3);
 
-            log_info(logger, "## PID: %d - Obtener instrucción: %d - Instrucción: <INSTRUCCIÓN> <...ARGS>”", *pid, *pc); // Completar con la instruccion y sus parametros
-            
-            // TODO: leer del archivo de pseudocodigo asociado al pid la proxima instruccion a ejecutar segun el pc
-            // Devolverla en forma de char*
+            char pid_str[10];
+            sprintf(pid_str, "%d", *pid);
 
-            t_paquete *respuesta_peticion_instruccion = crear_paquete(RESPUESTA_INSTRUCCION_MEMORIA);
-            enviar_paquete(respuesta_peticion_instruccion, socket_cpu);
-            eliminar_paquete(respuesta_peticion_instruccion);
+            t_list* instrucciones = dictionary_get(instrucciones_por_pid, pid_str);
+            if (!instrucciones || *pc >= list_size(instrucciones)) {
+                log_error(logger, "PID %d no encontrado o PC %d fuera de rango", *pid, *pc);
+                pthread_exit(NULL);
+            }
+
+            char* instruccion = list_get(instrucciones, *pc);
+
+                // Armar respuesta y mandarla
+            t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_INSTRUCCION_MEMORIA);
+            agregar_a_paquete(respuesta_cpu, instruccion, strlen(instruccion) + 1);
+            enviar_paquete(respuesta_cpu, socket_cpu);
+            eliminar_paquete(respuesta_cpu);
             break;
-        }
-        case PETICION_TRADUCCION_DIRECCION:
+            
+        }case PETICION_TRADUCCION_DIRECCION:
         {
             // TODO: traducir una direccion logica a una direccion fisica
             // Creo que no importa en esta entrega
