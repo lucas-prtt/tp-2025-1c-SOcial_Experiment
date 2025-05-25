@@ -1,13 +1,16 @@
-#include <main.h>
+#include "main.h"
 t_config* config;
 t_log* logger;
 
 int main(int argc, char* argv[]) {
     config = config_create("memory.config");
     if (config == NULL){ 
+        log_error(logger, "No se pudo leer archivo config");
         abort(); 
     }
-    logger = log_create("memory.log", "memory", false, log_level_from_string(config_get_string_value(config, "LOG_LEVEL")));
+    logger = log_create("memory.log", "memory", true, log_level_from_string(config_get_string_value(config, "LOG_LEVEL")));
+
+    procesos = list_create();
     
     log_info(logger, "Memoria iniciada");
 

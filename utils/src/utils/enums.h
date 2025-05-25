@@ -5,7 +5,8 @@ typedef enum {
     SOYKERNEL,
     SOYCPU,
     SOYMEMORIA,
-    SOYIO
+    SOYIO,
+    PEDIR_ESPACIO_LIBRE
 } ID_MODULO;
 
 #endif

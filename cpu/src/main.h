@@ -3,3 +3,4 @@
 #include <commons/config.h>
 #include <stdlib.h>
 #include "utils_cpu.h"
+#include "utils/enums.h"

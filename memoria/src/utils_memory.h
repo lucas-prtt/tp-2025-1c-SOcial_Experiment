@@ -15,3 +15,10 @@ extern t_log* logger;
 int crearSocketConfig(t_config* config, char opcion[]);
 void* aceptarConexiones(void* socketPtr); 
 void* atenderConexion(void* socketPtr);
+
+typedef struct { // estructura para almacenar instrucciones por proceso (PID)
+    uint32_t pid;
+    t_list* instrucciones; // Lista de strings
+} Proceso;
+
+extern t_list* procesos; // Lista global de procesos
