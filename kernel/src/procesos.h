@@ -10,6 +10,7 @@
 #include "utils/tiempo.h"
 #include "utils_kernel.h"
 #include <unistd.h>
+#include "peticion.h"
 
 typedef struct{
     char * nombre;
@@ -17,10 +18,15 @@ typedef struct{
     t_list * cola;
 } PeticionesIO;
 
-typedef struct {
-    int PID;
-    int milisegundos;
-} Peticion;
+
+typedef enum PeticionEstado{
+    PETICION_BLOQUEADA, // No se realizo el IO y no se suspendio
+    PETICION_SUSPENDIDA, // Se suspendio y no se realizo el IO
+    PETICION_FINALIZADA // Se realizo el IO, el Timer no hace nada
+}PeticionEstado;
+
+
+
 
 extern t_list * listasProcesos[7]; // Vector de lista para guardar procesos
 
@@ -33,3 +39,4 @@ void * orderThread(void * _);
 void * dispatcherThread(void * IDYSOCKETDISPATCH);
 void post_sem_introducirAReady(); // Para marcar el inicio desde main
 #endif
+

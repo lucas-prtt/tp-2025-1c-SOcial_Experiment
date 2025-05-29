@@ -105,8 +105,9 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 // TODO: CHECKPOINT 3: TEMPORIZADOR
+                Peticion * pet = crearPeticion(proceso->PID, milisegundos);
                 pthread_mutex_lock(&mutex_peticionesIO);
-                encolarPeticionIO(proceso->PID, nombreIO, milisegundos, lista_peticionesIO); // Tambien hace señal a su semaforo
+                encolarPeticionIO(nombreIO, pet, lista_peticionesIO); // Tambien hace señal a su semaforo
                 pthread_mutex_unlock(&mutex_peticionesIO);
                 actualizarEstimacion(proceso, alfa);
                 log_info(logger, "## (%d) - Bloqueado por IO: %s", proceso->PID, nombreIO);
@@ -243,6 +244,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
             peticion = list_remove(peticiones->cola,0);
             pthread_mutex_unlock(&mutex_peticionesIO);
         }
+            sem_wait(&(peticion->sem_estado));
         {
             //Emviar Peticion
             paquete = crear_paquete(PETICION_IO);
@@ -251,30 +253,37 @@ void * IOThread(void * NOMBREYSOCKETIO)
             enviar_paquete(paquete, io->SOCKET);
             eliminar_paquete(paquete);
         }
-        {
-            // Recibir respuesta
-            respuesta = recibir_paquete_lista(io->SOCKET, MSG_WAITALL, NULL);
-            if(respuesta == NULL){ // Si se pierde la conexion, se termina el proceso
-                log_error(logger, "Se perdio la conexion con IO: %s", io->NOMBRE);
-                pthread_mutex_lock(&mutex_peticionesIO);
-                cambiarEstado(peticion->PID, EXIT, listasProcesos);
-                pthread_mutex_unlock(&mutex_peticionesIO);
-                liberarMemoria(peticion->PID);
-            }else{                  // Si no se pierde la conexion, liberar el paquete y continuar a ready o susp_ready
-            eliminar_paquete_lista(respuesta);
+    
+        // Recibir respuesta
+        respuesta = recibir_paquete_lista(io->SOCKET, MSG_WAITALL, NULL);
+        if(respuesta == NULL){ // Si se pierde la conexion, se termina el proceso
+            log_error(logger, "Se perdio la conexion con IO: %s", io->NOMBRE);
+            pthread_mutex_lock(&mutex_peticionesIO);
+            cambiarEstado(peticion->PID, EXIT, listasProcesos);
+            pthread_mutex_unlock(&mutex_peticionesIO);
+            liberarMemoria(peticion->PID);
+        }else{                  // Si no se pierde la conexion, liberar el paquete y continuar a ready o susp_ready
+        eliminar_paquete_lista(respuesta);
+
+
+        if(peticion->estado == PETICION_BLOQUEADA){
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado_EstadoActualConocido(peticion->PID, BLOCKED, READY, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
             log_info(logger, "## (%d) finalizo IO y pasa a READY", peticion->PID);
-            }
+            peticion->estado = PETICION_FINALIZADA;
+            sem_post(&(peticion->sem_estado));
+        }else if(peticion->estado == PETICION_SUSPENDIDA){
+            pthread_mutex_lock(&mutex_listasProcesos);
+            cambiarEstado_EstadoActualConocido(peticion->PID, SUSP_BLOCKED, SUSP_READY, listasProcesos);
+            pthread_mutex_unlock(&mutex_listasProcesos);
+            log_info(logger, "## (%d) finalizo IO y pasa a SUSP_READY", peticion->PID);
+            eliminarPeticion(peticion);
         }
-        free(peticion); // Libera la peticion sacada de la cola
-        sem_post(&sem_ordenar_cola_ready);    
-        //TODO: CHECKPOINT 3:
-        // Cuando se suspendan, hay que ver si esta suspendido o no para mandar señal a un proceso de desuspender
-        // Cuando se implemente temporizador de suspension, eliminar el temporizador
-    }
+        }
 
+        sem_post(&sem_ordenar_cola_ready);    
+}
 }
 
 void * confirmDumpMemoryThread(void * Params){
@@ -302,20 +311,26 @@ void post_sem_introducirAReady(){sem_post(&sem_introducir_proceso_a_ready);}
 
 
 void * temporizadorSuspenderThread(void * param){
-    t_PCB * proceso = ((procesoYEspera * )param)->proceso;
-    int tiempo = ((procesoYEspera * )param)->tiempo;
-    free(param);
-    log_debug(logger, "Inicio de temporizador para suspender (%d) en %dms", proceso->PID, tiempo*1000);
+    Peticion * peticion = ((Peticion * )param);
+    int tiempo = 100; // MODIFICAR
+    log_debug(logger, "Inicio de temporizador para suspender (%d) en %dms", peticion->PID, tiempo*1000);
     usleep(tiempo*1000); // microsegundos a milisegundos
-    log_debug(logger, "Temporizador de (%d) finalizado", proceso->PID);
-    pthread_testcancel();
+    log_debug(logger, "Temporizador de (%d) finalizado", peticion->PID);
+    sem_wait(&(peticion->sem_estado));
+    if (peticion->estado == PETICION_BLOQUEADA)
+    {
     pthread_mutex_lock(&mutex_listasProcesos);
-    if (cambiarEstado_EstadoActualConocido(proceso->PID, BLOCKED, SUSP_BLOCKED, listasProcesos)){
-        log_debug(logger, "Cancelacion de suspension de (%d), ya no esta mas bloqueado",proceso->PID);
-        pthread_exit(NULL);
-    }
+        int r =cambiarEstado_EstadoActualConocido(peticion->PID, BLOCKED, SUSP_BLOCKED, listasProcesos);
     pthread_mutex_unlock(&mutex_listasProcesos);
-    log_debug(logger, "(%d) suspendido", proceso->PID);
+    peticion->estado = PETICION_SUSPENDIDA;
+    if (r!=0)
+        log_debug(logger, "Cancelacion de la suspension de (%d), ya no esta mas bloqueado",peticion->PID);
+    else
+        log_debug(logger, "(%d) suspendido", peticion->PID);
+    }
+    sem_post(&(peticion->sem_estado));
+    if(peticion->estado == PETICION_FINALIZADA)
+    eliminarPeticion(peticion);
     pthread_exit(NULL);
 }
 

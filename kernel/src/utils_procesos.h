@@ -9,6 +9,8 @@
 #include <semaphore.h>
 #include "utils/tiempo.h"
 #include "utils/enums.h"
+#include "peticion.h"
+
 enum estado{ // Para indicar el estado dentro del vector de ME y MT
     NEW = 0,
     READY = 1,
@@ -47,10 +49,7 @@ typedef struct{
     int socket;
 }PIDySocket;
 
-typedef struct{
-    t_PCB * proceso;
-    int tiempo;
-} procesoYEspera;
+
 
 t_PCB * crearPCB(int id, char * path, int size);
 void enviarSolicitudDumpMemory(int PID, int * socketMemoria);
@@ -62,11 +61,12 @@ char * estadoAsString(enum estado);
 enum algoritmo algoritmoStringToEnum(char * algoritmo);
 void ordenar_cola_ready(t_list * listaProcesos[], enum algoritmo algoritmo);
 void * procesoMasCorto(void * p1, void * p2);
-void encolarPeticionIO(int PID, char * nombreIO, int milisegundos, t_list * lista_peticiones);
+void encolarPeticionIO(char * nombreIO, Peticion * peticion, t_list * lista_peticiones);
 void actualizarEstimacion(t_PCB * proceso, float alfa);
 t_PCB * procesoADesalojar(t_list * listasProcesos[], enum algoritmo alg); // Puede devolver NULL si no requiere desalojo
+void eliminarPeticion(Peticion * pet);
+Peticion * crearPeticion(int PID, int milisegundos);
 // Funciones auxiliares
 t_PCB * encontrarProcesoPorPIDYLista(t_list * lista, int pid);
 int cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, enum estado estadoSiguiente, t_list * listaProcesos[]);
-
 #endif

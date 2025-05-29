@@ -252,11 +252,17 @@ PeticionesIO * encontrarPeticionesDeIOPorNombre(t_list * lista, char * nombreIO)
     return list_find(lista, _PIDCoincide);
     #endif
 }
-void encolarPeticionIO(int PID, char * nombreIO, int milisegundos, t_list * lista_peticiones){
-    PeticionesIO * io = encontrarPeticionesDeIOPorNombre(lista_peticiones, nombreIO);
+Peticion * crearPeticion(int PID, int milisegundos){
     Peticion * peticion = malloc(sizeof(Peticion));
     peticion->PID = PID;
     peticion->milisegundos = milisegundos;
+    sem_init(&(peticion->sem_estado), 0, 1);
+    peticion->estado = PETICION_BLOQUEADA;
+    return peticion;
+}
+
+void encolarPeticionIO(char * nombreIO, Peticion * peticion, t_list * lista_peticiones){
+    PeticionesIO * io = encontrarPeticionesDeIOPorNombre(lista_peticiones, nombreIO);
     list_add(io->cola, peticion);
     sem_post(&(io->sem_peticiones));
     return;
@@ -296,6 +302,11 @@ void liberarMemoria(int PID){
     }
     liberarConexion(socketMemoria);
 }
+void eliminarPeticion(Peticion * pet){
+    sem_destroy(&(pet->sem_estado));
+    free(pet);
+}
+
 
 void enviarSolicitudDumpMemory(int PID, int * socketMemoria){
     (*socketMemoria) = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
