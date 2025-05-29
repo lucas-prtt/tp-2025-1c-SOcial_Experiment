@@ -250,7 +250,6 @@ void * IOThread(void * NOMBREYSOCKETIO)
             peticion = list_remove(peticiones->cola,0);
             pthread_mutex_unlock(&mutex_peticionesIO);
         }
-            sem_wait(&(peticion->sem_estado));
         {
             //Emviar Peticion
             paquete = crear_paquete(PETICION_IO);
@@ -262,8 +261,10 @@ void * IOThread(void * NOMBREYSOCKETIO)
     
         // Recibir respuesta
         respuesta = recibir_paquete_lista(io->SOCKET, MSG_WAITALL, NULL);
+        sem_wait(&(peticion->sem_estado));
         if(respuesta == NULL){ // Si se pierde la conexion, se termina el proceso
             log_error(logger, "Se perdio la conexion con IO: %s", io->NOMBRE);
+            peticion->estado = PETICION_FINALIZADA;
             pthread_mutex_lock(&mutex_peticionesIO);
             cambiarEstado(peticion->PID, EXIT, listasProcesos);
             pthread_mutex_unlock(&mutex_peticionesIO);
