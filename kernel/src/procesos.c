@@ -104,25 +104,29 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
                 pthread_mutex_unlock(&mutex_listasProcesos);
+
                 pthread_t timerThread;
-                // TODO: CHECKPOINT 3: TEMPORIZADOR
                 Peticion * pet = crearPeticion(proceso->PID, milisegundos);
                 pthread_create(&timerThread, NULL, temporizadorSuspenderThread, pet);
                 pthread_detach(timerThread);
+
                 pthread_mutex_lock(&mutex_peticionesIO);
                 encolarPeticionIO(nombreIO, pet, lista_peticionesIO); // Tambien hace señal a su semaforo
                 pthread_mutex_unlock(&mutex_peticionesIO);
+
                 actualizarEstimacion(proceso, alfa);
                 log_info(logger, "## (%d) - Bloqueado por IO: %s", proceso->PID, nombreIO);
                 break;
             case SYSCALL_DUMP_MEMORY:
-
                 PIDySocket * infoDump;
                 infoDump = malloc(sizeof(infoDump));
                 infoDump->PID = proceso->PID;
                 enviarSolicitudDumpMemory(proceso->PID, &(infoDump->socket));
                 pthread_mutex_lock(&mutex_listasProcesos);
-                //TODO: CHECKPOINT 3: TEMPORIZADOR
+                //TODO ???? : SE SUSPENDE UN PROCESO EN DUMP_MEMORY? 
+                // No creo, si la memoria esta ocupada con el dump, pedirle  
+                // que mueva mas cosas no creo que ayude
+                // Porahora no
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
                 actualizarEstimacion(proceso, alfa);
                 pthread_mutex_unlock(&mutex_listasProcesos);
@@ -208,7 +212,6 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
         respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &r);
         eliminar_paquete_lista(respuesta); // El contenido del paquete es vacio: Solo importa el codOp
         
-        //r = 1; // 1: Hay espacio y se introdujo, 0: No hay espacio y no se introdujo
         liberarConexion(socketMemoria);
         if(r == RESPUESTA_MEMORIA_PROCESO_CARGADO){
             log_debug(logger, "Hay espacio en memoria: Pasando (%d) a READY", proceso->PID);
@@ -269,14 +272,14 @@ void * IOThread(void * NOMBREYSOCKETIO)
         eliminar_paquete_lista(respuesta);
 
 
-        if(peticion->estado == PETICION_BLOQUEADA){
+        if(peticion->estado == PETICION_BLOQUEADA){ // Si no se suspendio
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado_EstadoActualConocido(peticion->PID, BLOCKED, READY, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
             log_info(logger, "## (%d) finalizo IO y pasa a READY", peticion->PID);
             peticion->estado = PETICION_FINALIZADA;
             sem_post(&(peticion->sem_estado));
-        }else if(peticion->estado == PETICION_SUSPENDIDA){
+        }else if(peticion->estado == PETICION_SUSPENDIDA){ // Si se suspendio
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado_EstadoActualConocido(peticion->PID, SUSP_BLOCKED, SUSP_READY, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
@@ -307,7 +310,6 @@ void * confirmDumpMemoryThread(void * Params){
     free(infoDump);
     liberarConexion(infoDump->socket);
     pthread_exit(NULL);
-    //TODO: Actualizar cuando este el hilo para suspender
 }
 
 void post_sem_introducirAReady(){sem_post(&sem_introducir_proceso_a_ready);}
@@ -315,11 +317,13 @@ void post_sem_introducirAReady(){sem_post(&sem_introducir_proceso_a_ready);}
 
 void * temporizadorSuspenderThread(void * param){
     Peticion * peticion = ((Peticion * )param);
-    int tiempo = config_get_int_value(config, "TIEMPO_SUSPENSION"); // MODIFICAR
+    int tiempo = config_get_int_value(config, "TIEMPO_SUSPENSION");
     log_debug(logger, "Inicio de temporizador para suspender (%d) en %dms", peticion->PID, tiempo*1000);
     usleep(tiempo*1000); // microsegundos a milisegundos
     log_debug(logger, "Temporizador de (%d) finalizado", peticion->PID);
+
     sem_wait(&(peticion->sem_estado));
+
     if (peticion->estado == PETICION_BLOQUEADA)
     {
     pthread_mutex_lock(&mutex_listasProcesos);
