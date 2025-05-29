@@ -85,15 +85,19 @@ int cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, 
     proceso = encontrarProcesoPorPIDYLista(listaProcesos[estadoActual], idProceso);
     if (proceso == NULL)
         return -1; // Hubo error, no esta el proceso en estadoActual
+
     list_remove_element(listaProcesos[estadoActual], proceso);
     list_add(listaProcesos[estadoSiguiente], proceso);
     log_debug(logger, "Proceso movido");
+
     timeDifferenceStop(&(proceso->tiempoEnEstado));
     int tiempoASumar = proceso->tiempoEnEstado.mDelta;
     proceso->MT[estadoActual] += tiempoASumar;
     proceso->ME[estadoSiguiente]++;
     timeDifferenceStart(&(proceso->tiempoEnEstado));
+
     log_info(logger, "## (%d) Pasa del estado %s al estado %s", proceso->PID, estadoAsString(estadoActual), estadoAsString(estadoSiguiente));
+    
     if(estadoSiguiente == EXIT){
         log_info(logger, "## (%d) - Finaliza el proceso", proceso->PID);
         loguearMetricasDeEstado_PorPCB(proceso, listaProcesos);
@@ -225,7 +229,10 @@ t_PCB * procesoADesalojar(t_list * listasProcesos[], enum algoritmo alg){
             return NULL;
     }
 }
-void actualizarEstimacion(t_PCB * proceso, float alfa){ // Siempre ejecutar luego de cambiar el estado (lo que modifica EJC_ACT al tiempo total de ejecucion)
+void actualizarEstimacion(t_PCB * proceso, float alfa){ 
+    // Siempre ejecutar luego de cambiar el estado 
+    // debido a un IO o MemoryDump
+    // No en interrupt: Se estaria eliminando el tiempo de ejecucion actual
     proceso->EJC_ANT = proceso->EJC_ACT;
     proceso->EJC_ACT = 0;
     proceso->EST = proceso->EJC_ANT * alfa + proceso->EST * (1-alfa);

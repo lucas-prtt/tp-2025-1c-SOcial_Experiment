@@ -76,6 +76,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
 
             if (codOp != INTERRUPT_ACKNOWLEDGE){
                 log_info(logger, "## (%d) - Solicitó syscall: %s", proceso->PID, syscallAsString(codOp));
+
             }
             switch (codOp)//TODO: Cada caso con su logica: En funcion de codOp se hace cada syscall
             {
@@ -122,17 +123,23 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 infoDump = malloc(sizeof(infoDump));
                 infoDump->PID = proceso->PID;
                 enviarSolicitudDumpMemory(proceso->PID, &(infoDump->socket));
-                pthread_mutex_lock(&mutex_listasProcesos);
                 //TODO ???? : SE SUSPENDE UN PROCESO EN DUMP_MEMORY? 
                 // No creo, si la memoria esta ocupada con el dump, pedirle  
                 // que mueva mas cosas no creo que ayude
                 // Porahora no
+                pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
-                actualizarEstimacion(proceso, alfa);
                 pthread_mutex_unlock(&mutex_listasProcesos);
+                actualizarEstimacion(proceso, alfa);
                 pthread_t hiloConfirmacion;
                 pthread_create(&hiloConfirmacion, NULL, confirmDumpMemoryThread, infoDump);
                 pthread_detach(hiloConfirmacion);
+                break;
+            case INTERRUPT_ACKNOWLEDGE:
+                pthread_mutex_lock(&mutex_listasProcesos);
+                cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, READY, listasProcesos); 
+                // CambiarEstado Ya actualiza a EXEC_ACT
+                pthread_mutex_unlock(&mutex_listasProcesos);
                 break;
             }
             eliminar_paquete_lista(paqueteRespuesta);
