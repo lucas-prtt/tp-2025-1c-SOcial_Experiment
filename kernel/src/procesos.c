@@ -8,9 +8,12 @@ int last_PID = 1;                //
 ///////////////////////////////////
 
 // SEMAFOROS:
-pthread_mutex_t mutex_listasProcesos;   // MUTEX para interactuar con listasProcesos[7]
-pthread_mutex_t mutex_peticionesIO;     // MUTEX para acceder a lista_peticionesIO
-pthread_mutex_t mutex_last_PID;         // MUTEX para acceder a last_PID
+pthread_mutex_t mutex_listasProcesos    // MUTEX para interactuar con listasProcesos[7]
+ = PTHREAD_MUTEX_INITIALIZER        ;   // 
+pthread_mutex_t mutex_peticionesIO      // MUTEX para acceder a lista_peticionesIO
+ = PTHREAD_MUTEX_INITIALIZER        ;   // 
+pthread_mutex_t mutex_last_PID          // MUTEX para acceder a last_PID
+ = PTHREAD_MUTEX_INITIALIZER        ;   // 
                                         // Los mutex podrian ser particulares de cada elemento de la lista en algunos casos, pero es complicarse de más
 sem_t sem_procesos_en_ready;            // Semeforo contador: Cantidad de procesos en READY
 sem_t sem_ordenar_cola_ready;           // Representa peticion para ordenar la cola de ready y luego hacer signal a procesos en cola de ready (ya que se ejecuta al entrar un proceso nuevo)
@@ -296,4 +299,25 @@ void * confirmDumpMemoryThread(void * Params){
 }
 
 void post_sem_introducirAReady(){sem_post(&sem_introducir_proceso_a_ready);}
+
+
+void * temporizadorSuspenderThread(void * param){
+    t_PCB * proceso = ((procesoYEspera * )param)->proceso;
+    int tiempo = ((procesoYEspera * )param)->tiempo;
+    free(param);
+    log_debug(logger, "Inicio de temporizador para suspender (%d) en %dms", proceso->PID, tiempo*1000);
+    usleep(tiempo*1000); // microsegundos a milisegundos
+    log_debug(logger, "Temporizador de (%d) finalizado", proceso->PID);
+    pthread_testcancel();
+    pthread_mutex_lock(&mutex_listasProcesos);
+    if (cambiarEstado_EstadoActualConocido(proceso->PID, BLOCKED, SUSP_BLOCKED, listasProcesos)){
+        log_debug(logger, "Cancelacion de suspension de (%d), ya no esta mas bloqueado",proceso->PID);
+        pthread_exit(NULL);
+    }
+    pthread_mutex_unlock(&mutex_listasProcesos);
+    log_debug(logger, "(%d) suspendido", proceso->PID);
+    pthread_exit(NULL);
+}
+
+
 

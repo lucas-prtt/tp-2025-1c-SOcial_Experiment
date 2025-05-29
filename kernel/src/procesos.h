@@ -9,6 +9,8 @@
 #include "utils/socketUtils.h"
 #include "utils/tiempo.h"
 #include "utils_kernel.h"
+#include <unistd.h>
+
 typedef struct{
     char * nombre;
     sem_t sem_peticiones;

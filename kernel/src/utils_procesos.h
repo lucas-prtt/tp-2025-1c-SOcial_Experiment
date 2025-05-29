@@ -47,6 +47,11 @@ typedef struct{
     int socket;
 }PIDySocket;
 
+typedef struct{
+    t_PCB * proceso;
+    int tiempo;
+} procesoYEspera;
+
 t_PCB * crearPCB(int id, char * path, int size);
 void enviarSolicitudDumpMemory(int PID, int * socketMemoria);
 void liberarMemoria(int PID);
@@ -62,6 +67,6 @@ void actualizarEstimacion(t_PCB * proceso, float alfa);
 t_PCB * procesoADesalojar(t_list * listasProcesos[], enum algoritmo alg); // Puede devolver NULL si no requiere desalojo
 // Funciones auxiliares
 t_PCB * encontrarProcesoPorPIDYLista(t_list * lista, int pid);
-void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, enum estado estadoSiguiente, t_list * listaProcesos[]);
+int cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, enum estado estadoSiguiente, t_list * listaProcesos[]);
 
 #endif

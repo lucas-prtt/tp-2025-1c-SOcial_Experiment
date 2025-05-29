@@ -78,11 +78,13 @@ void cambiarEstado(int idProceso, enum estado estadoSiguiente, t_list * listaPro
     cambiarEstado_EstadoActualConocido(idProceso, estadoActual, estadoSiguiente, listaProcesos);
 }
 
-void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, enum estado estadoSiguiente, t_list * listaProcesos[])
+int cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, enum estado estadoSiguiente, t_list * listaProcesos[])
 {   
     log_debug(logger, "Peticion cambio de estado recibida");
     t_PCB * proceso;
     proceso = encontrarProcesoPorPIDYLista(listaProcesos[estadoActual], idProceso);
+    if (proceso == NULL)
+        return -1; // Hubo error, no esta el proceso en estadoActual
     list_remove_element(listaProcesos[estadoActual], proceso);
     list_add(listaProcesos[estadoSiguiente], proceso);
     log_debug(logger, "Proceso movido");
@@ -91,7 +93,6 @@ void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual,
     proceso->MT[estadoActual] += tiempoASumar;
     proceso->ME[estadoSiguiente]++;
     timeDifferenceStart(&(proceso->tiempoEnEstado));
-
     log_info(logger, "## (%d) Pasa del estado %s al estado %s", proceso->PID, estadoAsString(estadoActual), estadoAsString(estadoSiguiente));
     if(estadoSiguiente == EXIT){
         log_info(logger, "## (%d) - Finaliza el proceso", proceso->PID);
@@ -102,6 +103,7 @@ void cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual,
     if(estadoActual == EXEC && estadoSiguiente == READY){ // Unico caso es en interrupt
         log_info(logger, "## (%d) Desalojado por algoritmo SJF/SRT", proceso->PID);
     }
+    return 0;
 }
 
 t_PCB * encontrarProcesoPorPIDYLista(t_list * lista, int pid){
