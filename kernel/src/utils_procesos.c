@@ -238,12 +238,6 @@ void actualizarEstimacion(t_PCB * proceso, float alfa){
     proceso->EST = proceso->EJC_ANT * alfa + proceso->EST * (1-alfa);
 }
 
-bool verificarDesalojo(t_list * listasProcesos[]){ // Solo para STR
-    bool desalojar = false;
-    // Buscar en lista de EXEC si algun proceso tiene menos tiempo que el menor tiempo de Ready
-    // Si READY esta vacio: no desalojar (No deberia ocurrir)
-    return desalojar;
-}
 
 void * procesoMasCorto(void * p1, void * p2){
     if (((t_PCB*)p1)->SIZE <= ((t_PCB*)p2)->SIZE)

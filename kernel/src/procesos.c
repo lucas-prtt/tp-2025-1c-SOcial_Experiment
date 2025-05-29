@@ -45,6 +45,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             pthread_mutex_lock(&mutex_listasProcesos);
             proceso = list_get(listasProcesos[READY], 0);
             cambiarEstado_EstadoActualConocido(proceso->PID, READY, EXEC, listasProcesos);
+            proceso->ProcesadorQueLoEjecuta = cpu;
             pthread_mutex_unlock(&mutex_listasProcesos);
             log_debug(logger, "Se eligio el proceso (%d) para ejecutar", proceso->PID);
         }
@@ -56,10 +57,13 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             enviar_paquete(paqueteEnviado, cpu->SOCKET);
             eliminar_paquete(paqueteEnviado);
             paqueteRespuesta = recibir_paquete_lista(cpu->SOCKET, MSG_WAITALL, &codOp);
-
+            
+            
+            
             if (paqueteRespuesta == NULL){ // Si se cierra la conexion con el CPU, se cierra el hilo y se termina el proceso
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
+                proceso->ProcesadorQueLoEjecuta = NULL;
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 liberarMemoria(proceso->PID);
                 log_error(logger, "(%d) - Finaliza el proceso. Conexion con CPU (%d) perdida", proceso->PID, cpu->ID);
@@ -83,6 +87,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             case SYSCALL_EXIT:
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
+                proceso->ProcesadorQueLoEjecuta = NULL;
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 liberarMemoria(proceso->PID); // Envia mensaje a Memoria para liberar el espacio
                 sem_post(&sem_introducir_proceso_a_ready); 
@@ -104,6 +109,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 int milisegundos = *(int*)list_get(paqueteRespuesta, 5);
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
+                proceso->ProcesadorQueLoEjecuta = NULL;
                 pthread_mutex_unlock(&mutex_listasProcesos);
 
                 pthread_t timerThread;
@@ -129,6 +135,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 // Porahora no
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
+                proceso->ProcesadorQueLoEjecuta = NULL;
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 actualizarEstimacion(proceso, alfa);
                 pthread_t hiloConfirmacion;
@@ -138,6 +145,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             case INTERRUPT_ACKNOWLEDGE:
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, READY, listasProcesos); 
+                proceso->ProcesadorQueLoEjecuta = NULL;
                 // CambiarEstado Ya actualiza a EXEC_ACT
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 break;
@@ -151,16 +159,21 @@ void * orderThread(void * _){
     char config_key_algoritmo[] = "ALGORITMO_CORTO_PLAZO";
     char * algoritmo = config_get_string_value(config, config_key_algoritmo);
     enum algoritmo algoritmo_enum = algoritmoStringToEnum(algoritmo);
+    t_paquete * peticionInterrupt;
     while(1){
         sem_wait(&sem_ordenar_cola_ready);
         pthread_mutex_lock(&mutex_listasProcesos);
         ordenar_cola_ready(listasProcesos, algoritmo_enum);
         t_PCB * procesoInterrumpido = procesoADesalojar(listasProcesos, algoritmo_enum);
         if(procesoInterrumpido != NULL){
-            //TODO: CHECKPOINT 3: interrumpir el proceso, reordenar
+            peticionInterrupt = crear_paquete(PETICION_INTERRUPT_A_CPU);
+            enviar_paquete(peticionInterrupt, procesoInterrumpido->ProcesadorQueLoEjecuta->SOCKET);
+            ordenar_cola_ready(listasProcesos, algoritmo_enum);
+            // Hay que reordenar para que el que se desalojo quede donde corresponde
         }
         pthread_mutex_unlock(&mutex_listasProcesos);
-        sem_post(&sem_procesos_en_ready);
+        sem_post(&sem_procesos_en_ready); // Esto se ejecuta cada vez que entra un nuevo proceso a ready, reordenandose asi la cola
+        // Si no entra nada a ready (de NEW, BLOCKED o SUSP_READY) no se ejecuta
     }
 }
 

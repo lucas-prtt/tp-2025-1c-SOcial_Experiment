@@ -10,6 +10,7 @@
 #include "utils/tiempo.h"
 #include "utils/enums.h"
 #include "peticion.h"
+#include "utils_kernel.h"
 
 enum estado{ // Para indicar el estado dentro del vector de ME y MT
     NEW = 0,
@@ -42,6 +43,8 @@ typedef struct{
     int SIZE;    // Tamaño en memoria
     t_timeDifference tiempoEnEstado; // Usado para medir cuanto tiempo permanece en cada estado
                                      // Se lo inicia al crear el proceso y resetea por cada cambio de estado, sumandose el tiempo medido en el estado correspondiente
+    IDySocket_CPU * ProcesadorQueLoEjecuta; // NULL si no esta en ejecucion.
+                                            // Sirve para mandar mas facil los pedidos de interrupt solo conociendo el proceso 
 } t_PCB;
 
 typedef struct{
