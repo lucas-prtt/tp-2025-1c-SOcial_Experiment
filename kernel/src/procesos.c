@@ -104,8 +104,11 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
                 pthread_mutex_unlock(&mutex_listasProcesos);
+                pthread_t timerThread;
                 // TODO: CHECKPOINT 3: TEMPORIZADOR
                 Peticion * pet = crearPeticion(proceso->PID, milisegundos);
+                pthread_create(&timerThread, NULL, temporizadorSuspenderThread, pet);
+                pthread_detach(timerThread);
                 pthread_mutex_lock(&mutex_peticionesIO);
                 encolarPeticionIO(nombreIO, pet, lista_peticionesIO); // Tambien hace señal a su semaforo
                 pthread_mutex_unlock(&mutex_peticionesIO);
@@ -312,7 +315,7 @@ void post_sem_introducirAReady(){sem_post(&sem_introducir_proceso_a_ready);}
 
 void * temporizadorSuspenderThread(void * param){
     Peticion * peticion = ((Peticion * )param);
-    int tiempo = 100; // MODIFICAR
+    int tiempo = config_get_int_value(config, "TIEMPO_SUSPENSION"); // MODIFICAR
     log_debug(logger, "Inicio de temporizador para suspender (%d) en %dms", peticion->PID, tiempo*1000);
     usleep(tiempo*1000); // microsegundos a milisegundos
     log_debug(logger, "Temporizador de (%d) finalizado", peticion->PID);
