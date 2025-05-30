@@ -12,9 +12,11 @@ int generarSocket(char* ip_cliente, char* puerto_cliente, char* modulo_cliente) 
     return socket;
 }
 
-void verificarConexionCliente(int socket_cliente, char* nombreModuloCliente) { //TODO
-    if(socket_cliente == -1)
+void verificarConexionCliente(int socket_cliente, char* nombreModuloCliente) {
+    if(socket_cliente == -1) {
         log_info(logger, "%s - Conexión Inicial - Error", nombreModuloCliente);
+        exit(EXIT_FAILURE);
+    }
     else
         log_info(logger, "%s - Conexión Inicial - Exito", nombreModuloCliente);
 }
@@ -47,8 +49,10 @@ bool handshakeCliente(int socket_cliente, int identificador) {
 void verificarResultadoHandshake(bool result, char* nombreModuloCliente) {
     if(result)
         log_info(logger, "%s Handshake - Exito", nombreModuloCliente);
-    else
+    else {
         log_info(logger, "%s Handshake - Error", nombreModuloCliente);
+        exit(EXIT_FAILURE);
+    }
 }
 
 sockets_dispatcher *prepararSocketsDispatcher(int socket_memoria, int socket_kernel_dispatch) {

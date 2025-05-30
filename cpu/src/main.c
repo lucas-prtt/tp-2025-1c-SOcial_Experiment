@@ -19,9 +19,9 @@ Página Actualizada de Caché a Memoria
 int main(int argc, char* argv[]) {
     int identificadorCPU = atoi(argv[1]);
 
-    char* nombre_log;
-    // asprintf() formatea, reserva memoria y devuleve un puntero sobre la cadena //
-    asprintf(&nombre_log, "cpu_%d.log", identificadorCPU);
+    // snprintf() formatea y reserva memoria para la cadena (no considera '\0') //
+    char* nombre_log = malloc(snprintf(NULL, 0, "cpu_%d.log", identificadorCPU) + 1);
+    sprintf(nombre_log, "cpu_%d.log", identificadorCPU);
     
     if(abrirConfigYLog("cpu.config", nombre_log, "cpu", false)) {
         abort();
@@ -39,19 +39,18 @@ int main(int argc, char* argv[]) {
     }
 
     int socket_memoria = generarSocket(ip_memoria, puerto_memoria, "Memoria");
-    int *socket_kernel_dispatch = malloc(sizeof(int)); *socket_kernel_dispatch = generarSocket(ip_kernel, puerto_kernel_dispatch, "Kernel (Dispatch)");
-    int *socket_kernel_interrupt = malloc(sizeof(int)); *socket_kernel_interrupt = generarSocket(ip_kernel, puerto_kernel_interrupt, "Kernel (Interrupt)");
+    int socket_kernel_dispatch = generarSocket(ip_kernel, puerto_kernel_dispatch, "Kernel (Dispatch)");
+    int socket_kernel_interrupt = generarSocket(ip_kernel, puerto_kernel_interrupt, "Kernel (Interrupt)");
     
-    
-    //realizarHandshake(socket_memoria, identificadorCPU, "Memoria");
-    realizarHandshake(*socket_kernel_dispatch, identificadorCPU, "Kernel (Dispatch)");
-    realizarHandshake(*socket_kernel_interrupt, identificadorCPU, "Kernel (INterrupt)");
+    realizarHandshake(socket_memoria, identificadorCPU, "Memoria");
+    realizarHandshake(socket_kernel_dispatch, identificadorCPU, "Kernel (Dispatch)");
+    realizarHandshake(socket_kernel_interrupt, identificadorCPU, "Kernel (INterrupt)");
 
-    sockets_dispatcher *sockets_for_dispatch = prepararSocketsDispatcher(socket_memoria, *socket_kernel_dispatch);
+    sockets_dispatcher *sockets_for_dispatch = prepararSocketsDispatcher(socket_memoria, socket_kernel_dispatch); // falta liberar
     
-    pthread_t atenderKernel_D, atenderKernel_I; //crear un hilo para pedir a memoria
-    pthread_create(&atenderKernel_D, NULL, atenderKernelDispatch, sockets_for_dispatch);
-    pthread_create(&atenderKernel_I, NULL, atenderKernelInterrupt, socket_kernel_interrupt);
+    pthread_t atenderKernel_D, atenderKernel_I; //TODO: crear un hilo para pedir a memoria
+    pthread_create(&atenderKernel_D, NULL, atenderKernelDispatch, &sockets_for_dispatch);
+    pthread_create(&atenderKernel_I, NULL, atenderKernelInterrupt, &socket_kernel_interrupt);
 
 
     //getchar(); //TODO
@@ -65,8 +64,8 @@ int main(int argc, char* argv[]) {
 
 
     liberarConexion(socket_memoria);
-    liberarConexion(*socket_kernel_dispatch);
-    liberarConexion(*socket_kernel_interrupt);
+    liberarConexion(socket_kernel_dispatch);
+    liberarConexion(socket_kernel_interrupt);
 
     //Capaz deberian ir en cerrarCPU()//
 	log_destroy(logger);
