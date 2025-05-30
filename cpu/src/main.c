@@ -1,11 +1,31 @@
 #include "main.h"
 
+/*
+Logs obligatorios:
+
+Fetch Instrucción.
+Interrupción Recibida
+Instrucción Ejecutada
+Lectura/Escritura Memoria
+Obtener Marco
+TLB Hit
+TLB Miss
+Página encontrada en Caché
+Página faltante en Caché
+Página ingresada en Caché
+Página Actualizada de Caché a Memoria
+*/
+
 int main(int argc, char* argv[]) {
     int identificadorCPU = atoi(argv[1]);
 
-    char* nombre_log = malloc(snprintf(NULL, 0, "cpu_%d.log", identificadorCPU) + 1); //snprintf() devuelve el tamaño de cpu_%d.log (no considera '\0')//
-    sprintf(nombre_log, "cpu_%d.log", identificadorCPU);
-    abrirConfigYLog("cpu.config", nombre_log, "cpu", false);
+    char* nombre_log;
+    // asprintf() formatea, reserva memoria y devuleve un puntero sobre la cadena //
+    asprintf(&nombre_log, "cpu_%d.log", identificadorCPU);
+    
+    if(abrirConfigYLog("cpu.config", nombre_log, "cpu", false)) {
+        abort();
+    }
 
     char* ip_memoria = config_get_string_value(config, "IP_MEMORIA");
     char* puerto_memoria = config_get_string_value(config, "PUERTO_MEMORIA");
@@ -47,6 +67,7 @@ int main(int argc, char* argv[]) {
     liberarConexion(socket_memoria);
     liberarConexion(*socket_kernel_dispatch);
     liberarConexion(*socket_kernel_interrupt);
+
     //Capaz deberian ir en cerrarCPU()//
 	log_destroy(logger);
     free(nombre_log);
