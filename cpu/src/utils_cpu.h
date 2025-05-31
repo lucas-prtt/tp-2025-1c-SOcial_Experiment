@@ -20,4 +20,5 @@ void verificarResultadoHandshake(bool result, char* nombreModuloCliente);
 sockets_dispatcher *prepararSocketsDispatcher(int socket_memoria, int socket_kernel_dispatch);
 void *atenderKernelDispatch(void *socket);
 void *atenderKernelInterrupt(void *socket);
+void liberarConexiones(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt);
 
