@@ -37,7 +37,7 @@ typedef struct {
     bool requiere_traduccion;
 } instruccionInfo;
 
-bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar);
+bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, int *estado_conexion);
 bool ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *proc_AEjecutar);
 char* fetch(int socket_memoria, PCB_cpu *proc_AEjecutar);
 instruccionInfo decode(char *instruccion);

@@ -8,16 +8,33 @@ void *atenderKernelDispatch(void *sockets) {
 
     while(true) {
         PCB_cpu proc_AEjecutar;
-        if(recibirPIDyPC_kernel(socket_kernel_dispatch, &proc_AEjecutar)) {
-            for(;;) {
-                bool fin_proceso = ejecutarCicloInstruccion(socket_memoria, socket_kernel_dispatch, &proc_AEjecutar);
-                if(fin_proceso) break;
+        int estado_conexion = 0;
+
+        if(!recibirPIDyPC_kernel(socket_kernel_dispatch, &proc_AEjecutar, &estado_conexion)) {
+            switch(estado_conexion)
+            {
+                case -1:
+                {
+                    log_info(logger, "Modulo Kernel desconectado. Terminando hilo dispatch CPU");
+                    break;
+                }          
+                case -2:
+                {
+                    log_error(logger, "Se recibió un mensaje mal formado desde Kernel. Ignorando.");
+                    continue;
+                }
             }
+            break;
+        }
+        
+        for(;;) {
+            bool fin_proceso = ejecutarCicloInstruccion(socket_memoria, socket_kernel_dispatch, &proc_AEjecutar);
+            if(fin_proceso) break;
         }
     }
 
     free(sockets);
-    return NULL; //TODO
+    pthread_exit(NULL);
 }
 
 void *atenderKernelInterrupt(void *socket) {

@@ -8,14 +8,22 @@ pthread_mutex_t mutexInterrupcion; // MUTEX para acceder a hayInterrupcion
 
 
 
-bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar) {
+bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, int *estado_conexion) {
     int *codigo_operacion = malloc(sizeof(int));
     t_list *lista_PIDyPC = recibir_paquete_lista(socket_kernel_dispatch, MSG_WAITALL, codigo_operacion);
-    if (lista_PIDyPC == NULL || list_size(lista_PIDyPC) < 4 || *codigo_operacion != ASIGNACION_PROCESO_CPU) {
+
+    if(lista_PIDyPC == NULL) {
+        *estado_conexion = -1; // Desconexión //
+        free(codigo_operacion);
+        return false;
+    }
+    if(list_size(lista_PIDyPC) < 4 || *codigo_operacion != ASIGNACION_PROCESO_CPU) {
+        *estado_conexion = -2; // Error al recibir el paquete //
         free(codigo_operacion);
         eliminar_paquete_lista(lista_PIDyPC);
         return false;
     }
+    
     proc_AEjecutar->pid = *(int *)list_get(lista_PIDyPC, 1);
     proc_AEjecutar->pc = *(int *)list_get(lista_PIDyPC, 3);
 
@@ -25,6 +33,13 @@ bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar) {
 }
 
 bool ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *proc_AEjecutar) {
+    /*
+    if(CACHE_HIT) pueden haber dos respuestas CACHE_HIT o CACHE_MISS
+        usa lo que hay en la caché y salta a decode
+    else if(TLB_HIT) pueden haber dos respuestas TLB_HIT o TLB_MISS
+        usa el marco de la TLB para acceder a la memoria
+    else como ultimo recurso el fetch
+    */
     char *instruccion = fetch(socket_memoria, proc_AEjecutar);
     instruccionInfo instr_info = decode(instruccion);
     bool fin_proceso = execute(socket_memoria, socket_kernel, instruccion, instr_info, proc_AEjecutar);
@@ -34,7 +49,7 @@ bool ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *pr
     return fin_proceso;
 }
 
-char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar) {
+char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar) { //Funciona en casos de CACHE_MISS y TLB_MISS
     // Pide una instrucccion a memoria a partir de proc_AEjecutar //
     t_paquete *paquete_peticion_instr = crear_paquete(PETICION_INSTRUCCION_MEMORIA);
     agregar_a_paquete(paquete_peticion_instr, &(proc_AEjecutar->pid), sizeof(proc_AEjecutar->pid));

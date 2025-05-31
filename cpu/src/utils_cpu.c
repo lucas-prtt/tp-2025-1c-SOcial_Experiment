@@ -61,3 +61,9 @@ sockets_dispatcher *prepararSocketsDispatcher(int socket_memoria, int socket_ker
     sockets_d->socket_kernel_dispatch = socket_kernel_dispatch;
     return sockets_d;
 }
+
+void liberarConexiones(socket_memoria, socket_kernel_dispatch, socket_kernel_interrupt) {
+    liberarConexion(socket_memoria);
+    liberarConexion(socket_kernel_dispatch);
+    liberarConexion(socket_kernel_interrupt);
+}
