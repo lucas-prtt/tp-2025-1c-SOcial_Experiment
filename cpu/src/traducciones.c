@@ -162,3 +162,7 @@ int numeroPagina(int direccion_logica, int tamanio_pagina) {
 int entradaNivelX(int numero_pagina) {
     //return floor(nro_página / cant_entradas_tabla ^ (N - X)) % cant_entradas_tabla
 }
+
+int desplazamiento(int direccion_logica, int tamanio_pagina) {
+    return direccion_logica % tamanio_pagina;
+}
