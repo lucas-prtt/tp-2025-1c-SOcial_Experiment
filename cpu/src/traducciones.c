@@ -158,3 +158,7 @@ int deDireccionLogicaAfisica(int direccion_logica, int tamanio_pagina, int nro_m
 int numeroPagina(int direccion_logica, int tamanio_pagina) {
     return floor(direccion_logica / tamanio_pagina);
 }
+
+int entradaNivelX(int numero_pagina) {
+    //return floor(nro_página / cant_entradas_tabla ^ (N - X)) % cant_entradas_tabla
+}
