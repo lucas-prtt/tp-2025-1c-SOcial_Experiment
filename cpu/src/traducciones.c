@@ -51,3 +51,26 @@ int buscarRegistroTLB(r_TLB tlb[], int cantidad_entradas_tlb, int nro_pagina) {
     //el times stamp vuelve a cero
     return tlb[pos_registro].marco;
 }
+
+/*
+void reemplazarEnTLB() {
+    char *algoritmo = config_get_string_value(config, "REEMPLAZO_TLB"); //como arg, no lo voy a hacer siempre
+    TIPO_ALGORITMO_REMPLAZO algoritmo_reemplazo_tlb = algoritmo_string_to_enum(algoritmo)
+    
+    int victima; //mas como las pos en la tlb
+    victima = seleccionarEntradaVictima(tlb, algoritmo_reemplazo); //puedo ser la pos o en caso de la lsita el puntero al nodo.abrirConfigYLog
+
+    limpiarEntradaTLB(pos);
+
+    actualizarTimestamps(); //antes para que no sume uno al recien ingresado
+
+    insertarPaginaTLB(pos, );
+}
+
+void actualizarTimestamps(void) {
+    // pasa por cada registro de la tlb y aumenta sus timestamp (menos al del recien ingresado)
+    for(int i = 0; i < cantidad_entradas_tlb; i++) // para los que esten disponibles.
+        tlb[i].timestamp++;
+}
+
+*/
