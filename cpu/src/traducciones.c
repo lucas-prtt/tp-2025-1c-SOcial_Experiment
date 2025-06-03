@@ -112,3 +112,12 @@ int seleccionarEntradaVictima(r_TLB tlb[], int cantidad_entradas_tlb, int algori
 
     return indice_victima;
 }
+
+void vaciarTLB(r_TLB tlb[]) { //sucede por proceso
+    int cantidad_entradas_tlb = atoi(config_get_string_value(config, "ENTRADAS_TLB"));
+    
+    for(int i = 0; i < cantidad_entradas_tlb; i++) {
+        r_TLB registro = tlb[i];
+        limpiarEntradaTLB(&registro);
+    }
+}
