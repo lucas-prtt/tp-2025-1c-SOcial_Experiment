@@ -35,3 +35,19 @@ int buscarPaginaTLB(r_TLB tlb[], int cantidad_entradas_tlb, int nro_pagina) {
 
     return -1;
 }
+
+// o mejor buscarMarcoTLB
+int buscarRegistroTLB(r_TLB tlb[], int cantidad_entradas_tlb, int nro_pagina) {
+    // Devuelve TLB_MISS si no encuentra el registro. Si lo encuentra devuelve el marco //
+
+    int pos_registro = buscarPaginaTLB(tlb, cantidad_entradas_tlb, nro_pagina);
+
+    if(pos_registro == -1) {
+        log_info(logger, "PID: <PID> - TLB MISS - Pagina: %d", nro_pagina);
+        return TLB_MISS;
+    }
+    
+    log_info(logger, "PID: <PID> - TLB HIT - Pagina: %d", nro_pagina);
+    //el times stamp vuelve a cero
+    return tlb[pos_registro].marco;
+}
