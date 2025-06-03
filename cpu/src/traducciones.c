@@ -74,3 +74,41 @@ void actualizarTimestamps(void) {
 }
 
 */
+
+// mas como un seleccionar entrada => primero se fija si hay una vacia, si la hay pasa esa. Sino lentra al switch
+
+//int seleccionarEntradaVictima() que llama un seleccionar que se fija si esta vacio y a la que aplica el algoritmo.
+
+// int seleccionarEntradaConAlgoritmo()
+int seleccionarEntradaVictima(r_TLB tlb[], int cantidad_entradas_tlb, int algoritmo) {
+    // se puede pensar fifo con un indice circular, para mas eficiencia.
+    int indice_victima = 0;
+
+    switch(algoritmo)
+    {
+        case ALG_FIFO:
+        {
+            int mayor_timestamp = -1;
+            for(int i = 0; i < cantidad_entradas_tlb; i++) { // cambiar logica
+                if(tlb[i].timestamp > mayor_timestamp) {
+                    mayor_timestamp = tlb[i].timestamp;
+                    indice_victima = i;
+                }
+            }
+            break;
+        }
+        case ALG_LRU:
+        {
+            int menor_timestamp = -1;
+            for(int i = 0; i < cantidad_entradas_tlb; i++) {
+                if (tlb[i].timestamp < menor_timestamp) {
+                    menor_timestamp = tlb[i].timestamp;
+                    indice_victima = i;
+                }
+            }
+            break;
+        }
+    }
+
+    return indice_victima;
+}
