@@ -128,3 +128,21 @@ void limpiarEntradaTLB(r_TLB *registro) {
     registro->validez = 1;
     //registro->timestamp = 0;
 }
+
+/////////////////////////       < UTILS >       /////////////////////////
+
+enum TIPO_ALGORITMO_REEMPLAZO algoritmo_string_to_enum(char *nombreAlgoritmo) {
+    if (!strcmp(nombreAlgoritmo, "FIFO")) {
+        return ALG_FIFO;
+    }
+    if (!strcmp(nombreAlgoritmo, "LRU")) {
+        return ALG_LRU;
+    }
+    if (!strcmp(nombreAlgoritmo, "CLOCK")) {
+        return ALG_CLOCK;
+    }
+    if (!strcmp(nombreAlgoritmo, "CLOCK-M")) {
+        return ALG_CLOCK_M;
+    }
+    return ERROR_NO_ALG;
+}
