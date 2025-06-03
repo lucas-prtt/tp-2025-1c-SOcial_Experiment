@@ -154,3 +154,7 @@ int deDireccionLogicaAfisica(int direccion_logica, int tamanio_pagina, int nro_m
     int offset = desplazamiento(direccion_logica, tamanio_pagina);
     return ((nro_marco * tamanio_pagina) + offset); //tam marco = tam pagina
 }
+
+int numeroPagina(int direccion_logica, int tamanio_pagina) {
+    return floor(direccion_logica / tamanio_pagina);
+}
