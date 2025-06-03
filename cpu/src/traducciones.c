@@ -121,3 +121,10 @@ void vaciarTLB(r_TLB tlb[]) { //sucede por proceso
         limpiarEntradaTLB(&registro);
     }
 }
+
+void limpiarEntradaTLB(r_TLB *registro) {
+    registro->pagina = -1;
+    registro->marco = -1;
+    registro->validez = 1;
+    //registro->timestamp = 0;
+}
