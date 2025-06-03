@@ -24,3 +24,14 @@ void *inicilizarTLB(r_TLB tlb[], int cantidad_entradas_tlb) {
 
     log_info(logger, "TLB Habilitada");
 }
+
+int buscarPaginaTLB(r_TLB tlb[], int cantidad_entradas_tlb, int nro_pagina) {
+    // Devuelve la posicion de la pagina buscada en el vector. En caso de no encontrarla devuelve -1 //
+
+    for(int i = 0; i < cantidad_entradas_tlb; i++) { // si la encuentra actualiza el timestamp
+        if(tlb[i].pagina == nro_pagina) {}
+            return i;
+    }
+
+    return -1;
+}
