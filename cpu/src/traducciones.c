@@ -146,3 +146,11 @@ enum TIPO_ALGORITMO_REEMPLAZO algoritmo_string_to_enum(char *nombreAlgoritmo) {
     }
     return ERROR_NO_ALG;
 }
+
+/////////////////////////       < TRADUCCIÓN >       /////////////////////////
+
+
+int deDireccionLogicaAfisica(int direccion_logica, int tamanio_pagina, int nro_marco) {
+    int offset = desplazamiento(direccion_logica, tamanio_pagina);
+    return ((nro_marco * tamanio_pagina) + offset); //tam marco = tam pagina
+}
