@@ -36,6 +36,9 @@ void eliminarProcesoDeTabla(int PIDEliminado);
 void agregarProcesoATabla(int nuevoPID);
 void liberarVariablesGlobalesEnHeap();
 void * punteroAMarco(int numeroDeMarco);
+int marcosDisponibles();
+bool hayEspacio(int tamañoRequerido);
+
 
 
 

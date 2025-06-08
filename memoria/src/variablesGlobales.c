@@ -152,3 +152,16 @@ void removerPaginaDeMarco(int marco)
 void * punteroAMarco(int numeroDeMarco){
     return memoriaDeUsuario + numeroDeMarco * tamañoMarcos;
 }
+
+int marcosDisponibles(){
+    int acum = 0;
+    for (int i=0; i<numeroDeMarcos; i++){
+        if(PIDPorMarco[i] == -1)
+            acum++;
+    }
+    return acum;
+}
+
+bool hayEspacio(int tamañoRequerido){
+    return (marcosDisponibles() >= (tamañoRequerido / tamañoMarcos));
+}
