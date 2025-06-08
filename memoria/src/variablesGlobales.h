@@ -5,11 +5,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-typedef struct PIDyTablaDePaginas{
-    int PID;
-    void** TP;
-    Metricas stats; // Tambien le adjunto las metricas
-} PIDyTP;
 typedef struct MetricasMemoria{
     int accesosATP;
     int instruccionesSolicitadas;
@@ -18,6 +13,11 @@ typedef struct MetricasMemoria{
     int lecturasDeMemoria;
     int escriturasDeMemoria;
 } Metricas;
+typedef struct PIDyTablaDePaginas{
+    int PID;
+    void** TP;
+    Metricas stats; // Tambien le adjunto las metricas
+} PIDyTP;
 
 extern int* PIDPorMarco;
 extern void* memoriaDeUsuario;
