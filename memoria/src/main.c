@@ -14,27 +14,6 @@ int main(int argc, char* argv[]) {
     // se gurada lista de instrucciones
     instrucciones_por_pid = dictionary_create();
 
-    // ----- HARDCOREADO PARA PRUEBA DEL CHECKPOINT 2 -----
-    t_list* lista_instrucciones = list_create();
-
-    t_instruccion* instruccion1 = malloc(sizeof(t_instruccion));
-    instruccion1->identificador = F_READ;
-    instruccion1->param1 = 1;
-    instruccion1->param2 = 0;
-    instruccion1->param3 = 0;
-    list_add(lista_instrucciones, instruccion1);
-
-    t_instruccion* instruccion2 = malloc(sizeof(t_instruccion));
-    instruccion2->identificador = F_WRITE;
-    instruccion2->param1 = 1;
-    instruccion2->param2 = 0;
-    instruccion2->param3 = 42;
-    list_add(lista_instrucciones, instruccion2);
-
-    dictionary_put(instrucciones_por_pid, "1", lista_instrucciones);  // PID = 1
-    log_info(logger, "Se cargaron instrucciones de prueba para el PID 1");
-    // -----------------------------------------------------
-
     int socketServidor = crearSocketConfig(config, "PUERTO_ESCUCHA");
     if (socketServidor == -1) {
         log_error(logger, "No se pudo crear el socket servidor");
