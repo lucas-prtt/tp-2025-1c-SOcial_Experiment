@@ -2,7 +2,26 @@
 
 
 t_list * tablaDeProcesos = NULL;
-
+int maximoEntradasTabla;
+int nivelesTablas;
+int tamañoMarcos;
+int tamañoMemoriaDeUsuario;
+int * PIDPorMarco; // Vectpr:  PIDPorMarco[numeroDeMarco] = PID o -1 (vacio)
+int numeroDeMarcos;
+void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos){
+    tablaDeProcesos = list_create();
+    maximoEntradasTabla = sizeTabla;
+    nivelesTablas = qNiveles;
+    tamañoMarcos = SizeMarcos;
+    tamañoMemoriaDeUsuario = sizeMemoria;
+    memoriaDeUsuario = malloc(sizeMemoria);
+    numeroDeMarcos = tamañoMemoriaDeUsuario / tamañoMarcos;
+    PIDPorMarco = malloc(numeroDeMarcos);
+    for (int i = 0; i<numeroDeMarcos; i++){
+        PIDPorMarco[i] = -1;
+    }
+    
+}
 
 
 //////////////////// ARBOL INICIO ////////////////////
@@ -111,13 +130,19 @@ int obtenerMarcoDePaginaConPIDYEntradas(int PID, t_list * entradas){
 }
 void asignarMarcoAPaginaConPIDyEntradas(int PID, t_list * entradas, int marco){
     asignarMarcoAPagina(marco, obtenerProcesoYTPConPID(PID)->TP, entradas);
+    PIDPorMarco[marco] = PID;
     return; 
 }
-void inicializarVariablesGlobales(int sizeTabla, int qNiveles){
-    tablaDeProcesos = list_create();
-    maximoEntradasTabla = sizeTabla;
-    nivelesTablas = qNiveles;
-    // TODO: Inicializar void* memoriaDeUsuario segun el tamaño
+void removerPaginaDeMarco(int marco)
+{   
+    //No afecta el arbol del proceso
+    PIDPorMarco[marco] = -1;
+    return; 
 }
-
 /////////////////// TP FIN /////////////////////
+
+////////////// MANEJO DE MARCOS ///////////////
+
+void * punteroAMarco(int numeroDeMarco){
+    return memoriaDeUsuario + numeroDeMarco * tamañoMarcos;
+}

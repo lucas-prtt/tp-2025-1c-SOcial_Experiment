@@ -10,19 +10,23 @@ typedef struct PIDyTablaDePaginas{
     void** TP;
 } PIDyTP;
 
-
+extern int* PIDPorMarco;
 extern void* memoriaDeUsuario;
 extern t_list* tablaDeProcesos; // Llena de PIDyTablaDePaginas
 extern int maximoEntradasTabla;
 extern int nivelesTablas;
 extern int tamañoMarcos;
 extern int tamañoMemoriaDeUsuario;
+extern int numeroDeMarcos;
 
-void inicializarVariablesGlobales(int sizeTabla, int qNiveles);
+void removerPaginaDeMarco(int marco);
+void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos);
 int obtenerMarcoDePaginaConPIDYEntradas(int PID, t_list * entradas);
 void asignarMarcoAPaginaConPIDyEntradas(int PID, t_list * entradas, int marco);
 void eliminarProcesoDeTabla(int PIDEliminado);
 void agregarProcesoATabla(int nuevoPID);
+void liberarVariablesGlobalesEnHeap();
+void * punteroAMarco(int numeroDeMarco);
 
 
 
