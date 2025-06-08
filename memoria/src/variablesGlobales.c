@@ -8,6 +8,7 @@ int tamañoMarcos;
 int tamañoMemoriaDeUsuario;
 int * PIDPorMarco; // Vectpr:  PIDPorMarco[numeroDeMarco] = PID o -1 (vacio)
 int numeroDeMarcos;
+
 void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos){
     tablaDeProcesos = list_create();
     maximoEntradasTabla = sizeTabla;
@@ -98,8 +99,13 @@ void agregarProcesoATabla(int nuevoPID){
     PIDyTP * nuevoElemento = malloc(sizeof(PIDyTP));
     nuevoElemento->PID = nuevoPID;
     nuevoElemento->TP = crearNivelTablaDePaginas(maximoEntradasTabla);
+    nuevoElemento->stats.accesosATP = 0;
+    nuevoElemento->stats.instruccionesSolicitadas = 0;
+    nuevoElemento->stats.bajadasASwap = 0;
+    nuevoElemento->stats.subidasAMP = 0;
+    nuevoElemento->stats.lecturasDeMemoria = 0;
+    nuevoElemento->stats.escriturasDeMemoria = 0;
     list_add(tablaDeProcesos, nuevoElemento);
-    
 }
 PIDyTP * obtenerProcesoYTPConPID(int PIDBuscado){
     #ifndef __INTELLISENSE__

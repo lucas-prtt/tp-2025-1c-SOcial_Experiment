@@ -8,7 +8,16 @@
 typedef struct PIDyTablaDePaginas{
     int PID;
     void** TP;
+    Metricas stats; // Tambien le adjunto las metricas
 } PIDyTP;
+typedef struct MetricasMemoria{
+    int accesosATP;
+    int instruccionesSolicitadas;
+    int bajadasASwap;
+    int subidasAMP;
+    int lecturasDeMemoria;
+    int escriturasDeMemoria;
+} Metricas;
 
 extern int* PIDPorMarco;
 extern void* memoriaDeUsuario;
