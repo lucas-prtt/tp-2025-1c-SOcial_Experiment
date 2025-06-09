@@ -77,41 +77,14 @@ void * atenderKernel(void * socketPtr){
         PID = list_get(pedido, 1);
         PATH = list_get(pedido, 3);
         TAMAÑO = list_get(pedido, 5);
-
+        
+        if(hayEspacio(*TAMAÑO)){
+        agregarProcesoATabla(*PID, *TAMAÑO);
         log_info(logger, "## PID: %d - Proceso Creado - Tamaño: %d", *PID, *TAMAÑO);
-        char pid_str[10];
-        sprintf(pid_str, "%d", *PID);
-
-        FILE* archivo = fopen(PATH, "r");
-        if (!archivo) {
-            log_error(logger, "No se pudo abrir el archivo de pseudocódigo para el PID %d", *PID);
+        cargarInstrucciones(*PID, PATH, *TAMAÑO);
+        }else{
             error = 1;
-            break;
         }
-
-        t_list* instrucciones = list_create();
-        char* linea = NULL;
-        size_t len = 0;
-        ssize_t read;
-
-        while ((read = getline(&linea, &len, archivo)) != -1) {
-            // Quitar el salto de línea si existe
-            if (linea[read - 1] == '\n') {
-                linea[read - 1] = '\0';
-            }
-            list_add(instrucciones, strdup(linea));
-        }
-
-        free(linea);
-        fclose(archivo);
-
-        // Guardar en el diccionario global
-        dictionary_put(instrucciones_por_pid, strdup(pid_str), instrucciones);
-        // TODO: cargar de archivo pseudocodigo a memoria
-        // (modifica el valor de error (si no hay espacio, no lo carga))
-        // Tal vez se podria agregar una respuesta si no existe el archivo
-        // Pero seria mejor para proximas entregas
-
         if (!error)
         respuesta = crear_paquete(RESPUESTA_MEMORIA_PROCESO_CARGADO);
         else 
@@ -123,12 +96,7 @@ void * atenderKernel(void * socketPtr){
 
         PID = list_get(pedido, 1);
 
-        sprintf(pid_str, "%d", *PID);
-
-        instrucciones = dictionary_remove(instrucciones_por_pid, pid_str);
-        if (instrucciones) {
-            list_destroy_and_destroy_elements(instrucciones, free);
-        }
+        eliminarProcesoDeTabla(*PID);
 
         respuesta = crear_paquete(RESPUESTA_MEMORIA_LIBERADA_EXITOSAMENTE);
         enviar_paquete(respuesta,socket);

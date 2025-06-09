@@ -19,7 +19,8 @@ typedef struct PIDyTablaDePaginas{
     void** TP;
     Metricas stats; // Tambien le adjunto las metricas
     int TamMaxProceso;
-} PIDyTP;
+    t_list * instrucciones;
+} PIDInfo;
 
 extern int* PIDPorMarco;
 extern void* memoriaDeUsuario;
@@ -33,6 +34,7 @@ extern int numeroDeMarcos;
 
 
 // De Procesos
+PIDInfo * obtenerInfoProcesoConPID(int PIDBuscado);
 void agregarProcesoATabla(int nuevoPID, int tamañoMaximo);
 void eliminarProcesoDeTabla(int PIDEliminado);
 
@@ -59,7 +61,9 @@ void aumentarMetricaAccesoATablaDePaginas(int PID);
 // Otras
 void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos);
 void liberarVariablesGlobalesEnHeap();
-
+void agregarInstruccionesAPID(int PID, t_list * instruccionesNuevas);
+t_list * obtenerInstruccionesPorPID(int PID);
+char * leerInstruccion(int PID, int PC);
 
 
 #endif

@@ -1,18 +1,8 @@
 #include <main.h>
-t_config* config;
-t_log* logger;
 
 int main(int argc, char* argv[]) {
-    config = config_create("memory.config");
-    if (config == NULL){ 
-        abort(); 
-    }
-    logger = log_create("memory.log", "memory", false, log_level_from_string(config_get_string_value(config, "LOG_LEVEL")));
-    
+    abrirConfigYLog("memory.config", "memory.log", "memory", false);
     log_info(logger, "Memoria iniciada");
-
-    // se gurada lista de instrucciones
-    instrucciones_por_pid = dictionary_create();
 
     int socketServidor = crearSocketConfig(config, "PUERTO_ESCUCHA");
     if (socketServidor == -1) {

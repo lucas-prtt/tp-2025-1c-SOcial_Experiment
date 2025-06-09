@@ -31,13 +31,12 @@ void *atenderCPU(void *socketPtr) {
             char pid_str[10];
             sprintf(pid_str, "%d", *pid);
 
-            t_list* instrucciones = dictionary_get(instrucciones_por_pid, pid_str);
-            if (!instrucciones || *pc >= list_size(instrucciones)) {
+            if (!obtenerInstruccionesPorPID(*pid) || *pc >= cuantasInstruccionesDelPID(*pid)) {
                 log_error(logger, "PID %d no encontrado o PC %d fuera de rango", *pid, *pc);
                 pthread_exit(NULL);
             }
 
-            char* instruccion = list_get(instrucciones, *pc);
+            char* instruccion = leerInstruccion(*pid, *pc);
 
                 // Armar respuesta y mandarla
             t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_INSTRUCCION_MEMORIA);

@@ -8,6 +8,7 @@ int tamañoMarcos;
 int tamañoMemoriaDeUsuario;
 int * PIDPorMarco; // Vectpr:  PIDPorMarco[numeroDeMarco] = PID o -1 (vacio)
 int numeroDeMarcos;
+void * memoriaDeUsuario;
 
 pthread_mutex_t MUTEX_tablaDeProcesos = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_PIDPorMarco = PTHREAD_MUTEX_INITIALIZER;
@@ -99,7 +100,7 @@ void liberarArbolDePaginas(void ** arbolDePaginas){
 /////////////////// TP INCIO /////////////////
 
 void agregarProcesoATabla(int nuevoPID, int tamañoProceso){
-    PIDyTP * nuevoElemento = malloc(sizeof(PIDyTP));
+    PIDInfo * nuevoElemento = malloc(sizeof(PIDInfo));
     nuevoElemento->PID = nuevoPID;
     nuevoElemento->TP = crearNivelTablaDePaginas(maximoEntradasTabla);
     nuevoElemento->stats.accesosATP = 0;
@@ -109,45 +110,49 @@ void agregarProcesoATabla(int nuevoPID, int tamañoProceso){
     nuevoElemento->stats.lecturasDeMemoria = 0;
     nuevoElemento->stats.escriturasDeMemoria = 0;
     nuevoElemento->TamMaxProceso = tamañoProceso;
+    nuevoElemento->instrucciones = NULL;
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
     list_add(tablaDeProcesos, nuevoElemento);
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
 }
-PIDyTP * obtenerProcesoYTPConPID(int PIDBuscado){
+PIDInfo * obtenerInfoProcesoConPID(int PIDBuscado){
     #ifndef __INTELLISENSE__
     bool coincide (void * elemento)
     {
-        return ((PIDyTP*)elemento)->PID == PIDBuscado;
+        return ((PIDInfo*)elemento)->PID == PIDBuscado;
     }
-    return (PIDyTP*)list_find(tablaDeProcesos, coincide);
+    return (PIDInfo*)list_find(tablaDeProcesos, coincide);
     #endif
 }
-PIDyTP * removerProcesoYTPConPID(int PIDBuscado){
+PIDInfo * removerInfoProcesoConPID(int PIDBuscado){
     #ifndef __INTELLISENSE__
     bool coincide (void * elemento)
     {
-        return ((PIDyTP*)elemento)->PID == PIDBuscado;
+        return ((PIDInfo*)elemento)->PID == PIDBuscado;
     }
-    return (PIDyTP*)list_remove_by_condition(tablaDeProcesos, coincide);
+    return (PIDInfo*)list_remove_by_condition(tablaDeProcesos, coincide);
     #endif
 }
 
 void eliminarProcesoDeTabla(int PIDEliminado){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
-    PIDyTP * elemento = removerProcesoYTPConPID(PIDEliminado);
+    PIDInfo * elemento = removerInfoProcesoConPID(PIDEliminado);
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    if (elemento->instrucciones) {
+        list_destroy_and_destroy_elements(elemento->instrucciones, free);
+    }
     liberarArbolDePaginas(elemento->TP);
     free(elemento);
 }
 int obtenerMarcoDePaginaConPIDYEntradas(int PID, t_list * entradas){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
-    int r = leerMarcoDePagina(obtenerProcesoYTPConPID(PID)->TP, entradas);
+    int r = leerMarcoDePagina(obtenerInfoProcesoConPID(PID)->TP, entradas);
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return r;
 }
 void asignarMarcoAPaginaConPIDyEntradas(int PID, t_list * entradas, int marco){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
-    asignarMarcoAPagina(marco, obtenerProcesoYTPConPID(PID)->TP, entradas);
+    asignarMarcoAPagina(marco, obtenerInfoProcesoConPID(PID)->TP, entradas);
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     pthread_mutex_lock(&MUTEX_PIDPorMarco);
     PIDPorMarco[marco] = PID;
@@ -177,12 +182,15 @@ void * punteroAMarco(int numeroDeMarco){
     return memoriaDeUsuario + numeroDeMarco * tamañoMarcos;
 }
 
+int cantidadDeMarcosParaAlmacenar(int tamaño){
+    return (tamaño+tamañoMarcos-1)/tamañoMarcos;
+}
 int marcosOcupados(){
     int acum = 0;
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
     int tam_lista_procesos = list_size(tablaDeProcesos); 
     for (int i=0; i<tam_lista_procesos; i++){
-        acum +=  *((int*)list_get(tablaDeProcesos, i));
+        acum +=  cantidadDeMarcosParaAlmacenar(*((int*)list_get(tablaDeProcesos, i)));
     }
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return acum;
@@ -193,12 +201,12 @@ int marcosDisponibles(){
 }
 
 bool hayEspacio(int tamañoRequerido){
-    return (marcosDisponibles() >= (tamañoRequerido / tamañoMarcos));
+    return (marcosDisponibles() >= (cantidadDeMarcosParaAlmacenar(tamañoRequerido)));
 }
 
 void aumentarMetricaAccesoATablaDePaginas(int PID){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
-    PIDyTP * el = obtenerProcesoYTPConPID(PID);
+    PIDInfo * el = obtenerInfoProcesoConPID(PID);
     el->stats.accesosATP++;
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return;
@@ -206,7 +214,7 @@ void aumentarMetricaAccesoATablaDePaginas(int PID){
 
 void aumentarMetricaBajadasASwap(int PID){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
-    PIDyTP * el = obtenerProcesoYTPConPID(PID);
+    PIDInfo * el = obtenerInfoProcesoConPID(PID);
     el->stats.bajadasASwap++;
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return;
@@ -214,28 +222,28 @@ void aumentarMetricaBajadasASwap(int PID){
 
 void aumentarMetricaEscrituraDeMemoria(int PID){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
-    PIDyTP * el = obtenerProcesoYTPConPID(PID);
+    PIDInfo * el = obtenerInfoProcesoConPID(PID);
     el->stats.escriturasDeMemoria++;
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return;
 }
 void aumentarMetricaInstruccinoesSolicitadas(int PID){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
-    PIDyTP * el = obtenerProcesoYTPConPID(PID);
+    PIDInfo * el = obtenerInfoProcesoConPID(PID);
     el->stats.instruccionesSolicitadas++;
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return;
 }
 void aumentarMetricaLecturaDeMemoria(int PID){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
-    PIDyTP * el = obtenerProcesoYTPConPID(PID);
+    PIDInfo * el = obtenerInfoProcesoConPID(PID);
     el->stats.lecturasDeMemoria++;
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return;
 }
 void aumentarMetricaSubidasAMemoriaPrincipal(int PID){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
-    PIDyTP * el = obtenerProcesoYTPConPID(PID);
+    PIDInfo * el = obtenerInfoProcesoConPID(PID);
     el->stats.subidasAMP++;
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return;
@@ -243,7 +251,22 @@ void aumentarMetricaSubidasAMemoriaPrincipal(int PID){
 
 Metricas getMetricasPorPID(int PID){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
-    Metricas r = ((PIDyTP*)obtenerProcesoYTPConPID(PID))->stats;
+    Metricas r = ((PIDInfo*)obtenerInfoProcesoConPID(PID))->stats;
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return r;
 }
+
+void agregarInstruccionesAPID(int PID, t_list * instruccionesNuevas){ // No liberar lista de instrucciones
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDInfo * proceso = obtenerInfoProcesoConPID(PID);
+    proceso->instrucciones = instruccionesNuevas;
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+}   
+
+t_list * obtenerInstruccionesPorPID(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    t_list * inst = obtenerInfoProcesoConPID(PID)->instrucciones;
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    return inst;
+}
+
