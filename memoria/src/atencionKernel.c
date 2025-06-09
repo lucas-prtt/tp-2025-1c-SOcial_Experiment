@@ -11,6 +11,25 @@
 // case: PROCESO_FINALIZADO_LIBERAR_MEMORIA 
 // y default (tirar un error)
 
+void realizarDump(int PID, char * contenidoDump){
+    char * timestamp = timestampNow();
+    char * pidAsString = malloc(20);
+    sprintf(pidAsString, "%d", PID);
+    char * archivoDump = malloc(strlen(directorioDump) + strlen(pidAsString) + 1 + strlen(timestamp) + 4 + 1 );
+    strcpy(archivoDump, directorioDump);
+    strcat(archivoDump, pidAsString);
+    strcat(archivoDump, "-");
+    strcat(archivoDump, timestamp);
+    strcat(archivoDump, ".dmp");
+    FILE * fpArchivoDump = fopen(archivoDump, "wb");
+    fwrite(contenidoDump, sizeof(char), strlen(contenidoDump), fpArchivoDump);
+    // TODO: SLEEP
+    fclose(fpArchivoDump);
+    free(pidAsString);
+    free(timestamp);
+    free(archivoDump);
+}
+
 
 void * atenderKernel(void * socketPtr){
     int socket = *(int*)socketPtr;

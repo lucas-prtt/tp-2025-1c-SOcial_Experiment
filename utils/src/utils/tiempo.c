@@ -1,5 +1,4 @@
 #include "tiempo.h"
-#include <time.h>
 
 // USO: 
 // t_timeDifference diferencia;
@@ -30,6 +29,17 @@ void timeDifferenceStart(t_timeDifference * cantidadDeTiempo){
 void timeDifferenceStop(t_timeDifference * cantidadDeTiempo){
     clock_gettime(CLOCK_MONOTONIC, &(cantidadDeTiempo->fin));
     calcularDiferencia(cantidadDeTiempo);
+}
+
+
+char * timestampNow() {
+    struct timespec tiempo;
+    struct tm *tiempoDescompuesto;
+    static char buffer[13]; // HH:MM:SS:mss0
+    clock_gettime(CLOCK_REALTIME, &tiempo);
+    tiempoDescompuesto = localtime(&tiempo.tv_sec);
+    snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d:%03ld", tiempoDescompuesto->tm_hour, tiempoDescompuesto->tm_min, tiempoDescompuesto->tm_sec, tiempo.tv_nsec / 1000000);
+    return buffer;
 }
 
 
