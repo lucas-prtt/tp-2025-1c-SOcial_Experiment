@@ -30,6 +30,7 @@ extern int nivelesTablas;
 extern int tamañoMarcos;
 extern int tamañoMemoriaDeUsuario;
 extern int numeroDeMarcos;
+extern char * directorioPseudocodigo;
 
 
 
@@ -58,7 +59,7 @@ void aumentarMetricaBajadasASwap(int PID);
 void aumentarMetricaAccesoATablaDePaginas(int PID);
 
 // Otras
-void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos);
+void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * directorioPseudocodigo);
 void liberarVariablesGlobalesEnHeap();
 void agregarInstruccionesAPID(int PID, t_list * instruccionesNuevas);
 t_list * obtenerInstruccionesPorPID(int PID);
