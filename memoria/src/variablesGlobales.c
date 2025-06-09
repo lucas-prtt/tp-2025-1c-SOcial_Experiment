@@ -95,7 +95,7 @@ void liberarArbolDePaginas(void ** arbolDePaginas){
 
 /////////////////// TP INCIO /////////////////
 
-void agregarProcesoATabla(int nuevoPID){
+void agregarProcesoATabla(int nuevoPID, int tamañoProceso){
     PIDyTP * nuevoElemento = malloc(sizeof(PIDyTP));
     nuevoElemento->PID = nuevoPID;
     nuevoElemento->TP = crearNivelTablaDePaginas(maximoEntradasTabla);
@@ -105,6 +105,7 @@ void agregarProcesoATabla(int nuevoPID){
     nuevoElemento->stats.subidasAMP = 0;
     nuevoElemento->stats.lecturasDeMemoria = 0;
     nuevoElemento->stats.escriturasDeMemoria = 0;
+    nuevoElemento->TamMaxProceso = tamañoProceso;
     list_add(tablaDeProcesos, nuevoElemento);
 }
 PIDyTP * obtenerProcesoYTPConPID(int PIDBuscado){
@@ -153,13 +154,17 @@ void * punteroAMarco(int numeroDeMarco){
     return memoriaDeUsuario + numeroDeMarco * tamañoMarcos;
 }
 
-int marcosDisponibles(){
+int marcosOcupados(){
     int acum = 0;
-    for (int i=0; i<numeroDeMarcos; i++){
-        if(PIDPorMarco[i] == -1)
-            acum++;
+    int tam_lista_procesos = list_size(tablaDeProcesos); 
+    for (int i=0; i<tam_lista_procesos; i++){
+        acum +=  *((int*)list_get(tablaDeProcesos, i));
     }
     return acum;
+}
+
+int marcosDisponibles(){
+    return numeroDeMarcos - marcosOcupados();
 }
 
 bool hayEspacio(int tamañoRequerido){
