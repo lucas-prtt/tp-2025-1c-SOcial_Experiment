@@ -10,16 +10,18 @@ int * PIDPorMarco; // Vectpr:  PIDPorMarco[numeroDeMarco] = PID o -1 (vacio)
 int numeroDeMarcos;
 void * memoriaDeUsuario;
 char * directorioPseudocodigo;
+char * directorioDump;
 
 pthread_mutex_t MUTEX_tablaDeProcesos = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_PIDPorMarco = PTHREAD_MUTEX_INITIALIZER;
 
 
 // @brief Se debe ejecutar antes de utilizar cualquier funcion o variable del archivo variablesGlobales.h
-void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * PathPseudocodigo){
+void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * PathPseudocodigo, char * PathDUMP){
     tablaDeProcesos = list_create();
     maximoEntradasTabla = sizeTabla;
     directorioPseudocodigo = PathPseudocodigo;
+    directorioDump = PathDUMP;
     nivelesTablas = qNiveles;
     tamañoMarcos = SizeMarcos;
     tamañoMemoriaDeUsuario = sizeMemoria;

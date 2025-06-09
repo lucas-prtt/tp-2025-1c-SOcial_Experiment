@@ -8,7 +8,8 @@ int main(int argc, char* argv[]) {
     config_get_int_value(config, "CANTIDAD_NIVELES"),
     config_get_int_value(config, "TAM_MEMORIA"),
     config_get_int_value(config, "TAM_PAGINA"),
-    config_get_string_value(config, "PATH_INSTRUCCIONES")
+    config_get_string_value(config, "PATH_INSTRUCCIONES"),
+    config_get_string_value(config, "PATH_DUMP")
     );
 
     int socketServidor = crearSocketConfig(config, "PUERTO_ESCUCHA");
