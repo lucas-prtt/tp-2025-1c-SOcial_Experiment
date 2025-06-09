@@ -34,7 +34,6 @@ extern int numeroDeMarcos;
 
 
 // De Procesos
-PIDInfo * obtenerInfoProcesoConPID(int PIDBuscado);
 void agregarProcesoATabla(int nuevoPID, int tamañoMaximo);
 void eliminarProcesoDeTabla(int PIDEliminado);
 
