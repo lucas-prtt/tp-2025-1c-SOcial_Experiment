@@ -195,3 +195,55 @@ int marcosDisponibles(){
 bool hayEspacio(int tamañoRequerido){
     return (marcosDisponibles() >= (tamañoRequerido / tamañoMarcos));
 }
+
+void aumentarMetricaAccesoATablaDePaginas(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDyTP * el = obtenerProcesoYTPConPID(PID);
+    el->stats.accesosATP++;
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    return;
+}
+
+void aumentarMetricaBajadasASwap(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDyTP * el = obtenerProcesoYTPConPID(PID);
+    el->stats.bajadasASwap++;
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    return;
+}
+
+void aumentarMetricaEscrituraDeMemoria(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDyTP * el = obtenerProcesoYTPConPID(PID);
+    el->stats.escriturasDeMemoria++;
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    return;
+}
+void aumentarMetricaInstruccinoesSolicitadas(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDyTP * el = obtenerProcesoYTPConPID(PID);
+    el->stats.instruccionesSolicitadas++;
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    return;
+}
+void aumentarMetricaLecturaDeMemoria(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDyTP * el = obtenerProcesoYTPConPID(PID);
+    el->stats.lecturasDeMemoria++;
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    return;
+}
+void aumentarMetricaSubidasAMemoriaPrincipal(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDyTP * el = obtenerProcesoYTPConPID(PID);
+    el->stats.subidasAMP++;
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    return;
+}
+
+Metricas getMetricasPorPID(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    Metricas r = ((PIDyTP*)obtenerProcesoYTPConPID(PID))->stats;
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    return r;
+}

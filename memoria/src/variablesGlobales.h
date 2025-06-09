@@ -6,7 +6,6 @@
 #include <stdbool.h>
 #include <pthread.h>
 
-
 typedef struct MetricasMemoria{
     int accesosATP;
     int instruccionesSolicitadas;
@@ -31,20 +30,35 @@ extern int tamañoMarcos;
 extern int tamañoMemoriaDeUsuario;
 extern int numeroDeMarcos;
 
-void removerPaginaDeMarco(int marco);
-void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos);
-int obtenerMarcoDePaginaConPIDYEntradas(int PID, t_list * entradas);
-void asignarMarcoAPaginaConPIDyEntradas(int PID, t_list * entradas, int marco);
-void eliminarProcesoDeTabla(int PIDEliminado);
+
+
+// De Procesos
 void agregarProcesoATabla(int nuevoPID, int tamañoMaximo);
-void liberarVariablesGlobalesEnHeap();
+void eliminarProcesoDeTabla(int PIDEliminado);
+
+// De Paginas
+void asignarMarcoAPaginaConPIDyEntradas(int PID, t_list * entradas, int marco);
+int obtenerMarcoDePaginaConPIDYEntradas(int PID, t_list * entradas);
+void removerPaginaDeMarco(int marco);
+
+// De Marcos
 void * punteroAMarco(int numeroDeMarco);
 int marcosDisponibles();
 bool hayEspacio(int tamañoRequerido);
 int PIDdelMarco(int Marco);
 
+// De Metricas
+Metricas getMetricasPorPID(int PID);
+void aumentarMetricaSubidasAMemoriaPrincipal(int PID);
+void aumentarMetricaLecturaDeMemoria(int PID);
+void aumentarMetricaInstruccinoesSolicitadas(int PID);
+void aumentarMetricaEscrituraDeMemoria(int PID);
+void aumentarMetricaBajadasASwap(int PID);
+void aumentarMetricaAccesoATablaDePaginas(int PID);
 
-
+// Otras
+void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos);
+void liberarVariablesGlobalesEnHeap();
 
 
 
