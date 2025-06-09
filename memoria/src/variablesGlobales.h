@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <pthread.h>
+
 
 typedef struct MetricasMemoria{
     int accesosATP;
@@ -39,6 +41,7 @@ void liberarVariablesGlobalesEnHeap();
 void * punteroAMarco(int numeroDeMarco);
 int marcosDisponibles();
 bool hayEspacio(int tamañoRequerido);
+int PIDdelMarco(int Marco);
 
 
 

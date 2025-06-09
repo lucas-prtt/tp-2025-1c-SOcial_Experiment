@@ -9,6 +9,9 @@ int tamañoMemoriaDeUsuario;
 int * PIDPorMarco; // Vectpr:  PIDPorMarco[numeroDeMarco] = PID o -1 (vacio)
 int numeroDeMarcos;
 
+pthread_mutex_t MUTEX_tablaDeProcesos = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t MUTEX_PIDPorMarco = PTHREAD_MUTEX_INITIALIZER;
+
 void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos){
     tablaDeProcesos = list_create();
     maximoEntradasTabla = sizeTabla;
@@ -106,7 +109,9 @@ void agregarProcesoATabla(int nuevoPID, int tamañoProceso){
     nuevoElemento->stats.lecturasDeMemoria = 0;
     nuevoElemento->stats.escriturasDeMemoria = 0;
     nuevoElemento->TamMaxProceso = tamañoProceso;
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
     list_add(tablaDeProcesos, nuevoElemento);
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
 }
 PIDyTP * obtenerProcesoYTPConPID(int PIDBuscado){
     #ifndef __INTELLISENSE__
@@ -128,23 +133,41 @@ PIDyTP * removerProcesoYTPConPID(int PIDBuscado){
 }
 
 void eliminarProcesoDeTabla(int PIDEliminado){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
     PIDyTP * elemento = removerProcesoYTPConPID(PIDEliminado);
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     liberarArbolDePaginas(elemento->TP);
     free(elemento);
 }
 int obtenerMarcoDePaginaConPIDYEntradas(int PID, t_list * entradas){
-    return leerMarcoDePagina(obtenerProcesoYTPConPID(PID)->TP, entradas);
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    int r = leerMarcoDePagina(obtenerProcesoYTPConPID(PID)->TP, entradas);
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    return r;
 }
 void asignarMarcoAPaginaConPIDyEntradas(int PID, t_list * entradas, int marco){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
     asignarMarcoAPagina(marco, obtenerProcesoYTPConPID(PID)->TP, entradas);
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    pthread_mutex_lock(&MUTEX_PIDPorMarco);
     PIDPorMarco[marco] = PID;
+    pthread_mutex_unlock(&MUTEX_PIDPorMarco);
     return; 
 }
 void removerPaginaDeMarco(int marco)
 {   
     //No afecta el arbol del proceso
+    pthread_mutex_lock(&MUTEX_PIDPorMarco);
     PIDPorMarco[marco] = -1;
+    pthread_mutex_unlock(&MUTEX_PIDPorMarco);
     return; 
+}
+
+int PIDDelMarco(int numeroDeMarco){
+    pthread_mutex_lock(&MUTEX_PIDPorMarco);
+    int r = PIDPorMarco[numeroDeMarco];
+    pthread_mutex_unlock(&MUTEX_PIDPorMarco);
+    return r;
 }
 /////////////////// TP FIN /////////////////////
 
@@ -156,10 +179,12 @@ void * punteroAMarco(int numeroDeMarco){
 
 int marcosOcupados(){
     int acum = 0;
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
     int tam_lista_procesos = list_size(tablaDeProcesos); 
     for (int i=0; i<tam_lista_procesos; i++){
         acum +=  *((int*)list_get(tablaDeProcesos, i));
     }
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return acum;
 }
 
