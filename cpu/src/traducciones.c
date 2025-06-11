@@ -1,5 +1,8 @@
 #include "traducciones.h"
 
+
+#define TLB_SIZE 4 /////////
+
 /*
     Ninguna de estas funciones estan totalmente implementadas (algunas ni parametro reciben). Estoy probando cosas
 */
@@ -7,127 +10,115 @@
 /////////////////////////       < CACHÉ >       /////////////////////////
 
 
+
 /////////////////////////       < TLB >       /////////////////////////
 
-void *inicilizarTLB(r_TLB tlb[], int cantidad_entradas_tlb) {
-    if(cantidad_entradas_tlb == 0) {
+void inicializarTLB(TLB *tlb) {
+    if(TLB_SIZE == 0) {
         log_info(logger, "TLB Deshabilitada");
         return NULL;
     }
 
-    for(int i = 0; i < cantidad_entradas_tlb; i++) {
-        tlb[i].pagina = -1;
-        tlb[i].marco = -1;
-        tlb[i].validez = 1;
-        tlb[i].timestamp = 0;
+    for(int i = 0; i < TLB_SIZE; i++) {
+        tlb->entradas[i].validez = 0;
     }
 
+    tlb->proximo = 0;
+    tlb->algoritmo = algoritmo_string_to_enum(config_get_string_value(config, "REEMPLAZO_TLB"));
+    //puede ser global, porquee es el mismo para todas las cpus
     log_info(logger, "TLB Habilitada");
 }
 
-int buscarPaginaTLB(r_TLB tlb[], int cantidad_entradas_tlb, int nro_pagina) {
-    // Devuelve la posicion de la pagina buscada en el vector. En caso de no encontrarla devuelve -1 //
+int buscarPaginaTLB(TLB *tlb, int nro_pagina) {
+    int pos_registro = buscarIndicePaginaTLB(tlb, nro_pagina);
 
-    for(int i = 0; i < cantidad_entradas_tlb; i++) { // si la encuentra actualiza el timestamp
-        if(tlb[i].pagina == nro_pagina) {}
+    if(pos_registro == -1) {
+        log_info(logger, "PID: <PID> - TLB MISS - Pagina: %d", nro_pagina);
+        return -1; // TLB MISS
+    }
+    
+    log_info(logger, "PID: <PID> - TLB HIT - Pagina: %d", nro_pagina);
+    return tlb->entradas[pos_registro].marco; // TLB HIT
+}
+
+int buscarIndicePaginaTLB(TLB *tlb, int nro_pagina) {
+    for(int i = 0; i < TLB_SIZE; i++) {
+        if(tlb->entradas[i].validez && tlb->entradas[i].pagina == nro_pagina)
             return i;
     }
 
     return -1;
 }
 
-// o mejor buscarMarcoTLB
-int buscarRegistroTLB(r_TLB tlb[], int cantidad_entradas_tlb, int nro_pagina) {
-    // Devuelve TLB_MISS si no encuentra el registro. Si lo encuentra devuelve el marco //
+void reemplazarEnTLB(TLB *tlb) {
+    // Sucede cuando buscarRegistroTLB es -1 (TLB MISS) //
+    int indice_victima;
 
-    int pos_registro = buscarPaginaTLB(tlb, cantidad_entradas_tlb, nro_pagina);
-
-    if(pos_registro == -1) {
-        log_info(logger, "PID: <PID> - TLB MISS - Pagina: %d", nro_pagina);
-        return TLB_MISS;
+    if(hayEntradaVaciaTLB(tlb, &indice_victima)) {
+        // insertarPaginaTLB(tlb, indice_victima);
     }
     
-    log_info(logger, "PID: <PID> - TLB HIT - Pagina: %d", nro_pagina);
-    //el times stamp vuelve a cero
-    return tlb[pos_registro].marco;
+    indice_victima = seleccionarEntradaVictima(tlb);
+    limpiarEntradaTLB(tlb, indice_victima);
+    // insertarPaginaTLB(tlb, indice_victima);
 }
 
-/*
-void reemplazarEnTLB() {
-    char *algoritmo = config_get_string_value(config, "REEMPLAZO_TLB"); //como arg, no lo voy a hacer siempre
-    TIPO_ALGORITMO_REMPLAZO algoritmo_reemplazo_tlb = algoritmo_string_to_enum(algoritmo)
-    
-    int victima; //mas como las pos en la tlb
-    victima = seleccionarEntradaVictima(tlb, algoritmo_reemplazo); //puedo ser la pos o en caso de la lsita el puntero al nodo.abrirConfigYLog
-
-    limpiarEntradaTLB(pos);
-
-    actualizarTimestamps(); //antes para que no sume uno al recien ingresado
-
-    insertarPaginaTLB(pos, );
+bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima) {
+    for(int i = 0; i < TLB_SIZE; i++) {
+        if(tlb->entradas[i].validez == 0) {
+            indice_victima = i;
+            return true;
+        }
+    }
 }
 
-void actualizarTimestamps(void) {
-    // pasa por cada registro de la tlb y aumenta sus timestamp (menos al del recien ingresado)
-    for(int i = 0; i < cantidad_entradas_tlb; i++) // para los que esten disponibles.
-        tlb[i].timestamp++;
-}
-
-*/
-
-// mas como un seleccionar entrada => primero se fija si hay una vacia, si la hay pasa esa. Sino lentra al switch
-
-//int seleccionarEntradaVictima() que llama un seleccionar que se fija si esta vacio y a la que aplica el algoritmo.
-
-// int seleccionarEntradaConAlgoritmo()
-int seleccionarEntradaVictima(r_TLB tlb[], int cantidad_entradas_tlb, int algoritmo) {
-    // se puede pensar fifo con un indice circular, para mas eficiencia.
+int seleccionarEntradaVictima(TLB *tlb) {
     int indice_victima = 0;
 
-    switch(algoritmo)
+    switch(tlb->algoritmo)
     {
         case ALG_FIFO:
         {
-            int mayor_timestamp = -1;
-            for(int i = 0; i < cantidad_entradas_tlb; i++) { // cambiar logica
-                if(tlb[i].timestamp > mayor_timestamp) {
-                    mayor_timestamp = tlb[i].timestamp;
-                    indice_victima = i;
-                }
-            }
-            break;
+            indice_victima = tlb->proximo;
+            tlb->proximo = (tlb->proximo + 1) % TLB_SIZE;
+
+            return indice_victima;
         }
         case ALG_LRU:
         {
-            int menor_timestamp = -1;
-            for(int i = 0; i < cantidad_entradas_tlb; i++) {
-                if (tlb[i].timestamp < menor_timestamp) {
-                    menor_timestamp = tlb[i].timestamp;
+            int menor_uso = tlb->entradas[0].ultimo_uso;
+
+            for(int i = 1; i < TLB_SIZE; i++) {
+                if(tlb->entradas[i].ultimo_uso < menor_uso) {
+                    menor_uso = tlb->entradas[i].ultimo_uso;
                     indice_victima = i;
                 }
             }
-            break;
+            // contador_uso: cada que tlb_hit o reemplazo
+            return indice_victima;
+        }
+        default:
+        {
+            log_error(logger, "Algoritmo de reemplazo desconocido");
+            return 0;
         }
     }
-
-    return indice_victima;
 }
 
-void vaciarTLB(r_TLB tlb[]) { //sucede por proceso
-    int cantidad_entradas_tlb = atoi(config_get_string_value(config, "ENTRADAS_TLB"));
-    
-    for(int i = 0; i < cantidad_entradas_tlb; i++) {
-        r_TLB registro = tlb[i];
-        limpiarEntradaTLB(&registro);
-    }
+void limpiarEntradaTLB(TLB *tlb, int indice_victima) {
+    tlb->entradas[indice_victima].pagina = -1;
+    tlb->entradas[indice_victima].marco = -1;
+    tlb->entradas[indice_victima].ultimo_uso = -1;
+    tlb->entradas[indice_victima].validez = 0;
 }
 
-void limpiarEntradaTLB(r_TLB *registro) {
-    registro->pagina = -1;
-    registro->marco = -1;
-    registro->validez = 1;
-    //registro->timestamp = 0;
+void vaciarTLB(r_TLB tlb[]) {
+    // Sucede por proceso //
+    for(int i = 0; i < TLB_SIZE; i++)
+        limpiarEntradaTLB(tlb, i);
 }
+
+
 
 /////////////////////////       < UTILS >       /////////////////////////
 
@@ -146,6 +137,8 @@ enum TIPO_ALGORITMO_REEMPLAZO algoritmo_string_to_enum(char *nombreAlgoritmo) {
     }
     return ERROR_NO_ALG;
 }
+
+
 
 /////////////////////////       < TRADUCCIÓN >       /////////////////////////
 
