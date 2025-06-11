@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <utils/threads.h>
 #include <utils/paquetes.h>
+#include "utils_cpu.h"
 
 extern bool hayInterrupcion;
 extern pthread_mutex_t mutexInterrupcion;
@@ -38,7 +39,7 @@ typedef struct {
 } instruccionInfo;
 
 bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, int *estado_conexion);
-bool ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *proc_AEjecutar);
+bool ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *proc_AEjecutar, cpu_t *cpu);
 char* fetch(int socket_memoria, PCB_cpu *proc_AEjecutar);
 instruccionInfo decode(char *instruccion);
 char *devolverOperacion(char *instruccion);

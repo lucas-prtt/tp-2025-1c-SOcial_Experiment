@@ -2,12 +2,6 @@
 
 
 
-// VARIABLES GLOBALES:
-bool hayInterrupcion = false;
-pthread_mutex_t mutexInterrupcion; // MUTEX para acceder a hayInterrupcion
-
-
-
 bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, int *estado_conexion) {
     int *codigo_operacion = malloc(sizeof(int));
     t_list *lista_PIDyPC = recibir_paquete_lista(socket_kernel_dispatch, MSG_WAITALL, codigo_operacion);
@@ -32,7 +26,7 @@ bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, i
     return true;
 }
 
-bool ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *proc_AEjecutar) {
+bool ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *proc_AEjecutar, cpu_t *cpu) {
     /*
     if(CACHE_HIT) pueden haber dos respuestas CACHE_HIT o CACHE_MISS
         usa lo que hay en la caché y salta a decode
@@ -43,7 +37,7 @@ bool ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *pr
     char *instruccion = fetch(socket_memoria, proc_AEjecutar);
     instruccionInfo instr_info = decode(instruccion);
     bool fin_proceso = execute(socket_memoria, socket_kernel, instruccion, instr_info, proc_AEjecutar);
-    //checkInterrupt();
+    checkInterrupt(cpu);
     free(instruccion);
 
     return fin_proceso;
@@ -255,14 +249,43 @@ void setProgramCounter(PCB_cpu *pcb, int newProgramCounter) {
     pcb->pc = newProgramCounter;
 }
 
-void controlarInterrupciones(void) {
-    pthread_mutex_lock(&mutexInterrupcion);
-    if (hayInterrupcion) {
+/////////////////////////       < INTERRUPCIONES >       /////////////////////////
+
+/*
+bool recibirInterrupcion(int socket_kernel) {
+    int *codigo_operacion = malloc(sizeof(int));
+    t_list *lista_interrupcion = recibir_paquete_lista(socket_kernel_dispatch, MSG_WAITALL, codigo_operacion);
+
+    if(lista_interrupcion == NULL || ist_size(lista_interrupcion) < 2 || *codigo_operacion != INTERRUPT_ACKNOWLEDGE) {
+        free(codigo_operacion);
+        return false;
+    }
+
+    free(codigo_operacion);
+    eliminar_paquete_lista(lista_interrupcion);
+    return true;
+}
+
+*/
+
+
+void checkInterrupt(cpu_t *cpu) {
+    pthread_mutex_lock(&cpu->mutex_interrupcion);
+    if(cpu->hay_interrupcion) {
         hayInterrupcion = false;
-        pthread_mutex_unlock(&mutexInterrupcion);
+        pthread_mutex_unlock(&cpu->mutex_interrupcion);
 
         log_info(logger, "Interrupción activa: devuelvo el proceso al Kernel");
-        // devolverProcesoAlKernel(); // TODO
+        //devolverProcesoAlKernel(); // TODO  
     }
     pthread_mutex_unlock(&mutexInterrupcion);
 }
+
+/*
+void devolverProcesoAlKernel(PCB_cpu *proc_AEjecutar, int motivo) {
+    switch(motivo)
+    {
+
+    }
+}
+*/
