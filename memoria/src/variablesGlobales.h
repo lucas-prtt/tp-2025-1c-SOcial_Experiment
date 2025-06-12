@@ -22,18 +22,32 @@ typedef struct PIDyTablaDePaginas{
     t_list * instrucciones;
 } PIDInfo;
 
+//@brief Vector:  PIDPorMarco[numeroDeMarco] = PID o -1 (vacio)
 extern int* PIDPorMarco;
+//@brief El puntero a void donde se almacena la memoria que va usar el usuario durante la ejecucion de procesos
 extern void* memoriaDeUsuario;
-extern t_list* tablaDeProcesos; // Llena de PIDyTablaDePaginas
+//@brief Mutex a usar cada vez que se quiere operar sobre la memoria de usuario
+extern pthread_mutex_t MUTEX_MemoriaDeUsuario;
+//@brief Lista con informacion util de cada proceso: PID, puntero a TP, metricas, tamaño maximo en memoria y lista de instrucciones
+extern t_list* tablaDeProcesos; 
+//@brief Cuantas entradas tiene cada tabla del esquema de paginacion multinivel
 extern int maximoEntradasTabla;
+//@brief Cuantos niveles tiene el esquema de paginacion multinivel
 extern int nivelesTablas;
+//@brief El tamaño maximo de cada marco/pagina individual
 extern int tamañoMarcos;
+//@brief El tamaño maximo en Bytes de la memoria de usuario
 extern int tamañoMemoriaDeUsuario;
+//@brief Maxima cantidad de marcos admitidos en memoria
 extern int numeroDeMarcos;
+//@brief El directorio de donde se obtiene el pseudocodigo
 extern char * directorioPseudocodigo;
+//@brief El directorio donde se realizan los DUMPs de memoria
 extern char * directorioDump;
-
-
+//@brief Retraso para acceder a memoria en ms
+extern int retrasoAcceso;
+//@brief Retraso para realizar un SWAP en ms
+extern int retrasoSWAP;
 // De Procesos
 void agregarProcesoATabla(int nuevoPID, int tamañoMaximo);
 void eliminarProcesoDeTabla(int PIDEliminado);
@@ -48,6 +62,7 @@ void * punteroAMarco(int numeroDeMarco);
 int marcosDisponibles();
 bool hayEspacio(int tamañoRequerido);
 int PIDdelMarco(int Marco);
+t_list * marcosDelPid(int PID);
 
 // De Metricas
 Metricas getMetricasPorPID(int PID);
@@ -59,7 +74,7 @@ void aumentarMetricaBajadasASwap(int PID);
 void aumentarMetricaAccesoATablaDePaginas(int PID);
 
 // Otras
-void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * directorioPseudocodigo, char * directorioDump);
+void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * directorioPseudocodigo, char * directorioDump, int retrasoAcceso, int retrasoSWAP);
 void liberarVariablesGlobalesEnHeap();
 void agregarInstruccionesAPID(int PID, t_list * instruccionesNuevas);
 t_list * obtenerInstruccionesPorPID(int PID);

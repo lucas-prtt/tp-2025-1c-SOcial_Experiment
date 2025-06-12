@@ -9,7 +9,9 @@ int main(int argc, char* argv[]) {
     config_get_int_value(config, "TAM_MEMORIA"),
     config_get_int_value(config, "TAM_PAGINA"),
     config_get_string_value(config, "PATH_INSTRUCCIONES"),
-    config_get_string_value(config, "PATH_DUMP")
+    config_get_string_value(config, "PATH_DUMP"),
+    config_get_int_value(config, "RETARDO_MEMORIA"),
+    config_get_int_value(config, "RETARDO_SWAP")
     );
 
     int socketServidor = crearSocketConfig(config, "PUERTO_ESCUCHA");

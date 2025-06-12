@@ -11,7 +11,9 @@
 // case: PROCESO_FINALIZADO_LIBERAR_MEMORIA 
 // y default (tirar un error)
 
-void realizarDump(int PID, char * contenidoDump){
+int realizarDump(int PID){
+    t_list * marcos = marcosDelPid(PID);
+    int qMarcos = list_size(marcos);
     char * timestamp = timestampNow();
     char * pidAsString = malloc(20);
     sprintf(pidAsString, "%d", PID);
@@ -22,12 +24,26 @@ void realizarDump(int PID, char * contenidoDump){
     strcat(archivoDump, timestamp);
     strcat(archivoDump, ".dmp");
     FILE * fpArchivoDump = fopen(archivoDump, "wb");
-    fwrite(contenidoDump, sizeof(char), strlen(contenidoDump), fpArchivoDump);
-    // TODO: SLEEP
+    if (fpArchivoDump == NULL){
+        return 1;
+    }
+    pthread_mutex_lock(&MUTEX_MemoriaDeUsuario);
+    for (int i = 0; i<qMarcos; i++){
+    char * contenido = mem_hexstring(punteroAMarco(*(int*)list_get(marcos, i)), tamañoMarcos);
+    fwrite(
+        contenido,
+        sizeof(char),
+        strlen(contenido),
+        fpArchivoDump);
+    free(contenido);
+    }
+    pthread_mutex_lock(&MUTEX_MemoriaDeUsuario);
+    list_destroy_and_destroy_elements(marcos, free);
     fclose(fpArchivoDump);
     free(pidAsString);
     free(timestamp);
     free(archivoDump);
+    return 0;
 }
 
 
@@ -67,9 +83,7 @@ void * atenderKernel(void * socketPtr){
         PID = list_get(pedido, 1);
         log_debug(logger, "## PID: %d, Memory Dump solicitado", *PID);
 
-        //TODO: DUMP MEMORY
-        // (modifica el valor de error)
-
+        error = realizarDump(*PID);
         if (!error)
         respuesta = crear_paquete(RESPUESTA_DUMP_COMPLETADO);
         else 

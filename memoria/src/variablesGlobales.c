@@ -6,18 +6,20 @@ int maximoEntradasTabla;
 int nivelesTablas;
 int tamañoMarcos;
 int tamañoMemoriaDeUsuario;
-int * PIDPorMarco; // Vectpr:  PIDPorMarco[numeroDeMarco] = PID o -1 (vacio)
+int * PIDPorMarco; 
 int numeroDeMarcos;
 void * memoriaDeUsuario;
 char * directorioPseudocodigo;
 char * directorioDump;
+int retrasoAcceso;
+int retrasoSWAP; // Falta implementarlo
 
 pthread_mutex_t MUTEX_tablaDeProcesos = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_PIDPorMarco = PTHREAD_MUTEX_INITIALIZER;
-
+pthread_mutex_t MUTEX_MemoriaDeUsuario = PTHREAD_MUTEX_INITIALIZER;
 
 // @brief Se debe ejecutar antes de utilizar cualquier funcion o variable del archivo variablesGlobales.h
-void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * PathPseudocodigo, char * PathDUMP){
+void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * PathPseudocodigo, char * PathDUMP, int retAcc, int retSWAP){
     tablaDeProcesos = list_create();
     maximoEntradasTabla = sizeTabla;
     directorioPseudocodigo = PathPseudocodigo;
@@ -28,6 +30,8 @@ void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, 
     memoriaDeUsuario = malloc(sizeMemoria);
     numeroDeMarcos = tamañoMemoriaDeUsuario / tamañoMarcos;
     PIDPorMarco = malloc(numeroDeMarcos);
+    retrasoAcceso = retAcc;
+    retrasoSWAP = retSWAP;
     for (int i = 0; i<numeroDeMarcos; i++){
         PIDPorMarco[i] = -1;
     }
@@ -291,3 +295,19 @@ t_list * obtenerInstruccionesPorPID(int PID){
     return inst;
 }
 
+
+t_list * marcosDelPid(int PID){
+    t_list * marcos = list_create();
+    pthread_mutex_lock(&MUTEX_PIDPorMarco);
+    int * marco;
+    for(int i=0; i<numeroDeMarcos; i++)
+    {
+        if(PIDPorMarco[i] == PID){
+            marco = malloc(sizeof(marco));
+            marco = PIDPorMarco[i];
+            list_add(marcos, marco);
+        }
+    }
+    pthread_mutex_unlock(&MUTEX_PIDPorMarco);
+    return marcos;
+}
