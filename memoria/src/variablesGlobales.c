@@ -148,6 +148,16 @@ PIDInfo * removerInfoProcesoConPID(int PIDBuscado){
     return (PIDInfo*)list_remove_by_condition(tablaDeProcesos, coincide);
     #endif
 }
+// @brief En la tabla PIDPorMarco, marca todos los marcos con el PID que coincide con -1
+void eliminarProcesoDePIDPorMarco(int PID){
+    pthread_mutex_lock(&MUTEX_PIDPorMarco);
+    for(int i = 0; i<numeroDeMarcos; i++)
+    {
+        if(PIDPorMarco[i] == PID)
+            PIDPorMarco[i] = -1;
+    }
+    pthread_mutex_unlock(&MUTEX_PIDPorMarco);
+}
 // @brief Elimina un proceso de la tabla y libera los recursos asociados al proceso. No actualiza el PIDporMarco
 void eliminarProcesoDeTabla(int PIDEliminado){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
@@ -157,9 +167,10 @@ void eliminarProcesoDeTabla(int PIDEliminado){
         list_destroy_and_destroy_elements(elemento->instrucciones, free);
     }
     liberarArbolDePaginas(elemento->TP);
-    //TODO: Actualizar PIDporMarco
+    eliminarProcesoDePIDPorMarco(PIDEliminado);
     free(elemento);
 }
+
 // @brief Dado un PID y una lista de entradas asociadas a una pagina, obtiene el marco.
 int obtenerMarcoDePaginaConPIDYEntradas(int PID, t_list * entradas){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
