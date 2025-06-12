@@ -2,9 +2,10 @@
 
 
 
-void *atenderKernelDispatch(void *sockets) {
-    int socket_memoria = ((sockets_dispatcher*)sockets)->socket_memoria;
-    int socket_kernel_dispatch = ((sockets_dispatcher*)sockets)->socket_kernel_dispatch;
+void *atenderKernelDispatch(void *cpu_args) {
+    cpu_t *cpu = (cpu_t*)cpu_args;
+    int socket_memoria = cpu->socket_memoria;
+    int socket_kernel_dispatch = cpu->socket_kernel_dispatch;
 
     while(true) {
         PCB_cpu proc_AEjecutar;
@@ -28,25 +29,33 @@ void *atenderKernelDispatch(void *sockets) {
         }
         
         for(;;) {
-            bool fin_proceso = ejecutarCicloInstruccion(socket_memoria, socket_kernel_dispatch, &proc_AEjecutar);
+            bool fin_proceso = ejecutarCicloInstruccion(socket_memoria, socket_kernel_dispatch, &proc_AEjecutar, cpu);
             if(fin_proceso) break;
+            //devolverProcesoAlKernel(&proc_AEjecutar, FIN_PROCESO);
+            /*Una vez seleccionado el proceso a ejecutar... y se enviará a uno de los módulos CPU... quedando a la espera de recibir dicho PID y el PC después de
+            la ejecución junto con un motivo por el cual fue devuelto
+
+            hay motivos de devolucion...
+            */
         }
     }
 
-    free(sockets);
     pthread_exit(NULL);
 }
 
-void *atenderKernelInterrupt(void *socket) {
-    int socket_kernel_interrupt = *(int*)socket;
+void *atenderKernelInterrupt(void *cpu_args) {
+    cpu_t *cpu = (cpu_t*)cpu_args;
+    int socket_kernel_interrupt = cpu->socket_kernel_interrupt;
+    
     while(true) {
-        //TODO
-        /*if(recibirInterrupcion(socket_kernel_interrupt)) {
-            pthread_mutex_lock(&mutexInterrupcion);
-            hayInterrupcion = true;
-            pthread_mutex_unlock(&mutexInterrupcion);
+        if(recibirInterrupcion(socket_kernel_interrupt)) {
+            pthread_mutex_lock(&cpu->mutex_interrupcion);
+            cpu->hay_interrupcion = true;
+            pthread_mutex_unlock(&cpu->mutex_interrupcion);
 
             log_info(logger, "## Llega interrupción al puerto Interrupt");
-        }*/
+        }
     }
+
+    pthread_exit(NULL);
 }

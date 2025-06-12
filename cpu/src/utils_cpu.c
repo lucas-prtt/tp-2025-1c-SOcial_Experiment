@@ -55,11 +55,15 @@ void verificarResultadoHandshake(bool result, char* nombreModuloCliente) {
     }
 }
 
-sockets_dispatcher *prepararSocketsDispatcher(int socket_memoria, int socket_kernel_dispatch) {
-    sockets_dispatcher *sockets_d = malloc(sizeof(sockets_dispatcher));
-    sockets_d->socket_memoria = socket_memoria;
-    sockets_d->socket_kernel_dispatch = socket_kernel_dispatch;
-    return sockets_d;
+cpu_t *prepararCPU(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt) {
+    cpu_t *cpu = malloc(sizeof(cpu));
+    cpu->socket_memoria = socket_memoria;
+    cpu->socket_kernel_dispatch = socket_kernel_dispatch;
+    cpu->socket_kernel_interrupt = socket_kernel_interrupt;
+
+    cpu->hay_interrupcion = false;
+    pthread_mutex_init(&cpu->mutex_interrupcion, NULL);
+    return cpu;
 }
 
 void liberarConexiones(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt) {
