@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <unistd.h>
 
 typedef struct MetricasMemoria{
     int accesosATP;
@@ -79,6 +80,7 @@ void liberarVariablesGlobalesEnHeap();
 void agregarInstruccionesAPID(int PID, t_list * instruccionesNuevas);
 t_list * obtenerInstruccionesPorPID(int PID);
 char * leerInstruccion(int PID, int PC);
-
-
+void simularRetrasoSWAP();
+void simularRetrasoUnSoloNivel();
+void simularRetrasoMultinivel();
 #endif

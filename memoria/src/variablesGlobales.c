@@ -160,7 +160,7 @@ void eliminarProcesoDeTabla(int PIDEliminado){
     //TODO: Actualizar PIDporMarco
     free(elemento);
 }
-// @brief Dado un PID y una lista de entradas asociadas a una pagina, obtiene el marco
+// @brief Dado un PID y una lista de entradas asociadas a una pagina, obtiene el marco.
 int obtenerMarcoDePaginaConPIDYEntradas(int PID, t_list * entradas){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
     int r = leerMarcoDePagina(obtenerInfoProcesoConPID(PID)->TP, entradas);
@@ -304,10 +304,20 @@ t_list * marcosDelPid(int PID){
     {
         if(PIDPorMarco[i] == PID){
             marco = malloc(sizeof(marco));
-            marco = PIDPorMarco[i];
+            *marco = (PIDPorMarco[i]);
             list_add(marcos, marco);
         }
     }
     pthread_mutex_unlock(&MUTEX_PIDPorMarco);
     return marcos;
+}
+
+void simularRetrasoMultinivel(){
+    usleep(retrasoAcceso*nivelesTablas);
+}
+void simularRetrasoUnSoloNivel(){
+    usleep(retrasoAcceso);
+}
+void simularRetrasoSWAP(){
+    usleep(retrasoSWAP);
 }
