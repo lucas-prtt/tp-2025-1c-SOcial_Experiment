@@ -180,8 +180,8 @@ bool execute(int socket_memoria, int socket_kernel, t_list *instruccion_list, in
         }
         case INSTR_GOTO:
         {
-            char *valor = atoi((char *)list_get(instruccion_list, 1));
-            setProgramCounter(pcb, atoi(valor));
+            int valor = atoi((char *)list_get(instruccion_list, 1));
+            setProgramCounter(pcb, valor);
             break;
         }
         case INSTR_IO:
@@ -281,7 +281,7 @@ bool recibirInterrupcion(int socket_kernel_dispatch) { //preguntar a lucas
     int *codigo_operacion = malloc(sizeof(int));
     t_list *lista_interrupcion = recibir_paquete_lista(socket_kernel_dispatch, MSG_WAITALL, codigo_operacion);
 
-    if(lista_interrupcion == NULL || ist_size(lista_interrupcion) < 2 || *codigo_operacion != PETICION_INTERRUPT_A_CPU) {
+    if(lista_interrupcion == NULL || list_size(lista_interrupcion) < 2 || *codigo_operacion != PETICION_INTERRUPT_A_CPU) {
         free(codigo_operacion);
         return false;
     }

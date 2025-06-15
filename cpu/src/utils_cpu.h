@@ -1,3 +1,6 @@
+#ifndef UTILS_CPU_H
+#define UTILS_CPU_H
+
 #include <commons/log.h>
 #include <commons/config.h>
 #include <utils/socketUtils.h>
@@ -38,3 +41,4 @@ void cerrarCPU(void);
 cpu_t *prepararCPU(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt);
 void liberarConexiones(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt);
 
+#endif

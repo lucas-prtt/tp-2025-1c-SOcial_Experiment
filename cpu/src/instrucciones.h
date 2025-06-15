@@ -1,3 +1,6 @@
+#ifndef INSTRUCCIONES_H
+#define INSTRUCCIONES_H
+
 #include <commons/collections/list.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -12,5 +15,5 @@
 #include "utils_cpu.h"
 #include "utils_instrucciones.h"
 
-void *atenderKernelDispatch(void *cpu_args);
-void *atenderKernelInterrupt(void *cpu_args);
+
+#endif

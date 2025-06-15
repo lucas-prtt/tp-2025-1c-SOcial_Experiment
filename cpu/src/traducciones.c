@@ -3,21 +3,19 @@
 
 
 /////////////////////////       < VARIABLES GLOBALES >       /////////////////////////
-/////////////////////////            < va a cambiar >           /////////////////////////
+
+int TLB_SIZE;
+
+int cantidad_niveles_tabla_paginas;
+int cantidad_entradas_tabla;
+int tamanio_pagina;
 
 void inicializarVariablesGlobales(int socket_memoria, int cant_niveles_t, int cant_entradas_t, int tam_pag) {
-    pthread_mutex_lock(&mutex_inicializacion_globales);
-    if (!variables_globales_inicializadas) {
+    TLB_SIZE = atoi(config_get_string_value(config, "REEMPLAZO_TLB"));
 
-        TLB_SIZE = atoi(config_get_string_value(config, "REEMPLAZO_TLB"));
-
-        tamanio_pagina = tam_pag;
-        cantidad_entradas_tabla = cant_entradas_t;
-        cantidad_niveles_tabla_paginas = cant_niveles_t;
-
-        variables_globales_inicializadas = true;
-    }
-    pthread_mutex_unlock(&mutex_inicializacion_globales);
+    tamanio_pagina = tam_pag;
+    cantidad_entradas_tabla = cant_entradas_t;
+    cantidad_niveles_tabla_paginas = cant_niveles_t;
 }
 
 
@@ -117,10 +115,11 @@ void insertarPaginaTLB(TLB *tlb, int indice_victima, int nro_pagina, int marco) 
 bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima) {
     for(int i = 0; i < TLB_SIZE; i++) {
         if(tlb->entradas[i].validez == 0) {
-            indice_victima = i;
+            *indice_victima = i;
             return true;
         }
     }
+    return false;
 }
 
 int seleccionarEntradaVictima(TLB *tlb) {
@@ -163,7 +162,7 @@ void limpiarEntradaTLB(TLB *tlb, int indice_victima) {
     tlb->entradas[indice_victima].validez = 0;
 }
 
-void vaciarTLB(r_TLB tlb[]) {
+void vaciarTLB(TLB *tlb) {
     // Sucede por proceso //
     for(int i = 0; i < TLB_SIZE; i++)
         limpiarEntradaTLB(tlb, i);
@@ -198,7 +197,8 @@ int getNumeroPagina(int direccion_logica) {
 }
 
 int getEntradaNivelX(int nro_pagina, int nro_nivel) {
-    return floor(nro_pagina / cantidad_entradas_tabla ^ (cantidad_niveles_tabla_paginas - nro_nivel)) % cantidad_entradas_tabla;
+    int resultado = (int)pow(cantidad_entradas_tabla, cantidad_niveles_tabla_paginas - nro_nivel);
+    return (int)floor(nro_pagina / resultado) % cantidad_entradas_tabla;
 }
 
 int getDesplazamiento(int direccion_logica) {

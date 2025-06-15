@@ -37,12 +37,20 @@ typedef struct {
     bool requiere_traduccion;
 } instruccionInfo;
 
+
 bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, int *estado_conexion);
 bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar);
-char* fetch(int socket_memoria, PCB_cpu *proc_AEjecutar);
-//instruccionInfo decode(char *instruccion);
+void devolverProcesoKernel(int socket_kernel, PCB_cpu *proc_AEjecutar);
+char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar);
+t_list *decode(char *instruccion, instruccionInfo *instr_info);
 enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion);
-//bool execute(int socket_memoria, int socket_kernel, char *instruccion, instruccionInfo instr_info, PCB_cpu *pcb);
+bool execute(int socket_memoria, int socket_kernel, t_list *instruccion_list, instruccionInfo instr_info, PCB_cpu *pcb);
+int traducirDireccionCACHE(void);
+int traducirDireccionTLB(cpu_t *cpu, int pid, int direccion_logica);
 void setProgramCounter(PCB_cpu *pcb, int newProgramCounter);
-//void controlarInterrupciones(void);
+bool recibirInterrupcion(int socket_kernel_dispatch);
+bool checkInterrupt(cpu_t *cpu);
+
+void *atenderKernelDispatch(void *cpu_args);
+void *atenderKernelInterrupt(void *cpu_args);
 
