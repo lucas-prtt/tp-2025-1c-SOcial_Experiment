@@ -1,23 +1,66 @@
 #include "traducciones.h"
 
 
-#define TLB_SIZE 4 /////////
+
+/////////////////////////       < VARIABLES GLOBALES >       /////////////////////////
+/////////////////////////            < va a cambiar >           /////////////////////////
+
+void inicializarVariablesGlobales(int socket_memoria, int cant_niveles_t, int cant_entradas_t, int tam_pag) {
+    pthread_mutex_lock(&mutex_inicializacion_globales);
+    if (!variables_globales_inicializadas) {
+
+        TLB_SIZE = atoi(config_get_string_value(config, "REEMPLAZO_TLB"));
+
+        tamanio_pagina = tam_pag;
+        cantidad_entradas_tabla = cant_entradas_t;
+        cantidad_niveles_tabla_paginas = cant_niveles_t;
+
+        variables_globales_inicializadas = true;
+    }
+    pthread_mutex_unlock(&mutex_inicializacion_globales);
+}
+
+
+
+/////////////////////////       < MMU >       /////////////////////////
+
+int traducirDeLogicaAFisica(int direccion_logica) { //
+    // Envia a memoria una peticion del tipo: [ PID, Npág, (e1, e2, e3, e4...) ]
+}
 
 /*
-    Ninguna de estas funciones estan totalmente implementadas (algunas ni parametro reciben). Estoy probando cosas
+int leerDatoMemoria(dir_logica dir) {
+    return procesar_solicitud(dir,READ_ACCION,0);
+}
+
+int escribirDatoMemoria(dir_logica dir, uint32_t dato) {
+    return procesar_solicitud(dir, WRITE_ACCION, dato);
+}
 */
 
-/////////////////////////       < CACHÉ >       /////////////////////////
+//sucede despues de no encontrar ni en la tlb ni en cache
+
+/*
+// funcion que calcule la entrada de la tabla de paginas en el nivel x (Esta hecha)
+//TODO: funcion que envie al modulo memoria el pid de un proceso y un numero de entrada de pagina
+        deberia recibir, la base (direccion) del siguiente nivel de la entrada de pagina.
+        Comienza otra vez el ciclo, pero con la siguiente entrada a la tabla de paginas y la direccion antes calculada
+        hasta obtener el marco de la pagina (puedo usar un for)
+*/
 
 
 
 /////////////////////////       < TLB >       /////////////////////////
 
-void inicializarTLB(TLB *tlb) {
+int inicializarTLB(TLB *tlb) {
     if(TLB_SIZE == 0) {
-        log_info(logger, "TLB Deshabilitada");
-        return NULL;
+        tlb->habilitada = 0;
+        log_debug(logger, "TLB Deshabilitada");
+        free(tlb);
+        return 0;
     }
+
+    tlb->habilitada = 1;
 
     for(int i = 0; i < TLB_SIZE; i++) {
         tlb->entradas[i].validez = 0;
@@ -26,18 +69,19 @@ void inicializarTLB(TLB *tlb) {
     tlb->proximo = 0;
     tlb->algoritmo = algoritmo_string_to_enum(config_get_string_value(config, "REEMPLAZO_TLB"));
     //puede ser global, porquee es el mismo para todas las cpus
-    log_info(logger, "TLB Habilitada");
+    log_debug(logger, "TLB Habilitada");
+    return 1;
 }
 
-int buscarPaginaTLB(TLB *tlb, int nro_pagina) {
+int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina) { // recibe el pid del proceso
     int pos_registro = buscarIndicePaginaTLB(tlb, nro_pagina);
 
     if(pos_registro == -1) {
-        log_info(logger, "PID: <PID> - TLB MISS - Pagina: %d", nro_pagina);
+        log_info(logger, "PID: %d - TLB MISS - Pagina: %d", pid, nro_pagina);
         return -1; // TLB MISS
     }
     
-    log_info(logger, "PID: <PID> - TLB HIT - Pagina: %d", nro_pagina);
+    log_info(logger, "PID: %d - TLB HIT - Pagina: %d", pid, nro_pagina);
     return tlb->entradas[pos_registro].marco; // TLB HIT
 }
 
@@ -50,17 +94,24 @@ int buscarIndicePaginaTLB(TLB *tlb, int nro_pagina) {
     return -1;
 }
 
-void reemplazarEnTLB(TLB *tlb) {
-    // Sucede cuando buscarRegistroTLB es -1 (TLB MISS) //
+void reemplazarEnTLB(TLB *tlb, int nro_pagina, int marco) {
+    // Sucede cuando buscarRegistroTLB() es -1 (TLB MISS) //
     int indice_victima;
 
     if(hayEntradaVaciaTLB(tlb, &indice_victima)) {
-        // insertarPaginaTLB(tlb, indice_victima);
+        insertarPaginaTLB(tlb, indice_victima, nro_pagina, marco);
     }
     
     indice_victima = seleccionarEntradaVictima(tlb);
     limpiarEntradaTLB(tlb, indice_victima);
-    // insertarPaginaTLB(tlb, indice_victima);
+    insertarPaginaTLB(tlb, indice_victima, nro_pagina, marco);
+}
+
+void insertarPaginaTLB(TLB *tlb, int indice_victima, int nro_pagina, int marco) {
+    tlb->entradas[indice_victima].pagina = nro_pagina;
+    tlb->entradas[indice_victima].marco = marco;
+    tlb->entradas[indice_victima].ultimo_uso = -1;
+    tlb->entradas[indice_victima].validez = 1;
 }
 
 bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima) {
@@ -142,20 +193,14 @@ enum TIPO_ALGORITMO_REEMPLAZO algoritmo_string_to_enum(char *nombreAlgoritmo) {
 
 /////////////////////////       < TRADUCCIÓN >       /////////////////////////
 
-
-int deDireccionLogicaAfisica(int direccion_logica, int tamanio_pagina, int nro_marco) {
-    int offset = desplazamiento(direccion_logica, tamanio_pagina);
-    return ((nro_marco * tamanio_pagina) + offset); //tam marco = tam pagina
-}
-
-int numeroPagina(int direccion_logica, int tamanio_pagina) {
+int getNumeroPagina(int direccion_logica) {
     return floor(direccion_logica / tamanio_pagina);
 }
 
-int entradaNivelX(int numero_pagina) {
-    //return floor(nro_página / cant_entradas_tabla ^ (N - X)) % cant_entradas_tabla
+int getEntradaNivelX(int nro_pagina, int nro_nivel) {
+    return floor(nro_pagina / cantidad_entradas_tabla ^ (cantidad_niveles_tabla_paginas - nro_nivel)) % cantidad_entradas_tabla;
 }
 
-int desplazamiento(int direccion_logica, int tamanio_pagina) {
+int getDesplazamiento(int direccion_logica) {
     return direccion_logica % tamanio_pagina;
 }

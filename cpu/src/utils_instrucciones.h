@@ -11,9 +11,8 @@
 #include <utils/threads.h>
 #include <utils/paquetes.h>
 #include "utils_cpu.h"
+#include "traducciones.h"
 
-extern bool hayInterrupcion;
-extern pthread_mutex_t mutexInterrupcion;
 
 typedef struct {
     int pid;
@@ -39,12 +38,11 @@ typedef struct {
 } instruccionInfo;
 
 bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, int *estado_conexion);
-bool ejecutarCicloInstruccion(int socket_memoria, int socket_kernel, PCB_cpu *proc_AEjecutar, cpu_t *cpu);
+bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar);
 char* fetch(int socket_memoria, PCB_cpu *proc_AEjecutar);
-instruccionInfo decode(char *instruccion);
-char *devolverOperacion(char *instruccion);
+//instruccionInfo decode(char *instruccion);
 enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion);
-bool execute(int socket_memoria, int socket_kernel, char *instruccion, instruccionInfo instr_info, PCB_cpu *pcb);
+//bool execute(int socket_memoria, int socket_kernel, char *instruccion, instruccionInfo instr_info, PCB_cpu *pcb);
 void setProgramCounter(PCB_cpu *pcb, int newProgramCounter);
-void controlarInterrupciones(void);
+//void controlarInterrupciones(void);
 

@@ -3,13 +3,13 @@
 /*
 Logs obligatorios:
 
-Fetch Instrucción.
-Interrupción Recibida
-Instrucción Ejecutada
+Fetch Instrucción //
+Interrupción Recibida //
+Instrucción Ejecutada //
 Lectura/Escritura Memoria
 Obtener Marco
-TLB Hit
-TLB Miss
+TLB Hit //
+TLB Miss //
 Página encontrada en Caché
 Página faltante en Caché
 Página ingresada en Caché
@@ -44,22 +44,23 @@ int main(int argc, char* argv[]) {
     int socket_kernel_dispatch = generarSocket(ip_kernel, puerto_kernel_dispatch, "Kernel (Dispatch)");
     int socket_kernel_interrupt = generarSocket(ip_kernel, puerto_kernel_interrupt, "Kernel (Interrupt)");
     
-    realizarHandshake(socket_memoria, identificadorCPU, "Memoria"); //modificar porque recibe de MEMORIA mas cosas en el handshake 
-    realizarHandshake(socket_kernel_dispatch, identificadorCPU, "Kernel (Dispatch)");
-    realizarHandshake(socket_kernel_interrupt, identificadorCPU, "Kernel (INterrupt)");
+    realizarHandshakeMemoria(socket_memoria, identificadorCPU, "Memoria"); //modificar porque recibe de MEMORIA mas cosas en el handshake 
+    realizarHandshakeKernel(socket_kernel_dispatch, identificadorCPU, "Kernel (Dispatch)");
+    realizarHandshakeKernel(socket_kernel_interrupt, identificadorCPU, "Kernel (INterrupt)");
 
     cpu_t *args_cpu = prepararCPU(socket_memoria, socket_kernel_dispatch, socket_kernel_interrupt); //hace falta liberar memoria
 
-    pthread_t atenderKernel_D, atenderKernel_I; //TODO: crear un hilo para pedir a memoria
-    pthread_create(&atenderKernel_D, NULL, atenderKernelDispatch, &args_cpu);
-    pthread_create(&atenderKernel_I, NULL, atenderKernelInterrupt, &args_cpu);
+    pthread_t atender_kernel_D, atender_kernel_I;
+    // Hacer un hilo que maneje la conexion entre memoria y cpu, para que no tenga que hacer el handshake mil veces?
+    pthread_create(&atender_kernel_D, NULL, atenderKernelDispatch, &args_cpu);
+    pthread_create(&atender_kernel_I, NULL, atenderKernelInterrupt, &args_cpu);
 
 
     getchar(); //TODO: para que no termine inmediatamente
 
 
-    threadCancelAndDetach(&atenderKernel_D);
-    threadCancelAndDetach(&atenderKernel_I);
+    threadCancelAndDetach(&atender_kernel_D);
+    threadCancelAndDetach(&atender_kernel_I);
 
 
 

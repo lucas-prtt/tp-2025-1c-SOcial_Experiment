@@ -1,9 +1,19 @@
 #include <commons/collections/list.h>
-#include "utils/logConfig.h"
+#include <utils/threads.h>
 #include <string.h>
-
+#include "utils/logConfig.h"
 
 //tengo que hacer el tamaño una variable global.
+int TLB_SIZE;
+
+int cantidad_niveles_tabla_paginas;
+int cantidad_entradas_tabla;
+int tamanio_pagina;
+
+static bool variables_globales_inicializadas = false;
+static pthread_mutex_t mutex_inicializacion_globales = PTHREAD_MUTEX_INITIALIZER;
+
+////// va a cambiar
 
 typedef struct {
     int pagina;
@@ -13,16 +23,12 @@ typedef struct {
 } r_TLB;
 
 typedef struct {
+    int habilitada;
     r_TLB entradas[3]; //hardcodeado
     int proximo; // FIFO
     int contador_uso; // LRU
     int algoritmo;
 } TLB;
-
-/*typedef enum {
-    TLB_HIT,
-    TLB_MISS,
-} tlb_result;*/
 
 enum TIPO_ALGORITMO_REEMPLAZO {
     ALG_FIFO,

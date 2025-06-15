@@ -11,3 +11,6 @@
 #include <utils/paquetes.h>
 #include "utils_cpu.h"
 #include "utils_instrucciones.h"
+
+void *atenderKernelDispatch(void *cpu_args);
+void *atenderKernelInterrupt(void *cpu_args);
