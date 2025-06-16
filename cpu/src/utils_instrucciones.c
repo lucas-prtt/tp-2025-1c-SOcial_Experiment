@@ -259,7 +259,7 @@ int traducirDireccionTLB(cpu_t *cpu, int pid, int direccion_logica) { // capaz m
 
         if(marco == -1) {
             marco = resolver_pagina_con_memoria(pid, nro_pagina); // ke
-            reemplazarEnTLB(cpu->tlb, nro_pagina, marco);
+            reemplazarEnTLB(cpu->tlb, pid, nro_pagina, marco);
         }
     }
     else {

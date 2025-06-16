@@ -16,8 +16,7 @@ typedef struct {
     int socket_kernel_dispatch;
     int socket_kernel_interrupt;
 
-    // tamaño pagina
-
+    CACHE *cache;
     TLB *tlb;
 
     bool hay_interrupcion;

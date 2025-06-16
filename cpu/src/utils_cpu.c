@@ -102,9 +102,13 @@ void cerrarCPU(void) {
 
 cpu_t *prepararCPU(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt) {
     cpu_t *cpu = malloc(sizeof(cpu));
+    
     cpu->socket_memoria = socket_memoria;
     cpu->socket_kernel_dispatch = socket_kernel_dispatch;
     cpu->socket_kernel_interrupt = socket_kernel_interrupt;
+
+    cpu->cache = malloc(sizeof(CACHE));
+    inicializarCACHE(cpu->cache);
 
     cpu->tlb = malloc(sizeof(TLB));
     inicializarTLB(cpu->tlb);

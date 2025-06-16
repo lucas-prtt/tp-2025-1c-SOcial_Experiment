@@ -27,7 +27,10 @@ void *atenderKernelDispatch(void *cpu_args) {
         
         for(;;) {
             bool fin_proceso = ejecutarCicloInstruccion(cpu, &proc_AEjecutar);
-            if(fin_proceso) break;
+            if(fin_proceso) {
+                limpiarProcesoTLB(cpu->tlb, proc_AEjecutar.pid);
+                break;
+            }
         }
     }
 

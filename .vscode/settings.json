@@ -4,6 +4,7 @@
         "utils_procesos.h": "c",
         "procesos.h": "c",
         "utils_instrucciones.h": "c",
-        "list.h": "c"
+        "list.h": "c",
+        "enums.h": "c"
     }
 }
