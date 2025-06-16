@@ -49,16 +49,20 @@ extern char * directorioDump;
 extern int retrasoAcceso;
 //@brief Retraso para realizar un SWAP en ms
 extern int retrasoSWAP;
+
 // De Procesos
+
 void agregarProcesoATabla(int nuevoPID, int tamañoMaximo);
 void eliminarProcesoDeTabla(int PIDEliminado);
 
 // De Paginas
+
 void asignarMarcoAPaginaConPIDyEntradas(int PID, t_list * entradas, int marco);
 int obtenerMarcoDePaginaConPIDYEntradas(int PID, t_list * entradas);
 void removerPaginaDeMarco(int marco);
 
 // De Marcos
+
 void * punteroAMarco(int numeroDeMarco);
 int marcosDisponibles();
 bool hayEspacio(int tamañoRequerido);
@@ -66,6 +70,7 @@ int PIDdelMarco(int Marco);
 t_list * marcosDelPid(int PID);
 
 // De Metricas
+
 Metricas getMetricasPorPID(int PID);
 void aumentarMetricaSubidasAMemoriaPrincipal(int PID);
 void aumentarMetricaLecturaDeMemoria(int PID);
@@ -75,6 +80,7 @@ void aumentarMetricaBajadasASwap(int PID);
 void aumentarMetricaAccesoATablaDePaginas(int PID);
 
 // Otras
+
 void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * directorioPseudocodigo, char * directorioDump, int retrasoAcceso, int retrasoSWAP);
 void liberarVariablesGlobalesEnHeap();
 void agregarInstruccionesAPID(int PID, t_list * instruccionesNuevas);

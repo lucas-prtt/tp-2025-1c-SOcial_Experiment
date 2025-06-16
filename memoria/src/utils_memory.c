@@ -130,11 +130,20 @@ t_list* obtener_instrucciones_por_pid(uint32_t pid){
 
 int obtener_espacio_libre() {
     return 128; // Simulación de 128 páginas libres
+    // Considerar el uso de la funcion marcosDisponibles() en variablesGlobales.c
 }
 
 bool es_valida_dir_fisica(int* pid, int* direccion_fisica, int* tamanio) {
     int inicio = *direccion_fisica;
     int fin = inicio + *tamanio;
+    
+    // Recordar que hay que validar que las paginas donde se escriben pertenezcan al proceso
+    // En caso que no, depende de la logica que usemos. Podemos asignarle una pagina nueva
+    // aca, o que se asignen todas de una al crear el proceso y que aca se elija la siguiente 
+    // pagina a escribir aca, aunque depende tambien de si la logica de la pagina a escribir se 
+    // hace directo en memoria, o memoria solo escribe paginas enteras que vienen directo de la CPU,
+    // que era la posibilidad que deje escrita en el diagrama. Hay que discutirlo hoy eso.
+
 
     // Validar que el rango esté dentro de la memoria física disponible
     return inicio >= 0 && fin <= tamañoMemoriaDeUsuario;

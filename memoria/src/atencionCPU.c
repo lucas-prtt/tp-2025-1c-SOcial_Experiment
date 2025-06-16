@@ -3,15 +3,18 @@
 
 void *atenderCPU(void *socketPtr) {
     int socket_cpu = *(int*)socketPtr;
-
+    
     log_debug(logger, "Hilo atenderCPU creado, atendiendo socket %d", socket_cpu);
     free (socketPtr);
-
+    
     t_paquete *respuesta = crear_paquete(SOYCPU);
     enviar_paquete(respuesta, socket_cpu);
     log_debug(logger, "Paquete enviado (pointer = %p)", respuesta); // que hace esto?
+    // Respuesta: Esto era para comprobar que el paquete existia cuando escribí atencionKernel. Realmente se puede sacar
     eliminar_paquete(respuesta);
-
+    
+    // TODO: Envolver todo esto dentro de un while
+    
     int codigo_operacion = -42;
     t_list *pedido = recibir_paquete_lista(socket_cpu, MSG_WAITALL, &codigo_operacion);
     log_debug(logger, "Paquete recibido (socket = %d, pointer = %p, codigo_operacion = %d)", *(int*)socketPtr, pedido, codigo_operacion);
@@ -20,6 +23,7 @@ void *atenderCPU(void *socketPtr) {
         liberarConexion(socket_cpu);
         pthread_exit(NULL);
     }
+    
 
     switch(codigo_operacion) // Segun la operacion que me pida:
     {
