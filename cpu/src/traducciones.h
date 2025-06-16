@@ -10,11 +10,27 @@
 
 extern int TLB_SIZE;
 
+
 extern int cantidad_niveles_tabla_paginas;
 extern int cantidad_entradas_tabla;
 extern int tamanio_pagina;
 
 
+typedef struct {
+    // int pid;
+    int pagina;
+    void *contenido;
+    // int bit_uso;
+    // int bit_modificado;
+    // int ultimo_uso;
+} r_CACHE;
+
+typedef struct {
+    int habilitada;
+    int algoritmo;
+    // int tamanio;
+    r_CACHE entradas[]; // Revisar: r_CACHE* entradas;
+} CACHE;
 
 typedef struct {
     int pagina;
@@ -25,10 +41,11 @@ typedef struct {
 
 typedef struct {
     int habilitada;
-    r_TLB entradas[3]; //hardcodeado
     int proximo; // FIFO
     int contador_uso; // LRU
     int algoritmo;
+    // int tamanio;
+    r_TLB entradas[]; // Revisar: r_TLB* entradas;
 } TLB;
 
 enum TIPO_ALGORITMO_REEMPLAZO {
@@ -41,7 +58,9 @@ enum TIPO_ALGORITMO_REEMPLAZO {
 
 
 void inicializarVariablesGlobales(int socket_memoria, int cant_niveles_t, int cant_entradas_t, int tam_pag);
+
 int traducirDeLogicaAFisica(int direccion_logica);
+
 int inicializarTLB(TLB *tlb);
 int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina);
 int buscarIndicePaginaTLB(TLB *tlb, int nro_pagina);
@@ -51,7 +70,9 @@ bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima);
 int seleccionarEntradaVictima(TLB *tlb);
 void limpiarEntradaTLB(TLB *tlb, int indice_victima);
 void vaciarTLB(TLB *tlb);
+
 enum TIPO_ALGORITMO_REEMPLAZO algoritmo_string_to_enum(char *nombreAlgoritmo);
+
 int getNumeroPagina(int direccion_logica);
 int getEntradaNivelX(int nro_pagina, int nro_nivel);
 int getDesplazamiento(int direccion_logica);

@@ -48,6 +48,22 @@ int escribirDatoMemoria(dir_logica dir, uint32_t dato) {
 
 
 
+/////////////////////////       < CACHÉ >       /////////////////////////
+
+
+// uint8_t **espacio_usuario = malloc(sizeof(uint8_t*) * cantidad_marcos);
+
+
+
+
+
+
+
+
+
+
+
+
 /////////////////////////       < TLB >       /////////////////////////
 
 int inicializarTLB(TLB *tlb) {
@@ -58,6 +74,8 @@ int inicializarTLB(TLB *tlb) {
         return 0;
     }
 
+    TLB* tlb = (TLB*)malloc(sizeof(TLB) + TLB_SIZE * sizeof(r_TLB));
+
     tlb->habilitada = 1;
 
     for(int i = 0; i < TLB_SIZE; i++) {
@@ -66,7 +84,7 @@ int inicializarTLB(TLB *tlb) {
 
     tlb->proximo = 0;
     tlb->algoritmo = algoritmo_string_to_enum(config_get_string_value(config, "REEMPLAZO_TLB"));
-    //puede ser global, porquee es el mismo para todas las cpus
+    
     log_debug(logger, "TLB Habilitada");
     return 1;
 }
