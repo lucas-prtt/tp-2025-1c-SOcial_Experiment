@@ -332,3 +332,4 @@ void simularRetrasoUnSoloNivel(){
 void simularRetrasoSWAP(){
     usleep(retrasoSWAP);
 }
+

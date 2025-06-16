@@ -131,3 +131,11 @@ t_list* obtener_instrucciones_por_pid(uint32_t pid){
 int obtener_espacio_libre() {
     return 128; // Simulación de 128 páginas libres
 }
+
+bool es_valida_dir_fisica(int* pid, int* direccion_fisica, int* tamanio) {
+    int inicio = *direccion_fisica;
+    int fin = inicio + *tamanio;
+
+    // Validar que el rango esté dentro de la memoria física disponible
+    return inicio >= 0 && fin <= tamañoMemoriaDeUsuario;
+}
