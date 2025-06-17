@@ -4,6 +4,8 @@
 #include <commons/collections/list.h>
 #include <utils/threads.h>
 #include <string.h>
+#include <utils/paquetes.h>
+#include <sys/socket.h>
 #include "utils/logConfig.h"
 #include <math.h>
 
@@ -57,12 +59,17 @@ enum TIPO_ALGORITMO_REEMPLAZO {
 };
 
 
+
 void inicializarVariablesGlobales(int socket_memoria, int cant_niveles_t, int cant_entradas_t, int tam_pag);
 
-int traducirDeLogicaAFisica(int direccion_logica);
+int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina);
+int recibirDireccionTabla(int socket_memoria);
+int recibirMarco(int socket_memoria);
+void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio);
+void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos);
 
 int inicializarCACHE(CACHE *cache);
-int buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina);
+void *buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina);
 int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina);
 
 int inicializarTLB(TLB *tlb);

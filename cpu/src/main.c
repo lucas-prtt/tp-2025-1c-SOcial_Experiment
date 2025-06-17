@@ -1,17 +1,16 @@
 #include "main.h"
 
 /*
-Logs obligatorios:
-
 Fetch Instrucción //
 Interrupción Recibida //
 Instrucción Ejecutada //
-Lectura/Escritura Memoria
-Obtener Marco
+Lectura/Escritura Memoria //
+Obtener Marco //
 TLB Hit //
 TLB Miss //
 Página encontrada en Caché //
 Página faltante en Caché //
+
 Página ingresada en Caché
 Página Actualizada de Caché a Memoria
 */

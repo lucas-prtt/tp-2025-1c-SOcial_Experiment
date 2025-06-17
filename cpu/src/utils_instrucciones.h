@@ -44,10 +44,12 @@ void devolverProcesoKernel(int socket_kernel, PCB_cpu *proc_AEjecutar);
 char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar);
 t_list *decode(char *instruccion, instruccionInfo *instr_info);
 enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion);
-bool execute(int socket_memoria, int socket_kernel, t_list *instruccion_list, instruccionInfo instr_info, PCB_cpu *pcb);
-int traducirDireccionCACHE(void);
-int traducirDireccionTLB(cpu_t *cpu, int pid, int direccion_logica);
+bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, PCB_cpu *pcb);
+
+int traducirDireccionTLB(TLB *tlb, int pid, int direccion_logica);
+
 void setProgramCounter(PCB_cpu *pcb, int newProgramCounter);
+
 bool recibirInterrupcion(int socket_kernel_dispatch);
 bool checkInterrupt(cpu_t *cpu);
 

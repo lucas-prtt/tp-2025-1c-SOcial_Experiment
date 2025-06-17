@@ -24,29 +24,115 @@ void inicializarVariablesGlobales(int socket_memoria, int cant_niveles_t, int ca
 
 /////////////////////////       < MMU >       /////////////////////////
 
-int traducirDeLogicaAFisica(int direccion_logica) { //
-    // Envia a memoria una peticion del tipo: [ PID, Npág, (e1, e2, e3, e4...) ]
+int getNumeroPagina(int direccion_logica) {
+    return floor(direccion_logica / tamanio_pagina);
 }
 
-/*
-int leerDatoMemoria(dir_logica dir) {
-    return procesar_solicitud(dir,READ_ACCION,0);
+int getEntradaNivelX(int nro_pagina, int nro_nivel) {
+    int resultado = (int)pow(cantidad_entradas_tabla, cantidad_niveles_tabla_paginas - nro_nivel);
+    return (int)floor(nro_pagina / resultado) % cantidad_entradas_tabla;
 }
 
-int escribirDatoMemoria(dir_logica dir, uint32_t dato) {
-    return procesar_solicitud(dir, WRITE_ACCION, dato);
+int getDesplazamiento(int direccion_logica) {
+    return direccion_logica % tamanio_pagina;
 }
-*/
 
-//sucede despues de no encontrar ni en la tlb ni en cache
+int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina) {
+    int direccion_tabla_actual = -1;
 
-/*
-// funcion que calcule la entrada de la tabla de paginas en el nivel x (Esta hecha)
-//TODO: funcion que envie al modulo memoria el pid de un proceso y un numero de entrada de pagina
-        deberia recibir, la base (direccion) del siguiente nivel de la entrada de pagina.
-        Comienza otra vez el ciclo, pero con la siguiente entrada a la tabla de paginas y la direccion antes calculada
-        hasta obtener el marco de la pagina (puedo usar un for)
-*/
+    for(int nivel = 1; nivel <= cantidad_niveles_tabla_paginas; nivel++) {
+        int entrada = getEntradaNivelX(nro_pagina, nivel);
+
+        if(nivel == 1) {
+            // Es el primer nivel //
+            t_paquete *paquete_peticion = crear_paquete(PETICION_LEER_DE_MEMORIA); //
+            agregar_a_paquete(paquete_peticion, &pid, sizeof(int));
+            agregar_a_paquete(paquete_peticion, &entrada, sizeof(int));
+            enviar_paquete(paquete_peticion, socket_memoria);
+            eliminar_paquete(paquete_peticion);
+            
+            direccion_tabla_actual = recibirDireccionTabla(socket_memoria);
+        }
+        else if(nivel < cantidad_niveles_tabla_paginas) {
+            // Es un nivel intermedio //
+            t_paquete *paquete_peticion = crear_paquete(PETICION_LEER_DE_MEMORIA); //
+            agregar_a_paquete(paquete_peticion, &direccion_tabla_actual, sizeof(int));
+            agregar_a_paquete(paquete_peticion, &entrada, sizeof(int));
+            enviar_paquete(paquete_peticion, socket_memoria);
+            eliminar_paquete(paquete_peticion);
+
+            direccion_tabla_actual = recibirDireccionTabla(socket_memoria);
+        }
+        else {
+            // Es el último nivel //
+            t_paquete *paquete_peticion = crear_paquete(PETICION_LEER_DE_MEMORIA); //
+            agregar_a_paquete(paquete_peticion, &direccion_tabla_actual, sizeof(int));
+            agregar_a_paquete(paquete_peticion, &entrada, sizeof(int));
+            enviar_paquete(paquete_peticion, socket_memoria);
+            eliminar_paquete(paquete_peticion);
+
+            return recibirMarco(socket_memoria);
+        }
+    }
+
+    return -1;
+}
+
+int recibirDireccionTabla(int socket_memoria) {
+    int *codigo_operacion = malloc(sizeof(int));
+    t_list* respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
+    int direccion_tabla = *((int *)list_get(respuesta, 1));
+
+    free(codigo_operacion);
+    eliminar_paquete_lista(respuesta);
+    return direccion_tabla;
+}
+
+int recibirMarco(int socket_memoria) {
+    int *codigo_operacion = malloc(sizeof(int));
+    t_list* respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
+    int marco = *((int *)list_get(respuesta, 1));
+
+    free(codigo_operacion);
+    eliminar_paquete_lista(respuesta);
+    return marco;
+}
+
+void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio) {
+    t_paquete *paquete_peticion_read = crear_paquete(PETICION_LEER_DE_MEMORIA);
+    agregar_a_paquete(paquete_peticion_read, &pid, sizeof(int));
+    agregar_a_paquete(paquete_peticion_read, &direccion_fisica, sizeof(int));
+    agregar_a_paquete(paquete_peticion_read, &tamanio, sizeof(int));
+    enviar_paquete(paquete_peticion_read, socket_memoria);
+    eliminar_paquete(paquete_peticion_read);
+
+    int *codigo_operacion = malloc(sizeof(int));
+    t_list *respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
+    if(respuesta == NULL || *codigo_operacion != RESPUESTA_PETICION) {
+        free(codigo_operacion);
+        eliminar_paquete_lista(respuesta);
+        // Como deberia manejarlo? Deberia salir y avanzar a la siguiente instruccion?
+    }
+    
+    char *leido = strdup((char *)list_get(respuesta, 0)); // no estoy seguro
+
+    printf("READ: %s\n", leido);
+    log_info(logger, "PID: %d - Acción: READ - Dirección Física: %d - Valor: %s", pid, direccion_fisica, leido);
+
+    free(codigo_operacion);
+    eliminar_paquete_lista(respuesta);
+}
+
+void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos) {
+    t_paquete *paquete_peticion_write = crear_paquete(PETICION_ESCRIBIR_EN_MEMORIA);
+    agregar_a_paquete(paquete_peticion_write, &pid, sizeof(int));
+    agregar_a_paquete(paquete_peticion_write, &direccion_fisica, sizeof(int));
+    agregar_a_paquete(paquete_peticion_write, datos, strlen(datos) + 1);
+    enviar_paquete(paquete_peticion_write, socket_memoria);
+    eliminar_paquete(paquete_peticion_write);
+
+    log_info(logger, "PID: %d - Acción: ESCRIBIR - Dirección Física: %d - Valor: %s", pid, direccion_fisica, datos);
+}
 
 
 
@@ -70,16 +156,16 @@ int inicializarCACHE(CACHE *cache) {
     return 1;
 }
 
-int buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
+void *buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
     int pos_pagina = buscarIndicePaginaCACHE(cache, pid, nro_pagina);
 
     if(pos_pagina == -1) {
         log_info(logger, "PID: %d - Cache Miss - Pagina: %d", pid, nro_pagina);
-        return -1; // CACHE MISS
+        return NULL; // CACHE MISS
     }
     
     log_info(logger, "PID: %d - Cache Hit - Pagina: %d", pid, nro_pagina);
-    return pos_pagina; // CACHE HIT
+    return cache->entradas[pos_pagina].contenido; // CACHE HIT
 }
 
 int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
@@ -92,13 +178,6 @@ int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
 
     return -1;
 }
-
-
-
-
-
-
-
 
 
 
@@ -117,6 +196,9 @@ int inicializarTLB(TLB *tlb) { // crearTLB(TLB *tlb)
     tlb->habilitada = 1;
 
     for(int i = 0; i < TLB_SIZE; i++) {
+        tlb->entradas[i].pagina = -1;
+        tlb->entradas[i].marco = -1;
+        tlb->entradas[i].ultimo_uso = -1;
         tlb->entradas[i].validez = 0;
     }
 
@@ -172,11 +254,12 @@ void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, in
 
 bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima) {
     for(int i = 0; i < TLB_SIZE; i++) {
-        if(tlb->entradas[i].validez == 0) {
+        if(tlb->entradas[i].pagina == -1) {
             *indice_victima = i;
             return true;
         }
     }
+
     return false;
 }
 
@@ -246,21 +329,4 @@ enum TIPO_ALGORITMO_REEMPLAZO algoritmo_string_to_enum(char *nombreAlgoritmo) {
         return ALG_CLOCK_M;
     }
     return ERROR_NO_ALG;
-}
-
-
-
-/////////////////////////       < TRADUCCIÓN >       /////////////////////////
-
-int getNumeroPagina(int direccion_logica) {
-    return floor(direccion_logica / tamanio_pagina);
-}
-
-int getEntradaNivelX(int nro_pagina, int nro_nivel) {
-    int resultado = (int)pow(cantidad_entradas_tabla, cantidad_niveles_tabla_paginas - nro_nivel);
-    return (int)floor(nro_pagina / resultado) % cantidad_entradas_tabla;
-}
-
-int getDesplazamiento(int direccion_logica) {
-    return direccion_logica % tamanio_pagina;
 }

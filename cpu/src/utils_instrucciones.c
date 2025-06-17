@@ -32,8 +32,8 @@ bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
     log_info(logger, "## PID: %d - FETCH - Program Counter: %d", proc_AEjecutar->pid, proc_AEjecutar->pc);
 
     t_list *instruccion_list = decode(instruccion, &instr_info);
-    bool fin_proceso = execute(cpu->socket_memoria, cpu->socket_kernel_dispatch, instruccion_list, instr_info, proc_AEjecutar);
-    log_info(logger, "## PID: %d - Ejecutando: %s - <PARAMETROS>",  proc_AEjecutar->pid, (char *)list_get(instruccion_list, 0));
+    bool fin_proceso = execute(cpu, instruccion_list, instr_info, proc_AEjecutar); //
+    log_info(logger, "## PID: %d - Ejecutando: %s - <PARAMETROS>",  proc_AEjecutar->pid, (char *)list_get(instruccion_list, 0)); //raro
     if(checkInterrupt(cpu)) {
         devolverProcesoKernel(cpu->socket_kernel_dispatch, proc_AEjecutar);
         free(instruccion);
@@ -46,7 +46,7 @@ bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
     return fin_proceso;
 }
 
-char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar) { //Funciona en casos de CACHE_MISS y TLB_MISS
+char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar) { // Funciona en casos de CACHE_MISS y TLB_MISS
     // Pide una instrucccion a memoria a partir de proc_AEjecutar //
     t_paquete *paquete_peticion_instr = crear_paquete(PETICION_INSTRUCCION_MEMORIA);
     agregar_a_paquete(paquete_peticion_instr, &(proc_AEjecutar->pid), sizeof(proc_AEjecutar->pid));
@@ -75,7 +75,7 @@ t_list *decode(char *instruccion, instruccionInfo *instr_info) {
 
     // Duplica la cadena para manipulación //
     char *copia_de_instruccion = strdup(instruccion);
-    char *token = strtok(copia_de_instruccion, " ");  // Primer token (operación)
+    char *token = strtok(copia_de_instruccion, " ");  // Primer token: Operación
 
     // Decodificar tipo de instrucción //
     instr_info->tipo_instruccion = instrucciones_string_to_enum(token);
@@ -119,63 +119,88 @@ enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion) {
     return ERROR_NO_INSTR;
 }
 
-bool execute(int socket_memoria, int socket_kernel, t_list *instruccion_list, instruccionInfo instr_info, PCB_cpu *pcb) {
+bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, PCB_cpu *pcb) {
+    int socket_memoria = cpu->socket_memoria;
+    int socket_kernel = cpu->socket_kernel_dispatch;
+
     char *operacion = (char *)list_get(instruccion_list, 0);
+    void *contenido_cache = NULL;
     int direccion_fisica = -1;
 
+    // E S T Á S   E N   Z O N A   D E   P E L I G R O //
     if(instr_info.requiere_traduccion) {
-        direccion_fisica = traducirDireccionCACHE(); // TODO:
-        if(direccion_fisica == -1) {
-            //direccion_fisica = traducirDireccionTLB(cpu, pcb->pid, atoi(list_get(instruccion_list, 1)));
-            //cpu por el tamano de la pagina, capaz me covniene que ese tamano se global
+        int direccion_logica = atoi((char *)list_get(instruccion_list, 1));
+        int nro_pagina = getNumeroPagina(direccion_logica);
+
+        if(cpu->cache->habilitada) {
+            contenido_cache = buscarPaginaCACHE(cpu->cache, pcb->pid, nro_pagina);
+        }
+
+        // Si contenido_cache = NULL; Se usa la TLB y la memoria //
+        if(contenido_cache == NULL) {
+            direccion_fisica = traducirDireccionTLB(cpu->tlb, pcb->pid, direccion_logica);
+            if(direccion_fisica == -1) {
+                int marco = buscarMarcoAMemoria(socket_memoria, pcb->pid, nro_pagina);
+                reemplazarEnTLB(cpu->tlb, pcb->pid, nro_pagina, marco);
+            }
         }
     }
-
-    switch (instr_info.tipo_instruccion)
+    // E S T Á S   F U E R A   D E   L A   Z O N A   D E   P E L I G R O //
+    
+    switch(instr_info.tipo_instruccion)
     {
         case INSTR_NOOP:
         {
-            sleep(1); // Simula ciclo de CPU
             setProgramCounter(pcb, pcb->pc + 1);
             break;
         }
         case INSTR_WRITE: //
         {
-            char* datos = strtok(NULL, " ");
+            char* datos = (char*)list_get(instruccion_list, 2);
 
-            t_paquete *paquete_peticion_write = crear_paquete(PETICION_ESCRIBIR_EN_MEMORIA);
-            agregar_a_paquete(paquete_peticion_write, &pcb->pid, sizeof(int));
-            agregar_a_paquete(paquete_peticion_write, &direccion_fisica, sizeof(int));
-            agregar_a_paquete(paquete_peticion_write, datos, strlen(datos) + 1);
-            enviar_paquete(paquete_peticion_write, socket_memoria);
+            if(contenido_cache != NULL) {
+                // Write directamente en la caché //
+                int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
+                int desplazamiento = getDesplazamiento(direccion_logica);
+
+                memcpy((char *)contenido_cache + desplazamiento, datos, strlen(datos) + 1); // incluye '\0' //
+
+                log_info(logger, "PID: %d - Acción: ESCRIBIR - Dirección Física: %d - Valor: %s", pcb->pid, direccion_fisica, datos);
+
+                setProgramCounter(pcb, pcb->pc + 1);
+                return false;
+            }
+
+            escribirDatoMemoria(socket_memoria, pcb->pid, direccion_fisica, datos);
+            // actualizar caché
+
             setProgramCounter(pcb, pcb->pc + 1);
-
-            eliminar_paquete(paquete_peticion_write);
             break;
         }
-        case INSTR_READ: //
+        case INSTR_READ:
         {
-            int tam = atoi(strtok(NULL, " ")); // cambio
+            int tamanio = atoi((char *)list_get(instruccion_list, 2));
 
-            t_paquete *paquete_peticion_read = crear_paquete(PETICION_LEER_DE_MEMORIA);
-            agregar_a_paquete(paquete_peticion_read, &pcb->pid, sizeof(int));
-            agregar_a_paquete(paquete_peticion_read, &direccion_fisica, sizeof(int));
-            agregar_a_paquete(paquete_peticion_read, &tam, sizeof(int));
-            enviar_paquete(paquete_peticion_read, socket_memoria);
-            eliminar_paquete(paquete_peticion_read);
+            if(contenido_cache != NULL) {
+                // READ directamente desde la caché //
+                int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
+                int desplazamiento = getDesplazamiento(direccion_logica);
 
-            int *cod_op = malloc(sizeof(int));
-            t_list *lista = recibir_paquete_lista(socket_memoria, MSG_WAITALL, cod_op);
-            if(lista == NULL || *cod_op != RESPUESTA_PETICION || list_size(lista) < 1) {
-                free(cod_op);
-                eliminar_paquete_lista(lista);
-                // break; // Como deberia manejarlo? Deberia salir y avanzar a la siguiente instruccion?
+                char leido[tamanio + 1];
+                memcpy(leido, (char *)contenido_cache + desplazamiento, tamanio);
+                leido[tamanio] = '\0';
+
+                printf("READ: %s\n", leido);
+                log_info(logger, "PID: %d - Acción: READ - Dirección Física: %d - Valor: %s", pcb->pid, direccion_fisica, leido);
+
+                setProgramCounter(pcb, pcb->pc + 1);
+                return false;
             }
-            // char *leido = strdup((char *)list_get(lista, 0)); // No se usa
-            setProgramCounter(pcb, pcb->pc + 1);
+            
+            leerDatoMemoria(socket_memoria, pcb->pid, direccion_fisica, tamanio);
+            // actualizar cache
 
-            free(cod_op);
-            eliminar_paquete_lista(lista);
+            setProgramCounter(pcb, pcb->pc + 1);
             break;
         }
         case INSTR_GOTO:
@@ -247,26 +272,21 @@ bool execute(int socket_memoria, int socket_kernel, t_list *instruccion_list, in
     return false;
 }
 
-int traducirDireccionCACHE(void) {}
-
-int traducirDireccionTLB(cpu_t *cpu, int pid, int direccion_logica) { // capaz me deberia devolver -1 si esta deshabilitada, para que el resolver con memoria no este muy duplicaod
+int traducirDireccionTLB(TLB *tlb, int pid, int direccion_logica) {
     int nro_pagina = getNumeroPagina(direccion_logica);
     int desplazamiento = getDesplazamiento(direccion_logica);
     int marco = -1;
 
-    if(cpu->tlb->habilitada) {
-        marco = buscarPaginaTLB(cpu->tlb, pid, nro_pagina);
+    if(tlb->habilitada) {
+        marco = buscarPaginaTLB(tlb, pid, nro_pagina);
 
-        if(marco == -1) {
-            marco = resolver_pagina_con_memoria(pid, nro_pagina); // ke
-            reemplazarEnTLB(cpu->tlb, pid, nro_pagina, marco);
+        if(marco != -1) {
+            log_info(logger, "PID: %d - OBTENER MARCO - Página: %d - Marco: %d", pid, nro_pagina, marco);
+            return marco * tamanio_pagina + desplazamiento;
         }
     }
-    else {
-        marco = resolver_pagina_con_memoria(pid, nro_pagina); // ke
-    }
 
-    return marco * tamanio_pagina + desplazamiento;
+    return -1;
 }
 
 void setProgramCounter(PCB_cpu *pcb, int newProgramCounter) {
@@ -277,7 +297,7 @@ void setProgramCounter(PCB_cpu *pcb, int newProgramCounter) {
 
 /////////////////////////       < INTERRUPCIONES >       /////////////////////////
 
-bool recibirInterrupcion(int socket_kernel_dispatch) { //preguntar a lucas
+bool recibirInterrupcion(int socket_kernel_dispatch) {
     int *codigo_operacion = malloc(sizeof(int));
     t_list *lista_interrupcion = recibir_paquete_lista(socket_kernel_dispatch, MSG_WAITALL, codigo_operacion);
 
@@ -290,7 +310,6 @@ bool recibirInterrupcion(int socket_kernel_dispatch) { //preguntar a lucas
     eliminar_paquete_lista(lista_interrupcion);
     return true;
 }
-
 
 bool checkInterrupt(cpu_t *cpu) {
     pthread_mutex_lock(&cpu->mutex_interrupcion);
@@ -305,7 +324,7 @@ bool checkInterrupt(cpu_t *cpu) {
     return false;
 }
 
-void devolverProcesoAlKernel(int socket_kernel, PCB_cpu *proc_AEjecutar) {
+void devolverProcesoKernel(int socket_kernel, PCB_cpu *proc_AEjecutar) {
     t_paquete *paquete_devolucion_proceso = crear_paquete(INTERRUPT_ACKNOWLEDGE);
     agregar_a_paquete(paquete_devolucion_proceso, &(proc_AEjecutar->pc), sizeof(proc_AEjecutar->pc));
     enviar_paquete(paquete_devolucion_proceso, socket_kernel);
