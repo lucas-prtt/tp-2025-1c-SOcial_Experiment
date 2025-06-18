@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <unistd.h>
-#include "logConfig.h"
+#include "utils/logConfig.h"
 typedef struct MetricasMemoria{
     int accesosATP;
     int instruccionesSolicitadas;
