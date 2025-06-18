@@ -13,8 +13,8 @@ void *atenderCPU(void *socketPtr) {
     // Respuesta: Esto era para comprobar que el paquete existia cuando escribí atencionKernel. Realmente se puede sacar
     eliminar_paquete(respuesta);
     
-    // TODO: Envolver todo esto dentro de un while
-    
+    while(1){ // si se pierde la conexion, entra al if de abajo y termina el hilo
+
     int codigo_operacion = -42;
     t_list *pedido = recibir_paquete_lista(socket_cpu, MSG_WAITALL, &codigo_operacion);
     log_debug(logger, "Paquete recibido (socket = %d, pointer = %p, codigo_operacion = %d)", *(int*)socketPtr, pedido, codigo_operacion);
@@ -141,5 +141,6 @@ void *atenderCPU(void *socketPtr) {
         }
     }
     eliminar_paquete_lista(pedido);
+    }
     pthread_exit(NULL);
 }
