@@ -93,7 +93,7 @@ void *atenderCPU(void *socketPtr) {
             break;
         }
         case PETICION_ESCRIBIR_EN_MEMORIA:
-        {                                               //Revisar que tira errores de compilacion (prueben usar el comando make para ver los errores que tira)
+        {                                            
             int *pid = (int*)list_get(pedido, 1); //
             int *direccion_fisica = (int*)list_get(pedido, 3); //
             char *datos = (char*)list_get(pedido, 5); //
@@ -101,7 +101,7 @@ void *atenderCPU(void *socketPtr) {
 
             log_info(logger, "## PID: %d - Escritura - Dir. Física: %d - Tamaño: <TAMAÑO>", *pid, *direccion_fisica); // Dice tamaño... será datos?
 
-            if (!es_valida_dir_fisica(pid, direccion_fisica, tamanio)) {
+            if (!es_valida_dir_fisica(pid, direccion_fisica, & tamanio)) {
                 // error
             } else {
                 memcpy(memoriaDeUsuario + *direccion_fisica, datos, tamanio);
@@ -123,11 +123,11 @@ void *atenderCPU(void *socketPtr) {
                 // enviar error
             } else {
                 // leer bytes desde el buffer de memoria
-                void* datos = malloc(tamanio);
-                memcpy(datos, memoriaDeUsuario + *direccion_fisica, tamanio);
+                void* datos = malloc(*tamanio);
+                memcpy(datos, memoriaDeUsuario + *direccion_fisica, *tamanio);
                 //
                 t_paquete *respuesta_peticion_leer = crear_paquete(RESPUESTA_LEER_DE_MEMORIA);
-                agregar_a_paquete(respuesta_peticion_leer, datos, tamanio);
+                agregar_a_paquete(respuesta_peticion_leer, datos, *tamanio);
                 enviar_paquete(respuesta_peticion_leer, socket_cpu);
                 eliminar_paquete(respuesta_peticion_leer);
                 free(datos);
