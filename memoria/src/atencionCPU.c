@@ -74,7 +74,12 @@ void *atenderCPU(void *socketPtr) {
                 eliminar_paquete(respuesta_cpu);
             }else{
                 log_debug(logger, "CPU de socket %d intentó acceder a una pagina sin marco asignado", socket_cpu);
-                t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_PAGINA_NO_VALIDA);
+                    // Suponiendo que la CPU solo va a pedir paginas que corresponden al tamaño del proceso
+                int marco = asignarSiguienteMarcoLibreDadasLasEntradas(*pid, entradas);
+                log_debug(logger, "Se asigno el marco %d al PID %d", marco, *pid);
+                int dirMarco = direccionFisicaMarco(marco); // Devuelve el Offset, no el puntero en si
+                t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_DIRECCION_PAGINA);
+                agregar_a_paquete(respuesta_cpu, &dirMarco, sizeof(int));
                 enviar_paquete(respuesta_cpu, socket_cpu);
                 eliminar_paquete(respuesta_cpu);
             }

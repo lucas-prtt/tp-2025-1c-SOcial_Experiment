@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <unistd.h>
-
+#include "logConfig.h"
 typedef struct MetricasMemoria{
     int accesosATP;
     int instruccionesSolicitadas;
@@ -62,6 +62,7 @@ int obtenerMarcoDePaginaConPIDYEntradas(int PID, t_list * entradas);
 void removerPaginaDeMarco(int marco);
 void vaciarTablaDePaginasDePID(int PID);
 void eliminarProcesoDePIDPorMarco(int PID);
+int asignarSiguienteMarcoLibreDadasLasEntradas(int PID, t_list * entradas);
 
 // De Marcos
 

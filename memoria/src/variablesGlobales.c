@@ -17,7 +17,7 @@ int retrasoSWAP; // Falta implementarlo
 pthread_mutex_t MUTEX_tablaDeProcesos = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_PIDPorMarco = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_MemoriaDeUsuario = PTHREAD_MUTEX_INITIALIZER;
-
+pthread_mutex_t MUTEX_SiguienteMarcoLibre = PTHREAD_MUTEX_INITIALIZER; // Mutex para que el valor de siguienteMarcoLibre() no quede desactualizado
 // @brief Se debe ejecutar antes de utilizar cualquier funcion o variable del archivo variablesGlobales.h
 void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * PathPseudocodigo, char * PathDUMP, int retAcc, int retSWAP){
     tablaDeProcesos = list_create();
@@ -362,4 +362,14 @@ int siguienteMarcoLibre(){
     }
     pthread_mutex_unlock(&MUTEX_PIDPorMarco);
     return -1;
+}
+int asignarSiguienteMarcoLibreDadasLasEntradas(int PID, t_list * entradas){
+    pthread_mutex_lock(&MUTEX_SiguienteMarcoLibre);
+    int sig = siguienteMarcoLibre();
+    if(sig != -1)
+    asignarMarcoAPaginaConPIDyEntradas(PID, entradas, siguienteMarcoLibre());
+    else
+    log_error(logger, "Se intentó reservar mas espacio de la cuenta");
+    pthread_mutex_unlock(&MUTEX_SiguienteMarcoLibre);
+    return sig;
 }
