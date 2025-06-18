@@ -29,7 +29,7 @@ int realizarDump(int PID){
     }
     pthread_mutex_lock(&MUTEX_MemoriaDeUsuario);
     for (int i = 0; i<qMarcos; i++){
-    char * contenido = mem_hexstring(punteroAMarco(*(int*)list_get(marcos, i)), tamañoMarcos);
+    char * contenido = mem_hexstring(punteroAMarcoPorNumeroDeMarco(*(int*)list_get(marcos, i)), tamañoMarcos);
     fwrite(
         contenido,
         sizeof(char),

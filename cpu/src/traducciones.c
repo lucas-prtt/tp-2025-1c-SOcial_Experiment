@@ -42,6 +42,7 @@ int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina) {
 
     for(int nivel = 1; nivel <= cantidad_niveles_tabla_paginas; nivel++) {
         int entrada = getEntradaNivelX(nro_pagina, nivel);
+            // Che, acuerdense que quedamos en mandar todo de una aca (como un vector de ints de entrada)
 
         if(nivel == 1) {
             // Es el primer nivel //

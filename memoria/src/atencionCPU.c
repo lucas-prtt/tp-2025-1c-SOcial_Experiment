@@ -50,13 +50,31 @@ void *atenderCPU(void *socketPtr) {
             break;
             
         }case PETICION_TRADUCCION_DIRECCION:
-        {
-            // TODO: traducir una direccion logica a una direccion fisica
-            // Creo que no importa en esta entrega
+        {   
+            simularRetrasoMultinivel();
+            int *pid = (int*)list_get(pedido, 1);
+            int cantidadDeEntradas = (*(int*)list_get(pedido, 2))/sizeof(int);
+            int *entradasPaquete = (int*)list_get(pedido, 3);
+            t_list * entradas = list_create();
+            for (int i = 0; i < cantidadDeEntradas; i++){
+                list_add(entradas, &(entradasPaquete[i])); // Mientras exista el vector EntradasPaquete (y el pedido), va a existir los elementos de esta lista
+            }
+            int marco = obtenerMarcoDePaginaConPIDYEntradas(*pid, entradas);
+            int dirMarco = direccionFisicaMarco(marco); // Devuelve el Offset, no el puntero en si
+            // Habria que contemplar mandarle a la CPU un puntero en lugar de un entero que indique el offset
+            // Mandar un puntero emularia mejor lo que realmente pasa, aunque si hay que reallocar la memoriaDeUsuario
+            // se nos complicaría, ademas de que se siente como un crimen de guerra mandarle a otra computadora
+            // un puntero al que no puede acceder, ya que direcciona a una ubicacion de otra pc.
+            // Por el momento esto manda el offset. Se puede usar la funcion punteroAMarco en lugar de direccionFisicaMarco para cambiarlo
+            list_destroy(entradas);
+            t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_DIRECCION_PAGINA);
+            agregar_a_paquete(respuesta_cpu, &dirMarco, sizeof(int));
+            enviar_paquete(respuesta_cpu, socket_cpu);
+            eliminar_paquete(respuesta_cpu);
             break;
         }
         case PETICION_ESCRIBIR_EN_MEMORIA:
-        {
+        {                                               //Revisar que tira errores de compilacion (prueben usar el comando make para ver los errores que tira)
             int *pid = (int*)list_get(pedido, 1); //
             int *direccion_fisica = (int*)list_get(pedido, 3); //
             char *datos = (char*)list_get(pedido, 5); //
@@ -88,7 +106,7 @@ void *atenderCPU(void *socketPtr) {
                 // leer bytes desde el buffer de memoria
                 void* datos = malloc(tamanio);
                 memcpy(datos, memoriaDeUsuario + *direccion_fisica, tamanio);
-
+                //
                 t_paquete *respuesta_peticion_leer = crear_paquete(RESPUESTA_LEER_DE_MEMORIA);
                 agregar_a_paquete(respuesta_peticion_leer, datos, tamanio);
                 enviar_paquete(respuesta_peticion_leer, socket_cpu);

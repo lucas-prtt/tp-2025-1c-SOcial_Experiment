@@ -63,7 +63,9 @@ void removerPaginaDeMarco(int marco);
 
 // De Marcos
 
-void * punteroAMarco(int numeroDeMarco);
+void * punteroAMarcoPorNumeroDeMarco(int numeroDeMarco);
+void * punteroAMarcoPorDireccionFisica(int direccionFisica);
+int direccionFisicaMarco(int numeroDeMarco);
 int marcosDisponibles();
 bool hayEspacio(int tamañoRequerido);
 int PIDdelMarco(int Marco);

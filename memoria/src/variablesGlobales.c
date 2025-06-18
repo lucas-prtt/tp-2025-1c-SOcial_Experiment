@@ -210,9 +210,20 @@ int PIDDelMarco(int numeroDeMarco){
 
 
 //@brief Devuelve el puntero a un marco dentro del void * memoriaDeUsuario. Cuando se use, solo escribir hasta la posicion + tamañoMarcos
-void * punteroAMarco(int numeroDeMarco){
+void * punteroAMarcoPorNumeroDeMarco(int numeroDeMarco){
     return memoriaDeUsuario + numeroDeMarco * tamañoMarcos;
 }
+
+//@brief Dado un numero de marco, devuelve el offset que representa la direccion fisica del marco en nuestra "memoria". Para acceder, a esto hay que agregarle el puntero a la memoria fisica
+int direccionFisicaMarco(int numeroDeMarco){
+    return numeroDeMarco * tamañoMarcos;
+}
+
+//@brief Devuelve el puntero a marco dada la "direccion fisica"
+void * punteroAMarcoPorDireccionFisica(int direccionFisica){
+    return memoriaDeUsuario + direccionFisica;
+}
+
 //@brief Devuelve la division entre tamaño y tamañoMarcos, redondeada para arriba
 int cantidadDeMarcosParaAlmacenar(int tamaño){
     return (tamaño+tamañoMarcos-1)/tamañoMarcos;
