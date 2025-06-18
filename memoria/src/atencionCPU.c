@@ -51,9 +51,10 @@ void *atenderCPU(void *socketPtr) {
             
         }case PETICION_TRADUCCION_DIRECCION:
         {   
-            simularRetrasoMultinivel();
             int *pid = (int*)list_get(pedido, 1);
+            log_debug(logger, "Se pide traducir direccion del proceso %d ", *pid);
             int cantidadDeEntradas = (*(int*)list_get(pedido, 2))/sizeof(int);
+            simularRetrasoMultinivel();
             int *entradasPaquete = (int*)list_get(pedido, 3);
             t_list * entradas = list_create();
             for (int i = 0; i < cantidadDeEntradas; i++){
