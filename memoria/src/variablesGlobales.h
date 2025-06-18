@@ -7,6 +7,8 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "utils/logConfig.h"
+#include "math.h"
+
 typedef struct MetricasMemoria{
     int accesosATP;
     int instruccionesSolicitadas;
@@ -63,6 +65,9 @@ void removerPaginaDeMarco(int marco);
 void vaciarTablaDePaginasDePID(int PID);
 void eliminarProcesoDePIDPorMarco(int PID);
 int asignarSiguienteMarcoLibreDadasLasEntradas(int PID, t_list * entradas);
+int esPaginaValida(int PID, t_list * entradas);
+
+
 
 // De Marcos
 
@@ -74,6 +79,9 @@ bool hayEspacio(int tamañoRequerido);
 int PIDdelMarco(int Marco);
 t_list * marcosDelPid(int PID);
 int siguienteMarcoLibre();
+
+
+
 // De Metricas
 
 Metricas getMetricasPorPID(int PID);

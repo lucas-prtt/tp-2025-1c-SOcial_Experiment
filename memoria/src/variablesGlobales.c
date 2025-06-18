@@ -373,3 +373,26 @@ int asignarSiguienteMarcoLibreDadasLasEntradas(int PID, t_list * entradas){
     pthread_mutex_unlock(&MUTEX_SiguienteMarcoLibre);
     return sig;
 }
+
+int convertirEntradasAPagina(t_list * entradas){
+    int qentradas = list_size(entradas);
+    int acum = 0;
+    for(int i=0; i<qentradas; i++){
+        acum += (*(int*)list_get(entradas, i)) *  (int)pow(maximoEntradasTabla, qentradas-i-1);
+    }
+    return acum;
+}
+int cantidadDePaginasDelProceso(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDInfo * proceso = obtenerInfoProcesoConPID(PID);
+    int qmarcos = cantidadDeMarcosParaAlmacenar(proceso->TamMaxProceso);
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    return qmarcos;
+}
+
+int esPaginaValida(int PID, t_list * entradas){
+    return 
+    cantidadDePaginasDelProceso(PID) // N, (>=1)
+      >   
+    convertirEntradasAPagina(entradas) ; // de 0 a N-1 esta bien
+}
