@@ -158,6 +158,14 @@ void eliminarProcesoDePIDPorMarco(int PID){
     }
     pthread_mutex_unlock(&MUTEX_PIDPorMarco);
 }
+// @brief Elimina el arbol de paginas del PID pero lo deja inicializado para poder buscar y crear en el mismo a futuro (Desde afuera, se verá como si todos los marcos fueran -1)
+void vaciarTablaDePaginasDePID(int PID){
+    pthread_mutex_lock(&MUTEX_PIDPorMarco);
+    PIDInfo * proceso = obtenerInfoProcesoConPID(PID);
+    liberarArbolDePaginas(proceso->TP);
+    proceso->TP = crearNivelTablaDePaginas(maximoEntradasTabla);
+    pthread_mutex_unlock(&MUTEX_PIDPorMarco);
+}
 // @brief Elimina un proceso de la tabla y libera los recursos asociados al proceso. No actualiza el PIDporMarco
 void eliminarProcesoDeTabla(int PIDEliminado){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
@@ -344,3 +352,14 @@ void simularRetrasoSWAP(){
     usleep(retrasoSWAP);
 }
 
+int siguienteMarcoLibre(){
+    pthread_mutex_lock(&MUTEX_PIDPorMarco);
+    for(int i=0; i<numeroDeMarcos; i++){
+        if(PIDPorMarco[i] == -1){
+        pthread_mutex_unlock(&MUTEX_PIDPorMarco);
+        return i;
+        }
+    }
+    pthread_mutex_unlock(&MUTEX_PIDPorMarco);
+    return -1;
+}

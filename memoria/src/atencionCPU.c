@@ -60,17 +60,24 @@ void *atenderCPU(void *socketPtr) {
                 list_add(entradas, &(entradasPaquete[i])); // Mientras exista el vector EntradasPaquete (y el pedido), va a existir los elementos de esta lista
             }
             int marco = obtenerMarcoDePaginaConPIDYEntradas(*pid, entradas);
-            int dirMarco = direccionFisicaMarco(marco); // Devuelve el Offset, no el puntero en si
-            // Habria que contemplar mandarle a la CPU un puntero en lugar de un entero que indique el offset
-            // Mandar un puntero emularia mejor lo que realmente pasa, aunque si hay que reallocar la memoriaDeUsuario
-            // se nos complicaría, ademas de que se siente como un crimen de guerra mandarle a otra computadora
-            // un puntero al que no puede acceder, ya que direcciona a una ubicacion de otra pc.
-            // Por el momento esto manda el offset. Se puede usar la funcion punteroAMarco en lugar de direccionFisicaMarco para cambiarlo
             list_destroy(entradas);
-            t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_DIRECCION_PAGINA);
-            agregar_a_paquete(respuesta_cpu, &dirMarco, sizeof(int));
-            enviar_paquete(respuesta_cpu, socket_cpu);
-            eliminar_paquete(respuesta_cpu);
+            if(marco != -1){
+                int dirMarco = direccionFisicaMarco(marco); // Devuelve el Offset, no el puntero en si
+                // Habria que contemplar mandarle a la CPU un puntero en lugar de un entero que indique el offset
+                // Mandar un puntero emularia mejor lo que realmente pasa, aunque si hay que reallocar la memoriaDeUsuario
+                // se nos complicaría, ademas de que se siente como un crimen de guerra mandarle a otra computadora
+                // un puntero al que no puede acceder, ya que direcciona a una ubicacion de otra pc.
+                // Por el momento esto manda el offset. Se puede usar la funcion punteroAMarco en lugar de direccionFisicaMarco para cambiarlo
+                t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_DIRECCION_PAGINA);
+                agregar_a_paquete(respuesta_cpu, &dirMarco, sizeof(int));
+                enviar_paquete(respuesta_cpu, socket_cpu);
+                eliminar_paquete(respuesta_cpu);
+            }else{
+                log_debug(logger, "CPU de socket %d intentó acceder a una pagina sin marco asignado", socket_cpu);
+                t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_PAGINA_NO_VALIDA);
+                enviar_paquete(respuesta_cpu, socket_cpu);
+                eliminar_paquete(respuesta_cpu);
+            }
             break;
         }
         case PETICION_ESCRIBIR_EN_MEMORIA:

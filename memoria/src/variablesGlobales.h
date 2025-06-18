@@ -60,6 +60,8 @@ void eliminarProcesoDeTabla(int PIDEliminado);
 void asignarMarcoAPaginaConPIDyEntradas(int PID, t_list * entradas, int marco);
 int obtenerMarcoDePaginaConPIDYEntradas(int PID, t_list * entradas);
 void removerPaginaDeMarco(int marco);
+void vaciarTablaDePaginasDePID(int PID);
+void eliminarProcesoDePIDPorMarco(int PID);
 
 // De Marcos
 
@@ -70,7 +72,7 @@ int marcosDisponibles();
 bool hayEspacio(int tamañoRequerido);
 int PIDdelMarco(int Marco);
 t_list * marcosDelPid(int PID);
-
+int siguienteMarcoLibre();
 // De Metricas
 
 Metricas getMetricasPorPID(int PID);
