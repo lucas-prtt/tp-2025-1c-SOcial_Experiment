@@ -135,6 +135,24 @@ void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char
     log_info(logger, "PID: %d - Acción: ESCRIBIR - Dirección Física: %d - Valor: %s", pid, direccion_fisica, datos);
 }
 
+void actualizarCACHE(CACHE *cache, int pid, int nro_pagina, void *contenido) {
+    // Sucede cuando buscarPaginaCACHE() es NULL (CACHE MISS) //
+    int indice_victima;
+
+    if(hayEntradaVaciaCACHE(cache, &indice_victima)) {
+        insertarPaginaCACHE(cache, pid, indice_victima, nro_pagina, contenido);
+    }
+    else {
+        indice_victima = seleccionarEntradaVictimaCACHE(cache);
+        if(cache->entradas[indice_victima].bit_modificado) {
+            notificarActualizacionAMemoria();
+        }
+        limpiarEntradaCACHE(cache, indice_victima);
+        insertarPaginaCACHE(cache, pid, indice_victima, nro_pagina, contenido);
+    }
+}
+
+
 
 
 /////////////////////////       < CACHÉ DE PÁGINAS >       /////////////////////////
