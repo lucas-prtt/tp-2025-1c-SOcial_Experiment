@@ -23,6 +23,8 @@ int crearSocketConfig(t_config* config, char opcion[]);
 void* aceptarConexiones(void* socketPtr); 
 void* atenderConexion(void* socketPtr);
 bool es_valida_dir_fisica(int * pid, int * direccion_fisica, int * tamanio);
+void suspenderProceso(int pid);
+void dessuspenderProceso(int pid);
 
 typedef struct {
     uint32_t pid;

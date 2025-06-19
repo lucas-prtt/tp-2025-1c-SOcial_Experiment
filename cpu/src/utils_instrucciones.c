@@ -57,7 +57,7 @@ char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar) { // Funciona en casos 
     int *codigo_operacion;
     codigo_operacion = malloc(sizeof(int));
     t_list *lista_respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
-    if (lista_respuesta == NULL || list_size(lista_respuesta) < 2 || *codigo_operacion != RESPUESTA_INSTRUCCION_MEMORIA) {
+    if (lista_respuesta == NULL  || *codigo_operacion != RESPUESTA_INSTRUCCION_MEMORIA) {
         free(codigo_operacion);
         eliminar_paquete_lista(lista_respuesta);
         return NULL;

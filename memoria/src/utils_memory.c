@@ -148,3 +148,120 @@ bool es_valida_dir_fisica(int* pid, int* direccion_fisica, int* tamanio) {
     // Validar que el rango esté dentro de la memoria física disponible
     return inicio >= 0 && fin <= tamañoMemoriaDeUsuario;
 }
+
+void suspenderProceso(int pid){
+    FILE* swap = fopen("swapfile.bin", "rb+");
+    if (!swap) {
+        log_error(logger, "No se pudo abrir swapfile.bin");
+        return;
+    }
+
+    int cantidadPaginas = cantidadDePaginasDelProceso(pid);
+
+    for (int nroPagina = 0; nroPagina < cantidadPaginas; nroPagina++) {
+        // Obtener entradas del árbol a partir del número de página es decir el camino a seguir en el arbol en forma de lista
+        t_list* entradas = entradasDesdeNumeroDePagina(nroPagina);
+
+        // Buscar marco actual (si tiene asignado)
+        int marco = obtenerMarcoDePaginaConPIDYEntradas(pid, entradas);
+
+        if (marco == -1) {
+            list_destroy(entradas);
+            continue; // página no está en memoria, nada que guardar
+        }
+
+        // Leer contenido de la página
+        void* contenido = malloc(tamañoMarcos);
+        memcpy(contenido, punteroAMarcoPorNumeroDeMarco(marco), tamañoMarcos);//guardo el contenido de la pagina
+
+        // Calcular offset dentro del swapfile
+        int cantidadMaximaPaginasPorProceso = pow(maximoEntradasTabla, nivelesTablas);//esto se puede cambiar porque podria hacer de alguna forma que sea variable pero quedarian espacios y seria mucho más complejo
+        int offset = (pid * cantidadMaximaPaginasPorProceso + nroPagina) * tamañoMarcos;
+
+        fseek(swap, offset, SEEK_SET);
+        fwrite(contenido, tamañoMarcos, 1, swap);
+
+        // Guardar entrada en la tabla de swap
+        EntradaSwap* entradaSwap = malloc(sizeof(EntradaSwap));
+        entradaSwap->pid = pid;
+        entradaSwap->nro_pagina = nroPagina;
+        entradaSwap->offset = offset;
+        list_add(tablaSwap, entradaSwap);
+
+        free(contenido);
+        list_destroy(entradas);
+    }
+
+    fclose(swap);
+
+    // Liberar marcos y tabla de páginas
+    eliminarProcesoDePIDPorMarco(pid);
+    vaciarTablaDePaginasDePID(pid);
+
+    aumentarMetricaBajadasASwap(pid);
+}
+
+//Sirve para a partir del nroPagina obtener el camino a seguir del arbol
+t_list* entradasDesdeNumeroDePagina(int nroPagina) {
+    t_list* entradas = list_create();
+
+    for (int i = nivelesTablas - 1; i >= 0; i--) {
+        int divisor = pow(maximoEntradasTabla, i);
+        int entrada = nroPagina / divisor;
+        list_add(entradas, int_de(entrada));
+        nroPagina %= divisor;
+    }
+
+    return entradas;
+}
+
+int* int_de(int n) {
+    int* p = malloc(sizeof(int));
+    *p = n;
+    return p;
+}
+
+void dessuspenderProceso(int pid) {
+    FILE* swap = fopen("swapfile.bin", "rb");
+    if (!swap) {
+        log_error(logger, "No se pudo abrir swapfile.bin");
+        return;
+    }
+
+    int cantidadPaginas = cantidadDePaginasDelProceso(pid);
+    int cantidadMaximaPaginasPorProceso = pow(maximoEntradasTabla, nivelesTablas);
+
+    for (int nroPagina = 0; nroPagina < cantidadPaginas; nroPagina++) {
+        // Calcular offset exacto donde está la página del proceso en el swap
+        int offset = (pid * cantidadMaximaPaginasPorProceso + nroPagina) * tamañoMarcos;
+
+        // Leer la página desde el archivo swap
+        void* buffer = malloc(tamañoMarcos);
+        fseek(swap, offset, SEEK_SET);
+        fread(buffer, tamañoMarcos, 1, swap);
+
+        // Buscar un marco libre
+        int marcoLibre = siguienteMarcoLibre();
+        if (marcoLibre == -1) {
+            log_error(logger, "No hay marcos disponibles para cargar página %d del PID %d", nroPagina, pid);
+            free(buffer);
+            continue;// No se que hacer si no hay espacio por que en teoria no deberia pasar por la memoria cuando tiene el espacio deberia avisar para que mande un proceso
+        }
+
+        // Copiar el contenido al marco
+        memcpy(punteroAMarcoPorNumeroDeMarco(marcoLibre), buffer, tamañoMarcos);
+
+        // Calcular las entradas del árbol de páginas para esta página
+        t_list* entradas = entradasDesdeNumeroDePagina(nroPagina);
+
+        // Asignar el marco a la página en la tabla de páginas del proceso
+        asignarMarcoAPaginaConPIDyEntradas(pid, entradas, marcoLibre);// Esta funcion entiendo que hace eso pero tengo que preguntar todavia
+
+        aumentarMetricaSubidasAMemoriaPrincipal(pid);
+
+        list_destroy_and_destroy_elements(entradas, free);
+        free(buffer);
+    }
+
+    fclose(swap);
+}

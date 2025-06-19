@@ -24,6 +24,14 @@ typedef struct PIDyTablaDePaginas{
     int TamMaxProceso;
     t_list * instrucciones;
 } PIDInfo;
+// Todo lo relacionado con SWAP
+typedef struct {
+    int pid;
+    int nro_pagina;
+    int offset;
+} EntradaSwap;
+// Tabla de la informacion que está en SWAP
+t_list* tablaSwap;
 
 //@brief Vector:  PIDPorMarco[numeroDeMarco] = PID o -1 (vacio)
 extern int* PIDPorMarco;
@@ -66,6 +74,7 @@ void vaciarTablaDePaginasDePID(int PID);
 void eliminarProcesoDePIDPorMarco(int PID);
 int asignarSiguienteMarcoLibreDadasLasEntradas(int PID, t_list * entradas);
 int esPaginaValida(int PID, t_list * entradas);
+int cantidadDePaginasDelProceso(int PID);
 
 
 

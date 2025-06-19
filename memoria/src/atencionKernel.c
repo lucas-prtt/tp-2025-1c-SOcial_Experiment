@@ -91,12 +91,15 @@ void * atenderKernel(void * socketPtr){
         enviar_paquete(respuesta,socket);
         eliminar_paquete(respuesta);
         break;
-    case SOLICITUD_MEMORIA_CARGA_SWAP:
+    case SOLICITUD_MEMORIA_CARGA_SWAP: // Des suspensión del proceso en SWAP
 
         PID = list_get(pedido, 1);
 
-        // TODO: cargar de swap a memoria
-        // (modifica el valor de error)
+        if (!hayEspacio(tamañoProceso(*PID))) {
+           error = 1;
+        } else {
+           dessuspenderProceso(*PID);
+        }
 
         if (!error)
         respuesta = crear_paquete(RESPUESTA_MEMORIA_PROCESO_CARGADO);
@@ -135,12 +138,12 @@ void * atenderKernel(void * socketPtr){
         enviar_paquete(respuesta,socket);
         eliminar_paquete(respuesta);
         break;
-    case PROCESO_SUSPENDIDO_ENVIAR_A_SWAP:
+    case PROCESO_SUSPENDIDO_ENVIAR_A_SWAP: // suspensión del proceso en SWAP
 
         PID = list_get(pedido, 1);
-
-        // TODO: pasar de memoria a swap
-        // No deberia poder tirar error, solo si se acaba el espacio de disco
+        
+        suspenderProceso(PID);
+        // No deberia poder tirar error, solo si se acaba el espacio de disco(yo hice como que esto no es posible)
         
         respuesta = crear_paquete(RESPUESTA_MEMORIA_PROCESO_ENVIADO_A_SWAP);
         enviar_paquete(respuesta,socket);
@@ -154,4 +157,3 @@ void * atenderKernel(void * socketPtr){
     eliminar_paquete_lista(pedido);
     pthread_exit(NULL);
 }
-

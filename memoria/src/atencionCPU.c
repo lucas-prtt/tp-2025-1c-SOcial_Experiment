@@ -33,7 +33,7 @@ void *atenderCPU(void *socketPtr) {
             int *pc = (int*)list_get(pedido, 3);
 
             char pid_str[10];
-            sprintf(pid_str, "%d", *pid);
+            sprintf(pid_str, "%d", *pid);// transforma el numero de pid en un string
 
             if (!obtenerInstruccionesPorPID(*pid) || *pc >= cuantasInstruccionesDelPID(*pid)) {
                 log_error(logger, "PID %d no encontrado o PC %d fuera de rango", *pid, *pc);
