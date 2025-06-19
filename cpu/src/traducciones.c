@@ -163,6 +163,20 @@ bool hayEntradaVaciaCACHE(CACHE *cache, int *indice_victima) {
     return false;
 }
 
+void insertarPaginaCACHE(CACHE *cache, int pid, int indice_victima, int nro_pagina, void *contenido) {
+    cache->entradas[indice_victima].pid = pid;
+    cache->entradas[indice_victima].pagina = nro_pagina;
+    
+    if (cache->entradas[indice_victima].contenido != NULL) {
+        free(cache->entradas[indice_victima].contenido);
+    }
+    cache->entradas[indice_victima].contenido = malloc(tamanio_pagina);
+    memcpy(cache->entradas[indice_victima].contenido, contenido, tamanio_pagina);
+
+    cache->entradas[indice_victima].bit_uso = 1;
+    cache->entradas[indice_victima].bit_modificado = 0;
+}
+
 
 
 
