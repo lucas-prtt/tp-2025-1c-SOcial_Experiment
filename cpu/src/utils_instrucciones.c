@@ -141,7 +141,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             direccion_fisica = traducirDireccionTLB(cpu->tlb, pcb->pid, direccion_logica);
             if(direccion_fisica == -1) {
                 int marco = buscarMarcoAMemoria(socket_memoria, pcb->pid, nro_pagina);
-                reemplazarEnTLB(cpu->tlb, pcb->pid, nro_pagina, marco);
+                actualizarTLB(cpu->tlb, pcb->pid, nro_pagina, marco);
             }
         }
     }

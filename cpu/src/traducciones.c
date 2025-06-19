@@ -184,7 +184,7 @@ int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
 
 /////////////////////////       < TLB >       /////////////////////////
 
-int inicializarTLB(TLB *tlb) { // crearTLB(TLB *tlb)
+int inicializarTLB(TLB *tlb) {
     if(TLB_SIZE == 0) {
         tlb->habilitada = 0;
         log_debug(logger, "TLB Deshabilitada");
@@ -227,7 +227,7 @@ int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina) {
     return tlb->entradas[pos_registro].marco; // TLB HIT
 }
 
-int buscarIndicePaginaTLB(TLB *tlb, int pid, int nro_pagina) { // cambia porque pueden habe varios pid
+int buscarIndicePaginaTLB(TLB *tlb, int pid, int nro_pagina) {
     for(int i = 0; i < TLB_SIZE; i++) {
         if(tlb->entradas[i].validez && tlb->entradas[i].pid == pid && tlb->entradas[i].pagina == nro_pagina)
             return i;
@@ -236,7 +236,7 @@ int buscarIndicePaginaTLB(TLB *tlb, int pid, int nro_pagina) { // cambia porque 
     return -1;
 }
 
-void reemplazarEnTLB(TLB *tlb, int pid, int nro_pagina, int marco) {
+void actualizarTLB(TLB *tlb, int pid, int nro_pagina, int marco) {
     // Sucede cuando buscarPaginaTLB() es -1 (TLB MISS) //
     int indice_victima;
 
@@ -274,7 +274,7 @@ void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, in
 }
 
 int seleccionarEntradaVictima(TLB *tlb) {
-    int indice_victima = -1; //
+    int indice_victima = -1;
 
     switch(tlb->algoritmo)
     {

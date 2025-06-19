@@ -75,7 +75,7 @@ int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina);
 int inicializarTLB(TLB *tlb);
 int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina);
 int buscarIndicePaginaTLB(TLB *tlb, int pid, int nro_pagina);
-void reemplazarEnTLB(TLB *tlb, int pid, int nro_pagina, int marco);
+void actualizarTLB(TLB *tlb, int pid, int nro_pagina, int marco);
 void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, int marco);
 bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima);
 int seleccionarEntradaVictima(TLB *tlb);
