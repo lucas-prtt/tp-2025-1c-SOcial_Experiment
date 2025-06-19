@@ -152,6 +152,17 @@ void actualizarCACHE(CACHE *cache, int pid, int nro_pagina, void *contenido) {
     }
 }
 
+bool hayEntradaVaciaCACHE(CACHE *cache, int *indice_victima) {
+    for(int i = 0; i < CACHE_SIZE; i++) {
+        if(cache->entradas[i].contenido == NULL) {
+            *indice_victima = i;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 
 
 
