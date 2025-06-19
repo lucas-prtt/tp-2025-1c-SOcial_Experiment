@@ -220,6 +220,10 @@ int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina) {
     }
     
     log_info(logger, "PID: %d - TLB HIT - Pagina: %d", pid, nro_pagina);
+    
+    tlb->contador_uso++;
+    tlb->entradas[pos_registro].ultimo_uso = tlb->contador_uso;
+
     return tlb->entradas[pos_registro].marco; // TLB HIT
 }
 
@@ -261,7 +265,10 @@ void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, in
     tlb->entradas[indice_victima].pid = pid;
     tlb->entradas[indice_victima].pagina = nro_pagina;
     tlb->entradas[indice_victima].marco = marco;
-    tlb->entradas[indice_victima].ultimo_uso = -1; //?
+
+    tlb->contador_uso++;
+    tlb->entradas[indice_victima].ultimo_uso = tlb->contador_uso;
+
     tlb->entradas[indice_victima].validez = 1;
     log_info(logger, "PID: %d - TLB Add - Pagina: %d - Marco: %d", pid, nro_pagina, marco);
 }
@@ -274,21 +281,21 @@ int seleccionarEntradaVictima(TLB *tlb) {
         case ALG_FIFO:
         {
             indice_victima = tlb->proximo;
-            tlb->proximo = (tlb->proximo + 1) % TLB_SIZE; // como funciona
+            tlb->proximo = (tlb->proximo + 1) % TLB_SIZE;
 
             return indice_victima;
         }
         case ALG_LRU:
         {
-            int menor_uso = tlb->entradas[0].ultimo_uso;
+            for(int i = 0; i < TLB_SIZE; i++) {
+                int menor_uso;
 
-            for(int i = 1; i < TLB_SIZE; i++) {
-                if(tlb->entradas[i].ultimo_uso < menor_uso) {
+                if(tlb->entradas[i].validez == 1 && tlb->entradas[i].ultimo_uso < menor_uso) {
                     menor_uso = tlb->entradas[i].ultimo_uso;
                     indice_victima = i;
                 }
             }
-            // contador_uso: cada que tlb_hit o reemplazo
+            
             return indice_victima;
         }
         default:
