@@ -140,17 +140,21 @@ void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char
 /////////////////////////       < CACHÉ DE PÁGINAS >       /////////////////////////
 
 int inicializarCACHE(CACHE *cache) {
-    if(CACHE_SIZE > 0) {
+    if(CACHE_SIZE < 1) {
         cache->habilitada = 0;
         log_debug(logger, "CACHÉ Deshabilitada");
         free(cache);
         return 0;
     }
 
-    cache->entradas = (r_CACHE *)malloc(sizeof(CACHE) + CACHE_SIZE * sizeof(r_CACHE));
-
+    cache->entradas = (r_CACHE *)malloc(sizeof(CACHE) + CACHE_SIZE * sizeof(r_CACHE)); // malloc(CACHE_SIZE * sizeof(r_CACHE));
     cache->habilitada = 1;
+    cache->puntero_clock = 0;
 
+    for(int i = 0; i < CACHE_SIZE; i++) {
+        cache->entradas[i].contenido = NULL;
+    }
+    
     cache->algoritmo = algoritmo_string_to_enum(config_get_string_value(config, "REEMPLAZO_CACHE"));
     
     log_debug(logger, "CACHÉ Habilitada");
@@ -172,7 +176,7 @@ void *buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
 int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
     for(int i = 0; i < CACHE_SIZE; i++) {
         if(cache->entradas[i].contenido && cache->entradas[i].pid == pid && cache->entradas[i].pagina == nro_pagina) {
-            cache->entradas[i].bit_uso = 1; // de que me sirve?
+            cache->entradas[i].bit_uso = 1;
             return i;
         }
     }
@@ -182,18 +186,18 @@ int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
 
 
 
+
+
 /////////////////////////       < TLB >       /////////////////////////
 
 int inicializarTLB(TLB *tlb) {
     if(TLB_SIZE == 0) {
         tlb->habilitada = 0;
         log_debug(logger, "TLB Deshabilitada");
-        free(tlb);
         return 0;
     }
 
     tlb->entradas = (r_TLB *)malloc(sizeof(TLB) + TLB_SIZE * sizeof(r_TLB));
-
     tlb->habilitada = 1;
 
     for(int i = 0; i < TLB_SIZE; i++) {
@@ -244,7 +248,7 @@ void actualizarTLB(TLB *tlb, int pid, int nro_pagina, int marco) {
         insertarPaginaTLB(tlb, pid, indice_victima, nro_pagina, marco);
     }
     else {
-        indice_victima = seleccionarEntradaVictima(tlb);
+        indice_victima = seleccionarEntradaVictimaTLB(tlb);
         limpiarEntradaTLB(tlb, indice_victima);
         insertarPaginaTLB(tlb, pid, indice_victima, nro_pagina, marco);
     }
@@ -273,7 +277,7 @@ void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, in
     log_info(logger, "PID: %d - TLB Add - Pagina: %d - Marco: %d", pid, nro_pagina, marco);
 }
 
-int seleccionarEntradaVictima(TLB *tlb) {
+int seleccionarEntradaVictimaTLB(TLB *tlb) {
     int indice_victima = -1;
 
     switch(tlb->algoritmo)

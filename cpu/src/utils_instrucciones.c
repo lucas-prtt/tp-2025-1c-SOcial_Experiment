@@ -134,6 +134,10 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
 
         if(cpu->cache->habilitada) {
             contenido_cache = buscarPaginaCACHE(cpu->cache, pcb->pid, nro_pagina);
+            if(contenido_cache == NULL) { // cache miss
+                // contenido_cache = buscarPaginaAMemoria() ----> memoria me devuelve la pagina que pedi
+                actualizarCACHE(cpu->cache, pcb->pid, nro_pagina, contenido_cache); // esa pagina que pedi la reemplazo en mi cache
+            }
         }
 
         // Si contenido_cache = NULL; Se usa la TLB y la memoria //
@@ -154,7 +158,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             setProgramCounter(pcb, pcb->pc + 1);
             break;
         }
-        case INSTR_WRITE: //
+        case INSTR_WRITE: //////////////////////
         {
             char* datos = (char*)list_get(instruccion_list, 2);
 
@@ -177,7 +181,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             setProgramCounter(pcb, pcb->pc + 1);
             break;
         }
-        case INSTR_READ:
+        case INSTR_READ: ///////////////////////
         {
             int tamanio = atoi((char *)list_get(instruccion_list, 2));
 

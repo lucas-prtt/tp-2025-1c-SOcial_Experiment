@@ -11,10 +11,11 @@
 
 
 extern int CACHE_SIZE;
-
 extern int TLB_SIZE;
+
 extern int cantidad_niveles_tabla_paginas;
 extern int cantidad_entradas_tabla;
+
 extern int tamanio_pagina;
 
 typedef struct {
@@ -22,32 +23,30 @@ typedef struct {
     int pagina;
     void *contenido;
     int bit_uso;
-    // int bit_modificado;
-    // int ultimo_uso;
+    int bit_modificado;
 } r_CACHE;
 
 typedef struct {
     int habilitada;
+    int puntero_clock;
     int algoritmo;
-    // int tamanio;
-    r_CACHE *entradas; // Revisar: r_CACHE* entradas;
+    r_CACHE *entradas;
 } CACHE;
 
 typedef struct {
     int pid;
     int pagina;
     int marco;
-    int validez; // Para saber si el regitro de la tlb está vacia
+    int validez;
     int ultimo_uso;
 } r_TLB;
 
 typedef struct {
     int habilitada;
-    int proximo; // FIFO
-    int contador_uso; // LRU
+    int proximo; //puntero
+    int contador_uso;
     int algoritmo;
-    // int tamanio;
-    r_TLB *entradas; // Revisar: r_TLB* entradas;
+    r_TLB *entradas;
 } TLB;
 
 enum TIPO_ALGORITMO_REEMPLAZO {
@@ -68,9 +67,14 @@ int recibirMarco(int socket_memoria);
 void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio);
 void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos);
 
+
 int inicializarCACHE(CACHE *cache);
 void *buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina);
 int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina);
+
+
+
+
 
 int inicializarTLB(TLB *tlb);
 int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina);
@@ -78,7 +82,7 @@ int buscarIndicePaginaTLB(TLB *tlb, int pid, int nro_pagina);
 void actualizarTLB(TLB *tlb, int pid, int nro_pagina, int marco);
 void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, int marco);
 bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima);
-int seleccionarEntradaVictima(TLB *tlb);
+int seleccionarEntradaVictimaTLB(TLB *tlb);
 void limpiarEntradaTLB(TLB *tlb, int indice_victima);
 void limpiarProcesoTLB(TLB *tlb, int pid);
 
