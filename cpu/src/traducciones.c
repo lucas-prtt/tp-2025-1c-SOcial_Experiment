@@ -197,6 +197,7 @@ int inicializarTLB(TLB *tlb) { // crearTLB(TLB *tlb)
     tlb->habilitada = 1;
 
     for(int i = 0; i < TLB_SIZE; i++) {
+        tlb->entradas[i].pid = -1;
         tlb->entradas[i].pagina = -1;
         tlb->entradas[i].marco = -1;
         tlb->entradas[i].ultimo_uso = -1;
@@ -260,20 +261,20 @@ void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, in
     tlb->entradas[indice_victima].pid = pid;
     tlb->entradas[indice_victima].pagina = nro_pagina;
     tlb->entradas[indice_victima].marco = marco;
-    tlb->entradas[indice_victima].ultimo_uso = -1;
+    tlb->entradas[indice_victima].ultimo_uso = -1; //?
     tlb->entradas[indice_victima].validez = 1;
     log_info(logger, "PID: %d - TLB Add - Pagina: %d - Marco: %d", pid, nro_pagina, marco);
 }
 
 int seleccionarEntradaVictima(TLB *tlb) {
-    int indice_victima = 0;
+    int indice_victima = -1; //
 
     switch(tlb->algoritmo)
     {
         case ALG_FIFO:
         {
             indice_victima = tlb->proximo;
-            tlb->proximo = (tlb->proximo + 1) % TLB_SIZE;
+            tlb->proximo = (tlb->proximo + 1) % TLB_SIZE; // como funciona
 
             return indice_victima;
         }
@@ -299,6 +300,7 @@ int seleccionarEntradaVictima(TLB *tlb) {
 }
 
 void limpiarEntradaTLB(TLB *tlb, int indice_victima) {
+    tlb->entradas[indice_victima].pid = -1;
     tlb->entradas[indice_victima].pagina = -1;
     tlb->entradas[indice_victima].marco = -1;
     tlb->entradas[indice_victima].ultimo_uso = -1;
@@ -308,7 +310,7 @@ void limpiarEntradaTLB(TLB *tlb, int indice_victima) {
 void limpiarProcesoTLB(TLB *tlb, int pid) {
     // Sucede por proceso //
     for(int i = 0; i < TLB_SIZE; i++) {
-        if(tlb->entradas[i].pid == pid)
+        if(tlb->entradas[i].validez == 1 && tlb->entradas[i].pid == pid)
             limpiarEntradaTLB(tlb, i);
     }
 }
