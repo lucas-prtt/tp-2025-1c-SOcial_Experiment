@@ -243,7 +243,24 @@ int seleccionarEntradaVictimaCACHE(CACHE *cache) {
     }
 }
 
+void limpiarEntradaCACHE(CACHE *cache, int indice_victima) {
+    cache->entradas[indice_victima].pid = -1;
+    cache->entradas[indice_victima].pagina = -1;
+    free(cache->entradas[indice_victima].contenido);
+    cache->entradas[indice_victima].bit_uso = 0;
+    cache->entradas[indice_victima].bit_modificado = 0;
+}
 
+void limpiarProcesoCACHE(CACHE *cache, int pid) {
+    for(int i = 0; i < CACHE_SIZE; i++) {
+        if(cache->entradas[i].pid == pid) {
+            if(cache->entradas[i].bit_modificado) {
+                notificarActualizacionPaginaAMemoria();
+            }
+            limpiarEntradaCACHE(cache, i);
+        }
+    }
+}
 
 
 /////////////////////////       < CACHÉ DE PÁGINAS >       /////////////////////////
