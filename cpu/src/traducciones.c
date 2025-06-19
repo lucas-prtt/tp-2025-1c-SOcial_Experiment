@@ -243,6 +243,11 @@ int seleccionarEntradaVictimaCACHE(CACHE *cache) {
     }
 }
 
+void notificarActualizacionPaginaAMemoria() {
+    // TODO: Si la pagina fue modificada mientras estuvo cargada en caché, los cambios deberán enviarse a la memoria principal
+    // para que esta última tenga la versión actualizada de los datos.
+}
+
 void limpiarEntradaCACHE(CACHE *cache, int indice_victima) {
     cache->entradas[indice_victima].pid = -1;
     cache->entradas[indice_victima].pagina = -1;
