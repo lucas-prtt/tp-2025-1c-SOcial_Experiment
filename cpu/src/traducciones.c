@@ -177,6 +177,72 @@ void insertarPaginaCACHE(CACHE *cache, int pid, int indice_victima, int nro_pagi
     cache->entradas[indice_victima].bit_modificado = 0;
 }
 
+int seleccionarEntradaVictimaCACHE(CACHE *cache) {
+    int indice_victima = -1;
+
+    switch(cache->algoritmo)
+    {
+        case ALG_CLOCK:
+        {
+            while(true) {
+                r_CACHE *registro_actual = &cache->entradas[cache->puntero_clock];
+
+                if(registro_actual->bit_uso == 0) {
+                    // Encontramos a la victima //
+                    indice_victima = cache->puntero_clock;
+                    cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
+                    return indice_victima;
+                }
+                else {
+                    registro_actual->bit_uso = 0;
+                    cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
+                }
+            }
+        }
+        case ALG_CLOCK_M:
+        {
+            int puntero_inicial = cache->puntero_clock;
+
+            for(int i = 0; i < 2; i++) {
+                do {
+                    r_CACHE *registro_actual = &cache->entradas[cache->puntero_clock];
+
+                    if(i == 0) {
+                        // bit_uso = 0 // bit_modificado = 0 //
+                        if(registro_actual->bit_uso == 0 && registro_actual->bit_modificado == 0) {
+                            indice_victima = cache->puntero_clock;
+                            cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
+                            return indice_victima;
+                        }
+                    }
+                    else {
+                        // bit_uso = 0 // bit_modificado = 1 //
+                        if(registro_actual->bit_uso == 0 && registro_actual->bit_modificado == 1) {
+                            indice_victima = cache->puntero_clock;
+                            cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
+                            return indice_victima;
+                        }
+                    }
+
+                    // Limpia bit_uso //
+                    if(registro_actual->bit_uso == 1) {
+                        registro_actual->bit_uso = 0;
+                    }
+
+                    cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
+                } while(cache->puntero_clock != puntero_inicial);
+            }
+
+            return -1;
+        }
+        default:
+        {
+            log_error(logger, "Algoritmo de reemplazo desconocido");
+            return 0;
+        }
+    }
+}
+
 
 
 
