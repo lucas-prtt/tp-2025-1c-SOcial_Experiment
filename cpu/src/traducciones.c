@@ -238,10 +238,11 @@ void reemplazarEnTLB(TLB *tlb, int pid, int nro_pagina, int marco) {
     if(hayEntradaVaciaTLB(tlb, &indice_victima)) {
         insertarPaginaTLB(tlb, pid, indice_victima, nro_pagina, marco);
     }
-    
-    indice_victima = seleccionarEntradaVictima(tlb);
-    limpiarEntradaTLB(tlb, indice_victima);
-    insertarPaginaTLB(tlb, pid, indice_victima, nro_pagina, marco);
+    else {
+        indice_victima = seleccionarEntradaVictima(tlb);
+        limpiarEntradaTLB(tlb, indice_victima);
+        insertarPaginaTLB(tlb, pid, indice_victima, nro_pagina, marco);
+    }
 }
 
 void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, int marco) {
