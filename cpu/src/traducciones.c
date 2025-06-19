@@ -245,6 +245,17 @@ void reemplazarEnTLB(TLB *tlb, int pid, int nro_pagina, int marco) {
     }
 }
 
+bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima) {
+    for(int i = 0; i < TLB_SIZE; i++) {
+        if(tlb->entradas[i].validez == 0) {
+            *indice_victima = i;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, int marco) {
     tlb->entradas[indice_victima].pid = pid;
     tlb->entradas[indice_victima].pagina = nro_pagina;
@@ -252,17 +263,6 @@ void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, in
     tlb->entradas[indice_victima].ultimo_uso = -1;
     tlb->entradas[indice_victima].validez = 1;
     log_info(logger, "PID: %d - TLB Add - Pagina: %d - Marco: %d", pid, nro_pagina, marco);
-}
-
-bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima) {
-    for(int i = 0; i < TLB_SIZE; i++) {
-        if(tlb->entradas[i].pagina == -1) {
-            *indice_victima = i;
-            return true;
-        }
-    }
-
-    return false;
 }
 
 int seleccionarEntradaVictima(TLB *tlb) {
