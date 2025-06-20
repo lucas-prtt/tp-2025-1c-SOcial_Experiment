@@ -49,7 +49,7 @@ void *atenderCPU(void *socketPtr) {
             eliminar_paquete(respuesta_cpu);
             break;
             
-        }case PETICION_TRADUCCION_DIRECCION:
+        }case PETICION_MARCO_MEMORIA:
         {   
             int *pid = (int*)list_get(pedido, 1);
             log_debug(logger, "Se pide traducir direccion del proceso %d ", *pid);
@@ -69,7 +69,7 @@ void *atenderCPU(void *socketPtr) {
                 // se nos complicaría, ademas de que se siente como un crimen de guerra mandarle a otra computadora
                 // un puntero al que no puede acceder, ya que direcciona a una ubicacion de otra pc.
                 // Por el momento esto manda el offset. Se puede usar la funcion punteroAMarco en lugar de direccionFisicaMarco para cambiarlo
-                t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_DIRECCION_PAGINA);
+                t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_PETICION_MARCO);
                 agregar_a_paquete(respuesta_cpu, &marco/*dirMarco*/, sizeof(int));
                 enviar_paquete(respuesta_cpu, socket_cpu);
                 eliminar_paquete(respuesta_cpu);
@@ -85,7 +85,7 @@ void *atenderCPU(void *socketPtr) {
                 int marco = asignarSiguienteMarcoLibreDadasLasEntradas(*pid, entradas);
                 log_debug(logger, "Se asigno el marco %d al PID %d", marco, *pid);
                 int dirMarco = direccionFisicaMarco(marco); // Devuelve el Offset, no el puntero en si
-                t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_DIRECCION_PAGINA);
+                t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_PETICION_MARCO);
                 agregar_a_paquete(respuesta_cpu, &dirMarco, sizeof(int));
                 enviar_paquete(respuesta_cpu, socket_cpu);
                 eliminar_paquete(respuesta_cpu);
