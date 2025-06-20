@@ -21,6 +21,7 @@ extern int tamanio_pagina;
 typedef struct {
     int pid;
     int pagina;
+    // int marco (?)
     void *contenido;
     int bit_uso;
     int bit_modificado;
@@ -62,7 +63,6 @@ enum TIPO_ALGORITMO_REEMPLAZO {
 void inicializarVariablesGlobales(int socket_memoria, int cant_niveles_t, int cant_entradas_t, int tam_pag);
 
 int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina);
-int recibirDireccionTabla(int socket_memoria);
 int recibirMarco(int socket_memoria);
 void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio);
 void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos);

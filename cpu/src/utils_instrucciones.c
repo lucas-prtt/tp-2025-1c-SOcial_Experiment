@@ -134,18 +134,19 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
 
         if(cpu->cache->habilitada) {
             contenido_cache = buscarPaginaCACHE(cpu->cache, pcb->pid, nro_pagina);
-            if(contenido_cache == NULL) { // cache miss
-                // contenido_cache = buscarPaginaAMemoria() ----> memoria me devuelve la pagina que pedi
-                actualizarCACHE(cpu->cache, pcb->pid, nro_pagina, contenido_cache); // esa pagina que pedi la reemplazo en mi cache
+            if(contenido_cache == NULL) { // CACHE MISS //
+                int marco = buscarMarcoAMemoria(socket_memoria, pcb->pid, nro_pagina);
+                void *pagina = pedirPaginaAMemoria(socket_memoria, pcb->pid, marco); // ----> MEMORIA me devuelve la página //
+                actualizarCACHE(cpu->cache, pcb->pid, nro_pagina, pagina);
+                contenido_cache = pagina;
             }
         }
-
-        // Si contenido_cache = NULL; Se usa la TLB y la memoria //
-        if(contenido_cache == NULL) {
+        else {
             direccion_fisica = traducirDireccionTLB(cpu->tlb, pcb->pid, direccion_logica);
             if(direccion_fisica == -1) {
                 int marco = buscarMarcoAMemoria(socket_memoria, pcb->pid, nro_pagina);
                 actualizarTLB(cpu->tlb, pcb->pid, nro_pagina, marco);
+                // direccion_fisica = la hace...
             }
         }
     }
@@ -156,18 +157,18 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
         case INSTR_NOOP:
         {
             setProgramCounter(pcb, pcb->pc + 1);
-            break;
+            return false;
         }
-        case INSTR_WRITE: //////////////////////
+        case INSTR_WRITE:
         {
             char* datos = (char*)list_get(instruccion_list, 2);
-
-            if(contenido_cache != NULL) {
+            int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
+            
+            if(contenido_cache != NULL && cpu->cache->habilitada) {
                 // Write directamente en la caché //
-                int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
                 int desplazamiento = getDesplazamiento(direccion_logica);
 
-                memcpy((char *)contenido_cache + desplazamiento, datos, strlen(datos) + 1); // incluye '\0' //
+                memcpy((char *)contenido_cache + desplazamiento, datos, strlen(datos) + 1);
 
                 log_info(logger, "PID: %d - Acción: ESCRIBIR - Dirección Física: %d - Valor: %s", pcb->pid, direccion_fisica, datos);
 
@@ -175,24 +176,23 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
                 return false;
             }
 
+            // WRITE en memoria //
             escribirDatoMemoria(socket_memoria, pcb->pid, direccion_fisica, datos);
-            // actualizar caché
+            marcarModificadoEnCache(cpu->cache, pcb->pid, getNumeroPagina(direccion_logica));
 
             setProgramCounter(pcb, pcb->pc + 1);
-            break;
+            return false;
         }
-        case INSTR_READ: ///////////////////////
+        case INSTR_READ:
         {
             int tamanio = atoi((char *)list_get(instruccion_list, 2));
 
-            if(contenido_cache != NULL) {
+            if(contenido_cache != NULL && cpu->cache->habilitada) {
                 // READ directamente desde la caché //
                 int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
                 int desplazamiento = getDesplazamiento(direccion_logica);
 
-                char leido[tamanio + 1];
-                memcpy(leido, (char *)contenido_cache + desplazamiento, tamanio);
-                leido[tamanio] = '\0';
+                char *leido = strndup((char *)contenido_cache + desplazamiento, tamanio);
 
                 printf("READ: %s\n", leido);
                 log_info(logger, "PID: %d - Acción: READ - Dirección Física: %d - Valor: %s", pcb->pid, direccion_fisica, leido);
@@ -201,17 +201,18 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
                 return false;
             }
             
+            // READ desde memoria //
             leerDatoMemoria(socket_memoria, pcb->pid, direccion_fisica, tamanio);
-            // actualizar cache
 
             setProgramCounter(pcb, pcb->pc + 1);
-            break;
+            return false;
         }
         case INSTR_GOTO:
         {
             int valor = atoi((char *)list_get(instruccion_list, 1));
+
             setProgramCounter(pcb, valor);
-            break;
+            return false;
         }
         case INSTR_IO:
         {
@@ -226,9 +227,9 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             setProgramCounter(pcb, pcb->pc + 1);
 
             eliminar_paquete(paquete_peticion_io);
-            return true; // break;
+            return true;
         }
-        case INSTR_INIT_PROC:
+        case INSTR_INIT_PROC: // no terminaba creo...
         {
             char *path = (char *)list_get(instruccion_list, 1);
             int tamanio = atoi((char *)list_get(instruccion_list, 2));
@@ -241,7 +242,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             setProgramCounter(pcb, pcb->pc + 1);
 
             eliminar_paquete(paquete_peticion_init_proc);
-            return true; // break;
+            return true;
         }
         case INSTR_DUMP_MEMORY:
         {
@@ -251,29 +252,34 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             setProgramCounter(pcb, pcb->pc + 1);
 
             eliminar_paquete(paquete_peticion_dump_memory);
-            return true; // break;
+            return true;
         }
         case INSTR_EXIT:
         {
             t_paquete *paquete_instr_exit = crear_paquete(SYSCALL_EXIT);
-            agregar_a_paquete(paquete_instr_exit, &(pcb->pc), sizeof(pcb->pc)); //
+            agregar_a_paquete(paquete_instr_exit, &(pcb->pc), sizeof(pcb->pc));
             enviar_paquete(paquete_instr_exit, socket_kernel);
             setProgramCounter(pcb, pcb->pc + 1);
 
             eliminar_paquete(paquete_instr_exit);
-
-            // Devolver proceso al kernel //
-
             return true;
         }
         default:
         {
-            log_error(logger, "Instrucción no reconocida: %s", operacion); // error o algo //AUMENTA EL PC?
+            log_error(logger, "Instrucción no reconocida: %s", operacion);
             break;
         }
     }
+}
 
-    return false;
+void marcarModificadoEnCache(CACHE *cache, int pid, int nro_pagina) {
+    for(int i = 0; i < CACHE_SIZE; i++) {
+        r_CACHE entrada = cache->entradas[i];
+        if(entrada.pid == pid && entrada.pagina == nro_pagina) {
+            cache->entradas[i].bit_modificado = 1;
+            return;
+        }
+    }
 }
 
 int traducirDireccionTLB(TLB *tlb, int pid, int direccion_logica) {

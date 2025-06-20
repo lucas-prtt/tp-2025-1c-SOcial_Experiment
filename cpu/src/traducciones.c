@@ -38,58 +38,18 @@ int getDesplazamiento(int direccion_logica) {
 }
 
 int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina) {
-    int direccion_tabla_actual = -1;
+    int entradas[cantidad_niveles_tabla_paginas];
 
-    for(int nivel = 1; nivel <= cantidad_niveles_tabla_paginas; nivel++) {
-        int entrada = getEntradaNivelX(nro_pagina, nivel);
-            // Che, acuerdense que quedamos en mandar todo de una aca (como un vector de ints de entrada)
-
-        if(nivel == 1) {
-            // Es el primer nivel //
-            t_paquete *paquete_peticion = crear_paquete(PETICION_LEER_DE_MEMORIA); //
-            agregar_a_paquete(paquete_peticion, &pid, sizeof(int));
-            agregar_a_paquete(paquete_peticion, &entrada, sizeof(int));
-            enviar_paquete(paquete_peticion, socket_memoria);
-            eliminar_paquete(paquete_peticion);
-            
-            direccion_tabla_actual = recibirDireccionTabla(socket_memoria);
-        }
-        else if(nivel < cantidad_niveles_tabla_paginas) {
-            // Es un nivel intermedio //
-            t_paquete *paquete_peticion = crear_paquete(PETICION_LEER_DE_MEMORIA); //
-            agregar_a_paquete(paquete_peticion, &direccion_tabla_actual, sizeof(int));
-            agregar_a_paquete(paquete_peticion, &entrada, sizeof(int));
-            enviar_paquete(paquete_peticion, socket_memoria);
-            eliminar_paquete(paquete_peticion);
-
-            direccion_tabla_actual = recibirDireccionTabla(socket_memoria);
-        }
-        else {
-            // Es el último nivel //
-            t_paquete *paquete_peticion = crear_paquete(PETICION_LEER_DE_MEMORIA); //
-            agregar_a_paquete(paquete_peticion, &direccion_tabla_actual, sizeof(int));
-            agregar_a_paquete(paquete_peticion, &entrada, sizeof(int));
-            enviar_paquete(paquete_peticion, socket_memoria);
-            eliminar_paquete(paquete_peticion);
-
-            return recibirMarco(socket_memoria);
-        }
+    for (int nivel = 1; nivel <= cantidad_niveles_tabla_paginas; nivel++) {
+        entradas[nivel - 1] = getEntradaNivelX(nro_pagina, nivel);
     }
 
-    return -1;
-}
+    t_paquete *paquete_peticion_marco = crear_paquete(PETICION_MARCO_MEMORIA); //////// preguntar, porque me esta devolviendo la direccion fisica = marco * tam_pagina + offset
+    agregar_a_paquete(paquete_peticion_marco, &pid, sizeof(int));
+    agregar_a_paquete(paquete_peticion_marco, entradas, sizeof(int) * cantidad_niveles_tabla_paginas);
+    enviar_paquete(paquete_peticion_marco, socket_memoria);
+    eliminar_paquete(paquete_peticion_marco);
 
-int recibirDireccionTabla(int socket_memoria) {
-    int *codigo_operacion = malloc(sizeof(int));
-    t_list* respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
-    int direccion_tabla = *((int *)list_get(respuesta, 1));
-
-    free(codigo_operacion);
-    eliminar_paquete_lista(respuesta);
-    return direccion_tabla;
-}
-
-int recibirMarco(int socket_memoria) {
     int *codigo_operacion = malloc(sizeof(int));
     t_list* respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
     int marco = *((int *)list_get(respuesta, 1));
@@ -97,6 +57,21 @@ int recibirMarco(int socket_memoria) {
     free(codigo_operacion);
     eliminar_paquete_lista(respuesta);
     return marco;
+}
+
+void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos) {
+    t_paquete *paquete_peticion_write = crear_paquete(PETICION_ESCRIBIR_EN_MEMORIA);
+    agregar_a_paquete(paquete_peticion_write, &pid, sizeof(int));
+    agregar_a_paquete(paquete_peticion_write, &direccion_fisica, sizeof(int));
+    agregar_a_paquete(paquete_peticion_write, datos, strlen(datos) + 1);
+    enviar_paquete(paquete_peticion_write, socket_memoria);
+    eliminar_paquete(paquete_peticion_write);
+
+    int *codigo_operacion = malloc(sizeof(int));
+    t_list* respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
+    if(codigo_operacion == RESPUESTA_ESCRIBIR_EN_MEMORIA) {
+        log_info(logger, "PID: %d - Acción: ESCRIBIR - Dirección Física: %d - Valor: %s", pid, direccion_fisica, datos);
+    }
 }
 
 void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio) {
@@ -109,30 +84,19 @@ void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tama
 
     int *codigo_operacion = malloc(sizeof(int));
     t_list *respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
-    if(respuesta == NULL || *codigo_operacion != RESPUESTA_PETICION) {
+    if(respuesta == NULL || *codigo_operacion != RESPUESTA_LEER_DE_MEMORIA) {
         free(codigo_operacion);
         eliminar_paquete_lista(respuesta);
-        // Como deberia manejarlo? Deberia salir y avanzar a la siguiente instruccion?
+        // Como deberia manejarlo?
     }
     
-    char *leido = strdup((char *)list_get(respuesta, 0)); // no estoy seguro
+    char *leido = strndup((char *)list_get(respuesta, 1), tamanio);
 
     printf("READ: %s\n", leido);
     log_info(logger, "PID: %d - Acción: READ - Dirección Física: %d - Valor: %s", pid, direccion_fisica, leido);
 
     free(codigo_operacion);
     eliminar_paquete_lista(respuesta);
-}
-
-void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos) {
-    t_paquete *paquete_peticion_write = crear_paquete(PETICION_ESCRIBIR_EN_MEMORIA);
-    agregar_a_paquete(paquete_peticion_write, &pid, sizeof(int));
-    agregar_a_paquete(paquete_peticion_write, &direccion_fisica, sizeof(int));
-    agregar_a_paquete(paquete_peticion_write, datos, strlen(datos) + 1);
-    enviar_paquete(paquete_peticion_write, socket_memoria);
-    eliminar_paquete(paquete_peticion_write);
-
-    log_info(logger, "PID: %d - Acción: ESCRIBIR - Dirección Física: %d - Valor: %s", pid, direccion_fisica, datos);
 }
 
 void actualizarCACHE(CACHE *cache, int pid, int nro_pagina, void *contenido) {
@@ -208,16 +172,16 @@ int seleccionarEntradaVictimaCACHE(CACHE *cache) {
                     r_CACHE *registro_actual = &cache->entradas[cache->puntero_clock];
 
                     if(i == 0) {
-                        // bit_uso = 0 // bit_modificado = 0 //
                         if(registro_actual->bit_uso == 0 && registro_actual->bit_modificado == 0) {
+                            // Encontramos a la victima //
                             indice_victima = cache->puntero_clock;
                             cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
                             return indice_victima;
                         }
                     }
                     else {
-                        // bit_uso = 0 // bit_modificado = 1 //
                         if(registro_actual->bit_uso == 0 && registro_actual->bit_modificado == 1) {
+                            // Encontramos a la victima //
                             indice_victima = cache->puntero_clock;
                             cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
                             return indice_victima;
@@ -243,9 +207,48 @@ int seleccionarEntradaVictimaCACHE(CACHE *cache) {
     }
 }
 
-void notificarActualizacionPaginaAMemoria() {
-    // TODO: Si la pagina fue modificada mientras estuvo cargada en caché, los cambios deberán enviarse a la memoria principal
-    // para que esta última tenga la versión actualizada de los datos.
+void notificarActualizacionPaginaAMemoria(CACHE *cache, int socket_memoria, int pid) {
+    for(int i = 0; i < CACHE_SIZE; i++) {
+        r_CACHE *entrada = &cache->entradas[i];
+
+        if(entrada->pid == pid && entrada->bit_modificado == 1) {
+            int marco = buscarMarcoAMemoria(socket_memoria, pid, entrada->pagina);
+            int direccion_fisica = marco * tamanio_pagina;
+
+            t_paquete* paquete_actualizacion_pagina = crear_paquete(PETICION_ESCRIBIR_EN_MEMORIA);
+            agregar_a_paquete(paquete_actualizacion_pagina, &pid, sizeof(int));
+            agregar_a_paquete(paquete_actualizacion_pagina, &direccion_fisica, sizeof(int));
+            agregar_a_paquete(paquete_actualizacion_pagina, entrada->contenido, tamanio_pagina);
+            enviar_paquete(paquete_actualizacion_pagina, socket_memoria);
+            eliminar_paquete(paquete_actualizacion_pagina);
+        }
+    }
+}
+
+void pedirPaginaAMemoria(int socket_memoria, int pid, int marco) {
+    int direccion_fisica = marco * tamanio_pagina;
+
+    t_paquete *paquete_peticion_pagina = crear_paquete(PETICION_LEER_DE_MEMORIA);
+    agregar_a_paquete(paquete_peticion_pagina, &pid, sizeof(int));
+    agregar_a_paquete(paquete_peticion_pagina, &direccion_fisica, sizeof(int));
+    agregar_a_paquete(paquete_peticion_pagina, &tamanio_pagina, sizeof(int));
+    enviar_paquete(paquete_peticion_pagina, socket_memoria);
+    eliminar_paquete(paquete_peticion_pagina);
+
+    int *codigo_operacion = malloc(sizeof(int));
+    t_list *respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
+    if (!respuesta || *codigo_operacion != RESPUESTA_LEER_DE_MEMORIA || list_size(respuesta) < 1) {
+        eliminar_paquete_lista(respuesta);
+        free(codigo_operacion);
+        return NULL;
+    }
+
+    void *pagina = malloc(tamanio_pagina);
+    memcpy(pagina, list_get(respuesta, 1), tamanio_pagina);
+
+    eliminar_paquete_lista(respuesta);
+    free(codigo_operacion);
+    return pagina;
 }
 
 void limpiarEntradaCACHE(CACHE *cache, int indice_victima) {
@@ -256,11 +259,11 @@ void limpiarEntradaCACHE(CACHE *cache, int indice_victima) {
     cache->entradas[indice_victima].bit_modificado = 0;
 }
 
-void limpiarProcesoCACHE(CACHE *cache, int pid) {
+void limpiarProcesoCACHE(int socket_memoria, CACHE *cache, int pid) {
     for(int i = 0; i < CACHE_SIZE; i++) {
         if(cache->entradas[i].pid == pid) {
             if(cache->entradas[i].bit_modificado) {
-                notificarActualizacionPaginaAMemoria();
+                notificarActualizacionPaginaAMemoria(socket_memoria, cache, pid);
             }
             limpiarEntradaCACHE(cache, i);
         }
@@ -314,8 +317,6 @@ int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
 
     return -1;
 }
-
-
 
 
 
