@@ -1,4 +1,5 @@
 #include "utils_memory.h"
+extern pthread_mutex_t MUTEX_PIDPorMarco;
 t_list* lista_instrucciones = NULL;
 
 ModulosConectados conexiones;
@@ -136,17 +137,41 @@ int obtener_espacio_libre() {
 bool es_valida_dir_fisica(int* pid, int* direccion_fisica, int* tamanio) {
     int inicio = *direccion_fisica;
     int fin = inicio + *tamanio;
+
+    if (inicio < 0 || fin > tamañoMemoriaDeUsuario) {
+        return false;
+    }
+
+    // Validar que todas las pags que se pisan esten dentro del rango de marco
+    int pagina_inicio = inicio / tamañoMarcos;
+    int pagina_fin = (fin - 1) / tamañoMarcos;
+
+    if (pagina_inicio < 0 || pagina_fin >= numeroDeMarcos) {
+        return false;
+    }
     
-    // Recordar que hay que validar que las paginas donde se escriben pertenezcan al proceso
-    // En caso que no, depende de la logica que usemos. Podemos asignarle una pagina nueva
-    // aca, o que se asignen todas de una al crear el proceso y que aca se elija la siguiente 
-    // pagina a escribir aca, aunque depende tambien de si la logica de la pagina a escribir se 
-    // hace directo en memoria, o memoria solo escribe paginas enteras que vienen directo de la CPU,
-    // que era la posibilidad que deje escrita en el diagrama. Hay que discutirlo hoy eso.
+    return true;
+}
 
+bool asignarPaginaAlProceso (int pid, int numPagina) {
+    int marcoLibre = siguienteMarcoLibre();
+    if (marcoLibre == -1) {
+        log_error(logger, "No hay marcos libres para asignar a PID %d, página %d", pid, numPagina);
+        return false;
+    }
 
-    // Validar que el rango esté dentro de la memoria física disponible
-    return inicio >= 0 && fin <= tamañoMemoriaDeUsuario;
+    t_list * entradas = entradasDesdeNumeroDePagina(numPagina);
+
+    asignarMarcoAPaginaConPIDyEntradas(pid, entradas, marcoLibre);
+
+    pthread_mutex_lock(&MUTEX_PIDPorMarco);
+    PIDPorMarco[marcoLibre] = pid;
+    pthread_mutex_unlock(&MUTEX_PIDPorMarco);
+
+    log_debug(logger, "Asignado marco %d al PID %d (página %d)", marcoLibre, pid, numPagina);
+
+    list_destroy_and_destroy_elements(entradas, free);
+    return true;
 }
 
 void suspenderProceso(int pid){

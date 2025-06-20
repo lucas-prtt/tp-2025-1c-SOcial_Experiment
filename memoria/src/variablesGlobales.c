@@ -38,8 +38,8 @@ void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, 
 
     //apertura del archivo SWAP
     FILE* swap = fopen("swapfile.bin", "wb");
-    ''' Esto esta por si queremos definir un tamaño maximo de paginas en SWAP porque pense que lo habia pero sino seria solo sacar estas 2 lineas de abajo.
-        Por lo que pregunte que haya tamaño variable puede traer otros problema relacionado a huecos vacios pero si lo manejamos bien no deberia haber problema'''
+    // Esto esta por si queremos definir un tamaño maximo de paginas en SWAP porque pense que lo habia pero sino seria solo sacar estas 2 lineas de abajo.
+    // Por lo que pregunte que haya tamaño variable puede traer otros problema relacionado a huecos vacios pero si lo manejamos bien no deberia haber problema
     int paginasMaximasSwap = 1000; 
     ftruncate(fileno(swap), paginasMaximasSwap * tamañoMarcos);//esto hace que el File tenga un tamaño maximo
     
