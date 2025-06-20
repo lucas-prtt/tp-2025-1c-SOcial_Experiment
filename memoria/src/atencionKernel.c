@@ -82,7 +82,6 @@ void * atenderKernel(void * socketPtr){
     case SOLICITUD_MEMORIA_DUMP_MEMORY:
         PID = list_get(pedido, 1);
         log_debug(logger, "## PID: %d, Memory Dump solicitado", *PID);
-
         error = realizarDump(*PID);
         if (!error)
         respuesta = crear_paquete(RESPUESTA_DUMP_COMPLETADO);
@@ -94,7 +93,7 @@ void * atenderKernel(void * socketPtr){
     case SOLICITUD_MEMORIA_CARGA_SWAP: // Des suspensión del proceso en SWAP
 
         PID = list_get(pedido, 1);
-
+        aumentarMetricaSubidasAMemoriaPrincipal(*PID);
         if (!hayEspacio(tamañoProceso(*PID))) {
            error = 1;
         } else {
@@ -118,6 +117,7 @@ void * atenderKernel(void * socketPtr){
         agregarProcesoATabla(*PID, *TAMAÑO);
         log_info(logger, "## PID: %d - Proceso Creado - Tamaño: %d", *PID, *TAMAÑO);
         cargarInstrucciones(*PID, PATH, *TAMAÑO);
+        aumentarMetricaSubidasAMemoriaPrincipal(*PID); // Subida inicial a memoria
         }else{
             error = 1;
         }
@@ -141,7 +141,7 @@ void * atenderKernel(void * socketPtr){
     case PROCESO_SUSPENDIDO_ENVIAR_A_SWAP: // suspensión del proceso en SWAP
 
         PID = list_get(pedido, 1);
-        
+        aumentarMetricaBajadasASwap(*PID);
         suspenderProceso(PID);
         // No deberia poder tirar error, solo si se acaba el espacio de disco(yo hice como que esto no es posible)
         

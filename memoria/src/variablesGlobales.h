@@ -100,7 +100,7 @@ void aumentarMetricaInstruccinoesSolicitadas(int PID);
 void aumentarMetricaEscrituraDeMemoria(int PID);
 void aumentarMetricaBajadasASwap(int PID);
 void aumentarMetricaAccesoATablaDePaginas(int PID);
-
+void aumentarMetricaAccesoATablaDePaginasPorNiveles(int PID);
 // Otras
 
 void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * directorioPseudocodigo, char * directorioDump, int retrasoAcceso, int retrasoSWAP);

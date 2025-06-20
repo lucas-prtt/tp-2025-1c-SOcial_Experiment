@@ -275,6 +275,14 @@ void aumentarMetricaAccesoATablaDePaginas(int PID){
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return;
 }
+void aumentarMetricaAccesoATablaDePaginasPorNiveles(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDInfo * el = obtenerInfoProcesoConPID(PID);
+    el->stats.accesosATP+= nivelesTablas;
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    return;
+}
+
 //@brief stats.bajadasASwap++; (con MUTEX, tomando solo el PID)
 void aumentarMetricaBajadasASwap(int PID){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);

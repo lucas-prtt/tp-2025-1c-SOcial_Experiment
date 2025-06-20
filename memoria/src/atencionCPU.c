@@ -40,6 +40,8 @@ void *atenderCPU(void *socketPtr) {
                 pthread_exit(NULL);
             }
 
+            aumentarMetricaInstruccinoesSolicitadas(*pid);
+
             char* instruccion = leerInstruccion(*pid, *pc);
 
                 // Armar respuesta y mandarla
@@ -55,6 +57,7 @@ void *atenderCPU(void *socketPtr) {
             log_debug(logger, "Se pide traducir direccion del proceso %d ", *pid);
             int cantidadDeEntradas = (*(int*)list_get(pedido, 2))/sizeof(int);
             simularRetrasoMultinivel();
+            aumentarMetricaAccesoATablaDePaginasPorNiveles(*pid);
             int *entradasPaquete = (int*)list_get(pedido, 3);
             t_list * entradas = list_create();
             for (int i = 0; i < cantidadDeEntradas; i++){
@@ -93,8 +96,9 @@ void *atenderCPU(void *socketPtr) {
             break;
         }
         case PETICION_ESCRIBIR_EN_MEMORIA:
-        {                                            
+        {                               
             int *pid = (int*)list_get(pedido, 1); //
+            aumentarMetricaEscrituraDeMemoria(*pid);             
             int *direccion_fisica = (int*)list_get(pedido, 3); //
             char *datos = (char*)list_get(pedido, 5); //
             int total_a_escribir = strlen(datos) + 1;
@@ -145,6 +149,7 @@ void *atenderCPU(void *socketPtr) {
         case PETICION_LEER_DE_MEMORIA:
         {
             int *pid = (int*)list_get(pedido, 1); //
+            aumentarMetricaLecturaDeMemoria(*pid);
             int *direccion_fisica = (int*)list_get(pedido, 3); //
             // int *tamanio = (int*)list_get(pedido, 5); 
             int tamanio = tamañoMarcos;
