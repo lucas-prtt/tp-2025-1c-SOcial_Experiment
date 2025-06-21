@@ -100,7 +100,7 @@ void * atenderKernel(void * socketPtr){
            dessuspenderProceso(*PID);
         }
 
-        if (!error)
+        if (!error) 
         respuesta = crear_paquete(RESPUESTA_MEMORIA_PROCESO_CARGADO);
         else 
         respuesta = crear_paquete(RESPUESTA_MEMORIA_NO_HAY_MEMORIA_SUFICIENTE);

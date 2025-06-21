@@ -35,6 +35,7 @@ bool handshakeMemoria(int socket_memoria, int identificador) {
     int respuesta;
     t_list *lista_contenido = recibir_paquete_lista(socket_memoria, MSG_WAITALL, &respuesta);
     if(lista_contenido == NULL || respuesta != SOYMEMORIA) {
+        log_error(logger, "Handshake con Memoria falló: respuesta incorrecta o lista nula.");
         eliminar_paquete_lista(lista_contenido);
         return false;
     }
@@ -65,6 +66,7 @@ bool handshakeKernel(int socket_kernel, int identificador) {
     enviar_paquete(paquete_consult_cliente, socket_kernel);
     t_list *lista_contenido = recibir_paquete_lista(socket_kernel, MSG_WAITALL, codigo_operacion);
     if(lista_contenido == NULL || list_size(lista_contenido) < 2 || *codigo_operacion != HANDSHAKE || *(int*)list_get(lista_contenido, 1) == -1) {
+        log_error(logger, "Handshake con Kernel falló: lista nula, incompleta o código de operación incorrecto.");
         free(codigo_operacion);
         eliminar_paquete(paquete_consult_cliente);
         eliminar_paquete_lista(lista_contenido);

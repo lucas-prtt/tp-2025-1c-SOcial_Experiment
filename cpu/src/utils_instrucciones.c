@@ -11,6 +11,7 @@ bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, i
         return false;
     }
     else if(list_size(lista_PIDyPC) < 4 || *codigo_operacion != ASIGNACION_PROCESO_CPU) {
+        log_error(logger, "Error en recibirPIDyPC_kernel: paquete inválido o codigo de operación incorrecto.");
         *estado_conexion = -2; // Error al recibir el paquete //
         free(codigo_operacion);
         eliminar_paquete_lista(lista_PIDyPC);
@@ -58,6 +59,7 @@ char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar) { // Funciona en casos 
     codigo_operacion = malloc(sizeof(int));
     t_list *lista_respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
     if (lista_respuesta == NULL  || *codigo_operacion != RESPUESTA_INSTRUCCION_MEMORIA) {
+        log_error(logger, "Error en FETCH: no se pudo obtener instrucción de memoria.");
         free(codigo_operacion);
         eliminar_paquete_lista(lista_respuesta);
         return NULL;
