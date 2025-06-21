@@ -4,8 +4,10 @@
 
 int cargarInstrucciones(int PID, char* PATH, int tamaño){
 
-        //TODO: Este path es erroneo: Hay que agregarle lo que ponga en configuracion
-        FILE* archivo = fopen(PATH, "r"); 
+        char * PATHCompleto = malloc(strlen(PATH) + strlen(directorioPseudocodigo) + 1);
+        strcpy(PATHCompleto, directorioPseudocodigo);
+        strcat(PATHCompleto, PATH);
+        FILE* archivo = fopen(PATHCompleto, "r"); 
         if (!archivo) {
             log_error(logger, "No se pudo abrir el archivo de pseudocódigo para el PID %d", PID);
             return 1;
@@ -26,6 +28,7 @@ int cargarInstrucciones(int PID, char* PATH, int tamaño){
         free(linea);
         fclose(archivo);
         agregarInstruccionesAPID(PID, instrucciones);
+        free(PATHCompleto);
         return 0;
 }
 
