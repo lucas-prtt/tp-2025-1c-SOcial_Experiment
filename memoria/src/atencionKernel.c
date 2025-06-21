@@ -81,7 +81,7 @@ void * atenderKernel(void * socketPtr){
     {
     case SOLICITUD_MEMORIA_DUMP_MEMORY:
         PID = list_get(pedido, 1);
-        log_debug(logger, "## PID: %d, Memory Dump solicitado", *PID);
+        log_info(logger, "## PID: %d, Memory Dump solicitado", *PID);
         error = realizarDump(*PID);
         if (!error)
         respuesta = crear_paquete(RESPUESTA_DUMP_COMPLETADO);
@@ -129,9 +129,12 @@ void * atenderKernel(void * socketPtr){
         eliminar_paquete(respuesta);
         break;
     case PROCESO_FINALIZADO_LIBERAR_MEMORIA:
-
+        
         PID = list_get(pedido, 1);
-
+        Metricas m = getMetricasPorPID(*PID);
+        log_info(logger, 
+        "## PID: %d - Proceso Destruido - Métricas - Acc.T.Pag: %d; Inst.Sol.: %d; SWAP: %d; Mem.Prin.: %d; Lec.Mem.: %d; Esc.Mem.: %d", 
+         *PID, m.accesosATP, m.instruccionesSolicitadas, m.bajadasASwap, m.subidasAMP, m.lecturasDeMemoria, m.escriturasDeMemoria);
         eliminarProcesoDeTabla(*PID);
 
         respuesta = crear_paquete(RESPUESTA_MEMORIA_LIBERADA_EXITOSAMENTE);

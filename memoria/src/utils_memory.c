@@ -97,7 +97,7 @@ void* atenderConexion(void* socketPtr) {
             break;
         case SOYCPU:
             // Si el ID del paquete indica que es una CPU
-            log_info(logger, "Se conectó una CPU.");
+            log_debug(logger, "Se conectó una CPU.");
             pthread_t hiloCPU;
             // Creo un thread para atender la CPU y le mando el socket de la conexion
             pthread_create(&hiloCPU, NULL, atenderCPU, socketPtr);
