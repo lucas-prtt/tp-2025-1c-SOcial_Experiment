@@ -21,7 +21,6 @@ extern int tamanio_pagina;
 typedef struct {
     int pid;
     int pagina;
-    // int marco (?)
     void *contenido;
     int bit_uso;
     int bit_modificado;
@@ -44,7 +43,7 @@ typedef struct {
 
 typedef struct {
     int habilitada;
-    int proximo; //puntero
+    int proximo;
     int contador_uso;
     int algoritmo;
     r_TLB *entradas;
@@ -62,21 +61,26 @@ enum TIPO_ALGORITMO_REEMPLAZO {
 
 void inicializarVariablesGlobales(int socket_memoria, int cant_niveles_t, int cant_entradas_t, int tam_pag);
 
+int getNumeroPagina(int direccion_logica);
+int getEntradaNivelX(int nro_pagina, int nro_nivel);
+int getDesplazamiento(int direccion_logica);
 int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina);
-int recibirMarco(int socket_memoria);
-void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio);
 void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos);
+void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio);
 
-
-int inicializarCACHE(CACHE *cache);
+void inicializarCACHE(CACHE *cache);
 void *buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina);
 int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina);
+void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, void *contenido);
+bool hayEntradaVaciaCACHE(CACHE *cache, int *indice_victima);
+void insertarPaginaCACHE(CACHE *cache, int pid, int indice_victima, int nro_pagina, void *contenido);
+int seleccionarEntradaVictimaCACHE(CACHE *cache);
+void notificarActualizacionPaginaAMemoria(int socket_memoria, CACHE *cache, int pid);
+void *pedirPaginaAMemoria(int socket_memoria, int pid, int marco);
+void limpiarEntradaCACHE(CACHE *cache, int indice_victima);
+void limpiarProcesoCACHE(int socket_memoria, CACHE *cache, int pid);
 
-
-
-
-
-int inicializarTLB(TLB *tlb);
+void inicializarTLB(TLB *tlb);
 int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina);
 int buscarIndicePaginaTLB(TLB *tlb, int pid, int nro_pagina);
 void actualizarTLB(TLB *tlb, int pid, int nro_pagina, int marco);

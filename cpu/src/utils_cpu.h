@@ -36,7 +36,7 @@ bool handshakeKernel(int socket_kernel, int identificador);
 
 void verificarResultadoHandshake(bool result, char* nombreModuloCliente);
 
-void cerrarCPU(void);
+void cerrarCPU(cpu_t *args_cpu);
 cpu_t *prepararCPU(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt);
 void liberarConexiones(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt);
 

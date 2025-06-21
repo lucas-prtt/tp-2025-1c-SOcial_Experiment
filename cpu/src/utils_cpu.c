@@ -3,19 +3,20 @@
 
 /////////////////////////       < SOCKETS >       /////////////////////////
 
-int generarSocket(char* ip_cliente, char* puerto_cliente, char* modulo_cliente) {
+int generarSocket(char *ip_cliente, char *puerto_cliente, char *modulo_cliente) {
     int socket = conectarSocketClient(ip_cliente, puerto_cliente);
     verificarConexionCliente(socket, modulo_cliente);
     return socket;
 }
 
-void verificarConexionCliente(int socket_cliente, char* nombreModuloCliente) {
+void verificarConexionCliente(int socket_cliente, char *nombreModuloCliente) {
     if(socket_cliente == -1) {
-        log_error(logger, "%s - Conexión Inicial - Error", nombreModuloCliente);
+        log_error(logger, "Conexión Inicial - %s - Error", nombreModuloCliente);
         exit(EXIT_FAILURE);
     }
-    else
-        log_debug(logger, "%s - Conexión Inicial - Exito", nombreModuloCliente);
+    else {
+        log_debug(logger, "Conexión Inicial - %s - Success", nombreModuloCliente);
+    }
 }
 
 
@@ -35,7 +36,6 @@ bool handshakeMemoria(int socket_memoria, int identificador) {
     int respuesta;
     t_list *lista_contenido = recibir_paquete_lista(socket_memoria, MSG_WAITALL, &respuesta);
     if(lista_contenido == NULL || respuesta != SOYMEMORIA) {
-        log_error(logger, "Handshake con Memoria falló: respuesta incorrecta o lista nula.");
         eliminar_paquete_lista(lista_contenido);
         return false;
     }
@@ -45,7 +45,20 @@ bool handshakeMemoria(int socket_memoria, int identificador) {
                                 *(int *)list_get(lista_contenido, 3),
                                 *(int *)list_get(lista_contenido, 5)
                                 );
-    
+    if(*(int *)list_get(lista_contenido, 1) == tamanio_pagina) {
+        log_debug(logger, "Crear variables globales - Success:");
+        log_debug(logger, "  Tamaño caché             : %d", CACHE_SIZE);
+        log_debug(logger, "  Tamaño TLB               : %d", TLB_SIZE);
+        log_debug(logger, "  Tamaño de página         : %d", tamanio_pagina);
+        log_debug(logger, "  Entradas por tabla       : %d", cantidad_entradas_tabla);
+        log_debug(logger, "  Cantidad de niveles      : %d", cantidad_niveles_tabla_paginas);
+    }
+    else {
+        log_error(logger, "Crear variables globales - Error");
+        eliminar_paquete_lista(lista_contenido);
+        return false;
+    }
+
     eliminar_paquete_lista(lista_contenido);
     return true;
 }
@@ -60,22 +73,25 @@ void realizarHandshakeKernel(int socket_cliente, int identificadorCPU, char* mod
 }
 
 bool handshakeKernel(int socket_kernel, int identificador) {
-    int *codigo_operacion = malloc(sizeof(int));
     t_paquete* paquete_consult_cliente = crear_paquete(HANDSHAKE);
     agregar_a_paquete(paquete_consult_cliente, &identificador, sizeof(int));
     enviar_paquete(paquete_consult_cliente, socket_kernel);
+    eliminar_paquete(paquete_consult_cliente);
+
+    int *codigo_operacion = malloc(sizeof(int));
     t_list *lista_contenido = recibir_paquete_lista(socket_kernel, MSG_WAITALL, codigo_operacion);
-    if(lista_contenido == NULL || list_size(lista_contenido) < 2 || *codigo_operacion != HANDSHAKE || *(int*)list_get(lista_contenido, 1) == -1) {
-        log_error(logger, "Handshake con Kernel falló: lista nula, incompleta o código de operación incorrecto.");
+    if(lista_contenido == NULL || list_size(lista_contenido) < 2 || *codigo_operacion != HANDSHAKE) {
         free(codigo_operacion);
-        eliminar_paquete(paquete_consult_cliente);
         eliminar_paquete_lista(lista_contenido);
         return false;
     }
+
     int result = false;
-    if(*(int*)list_get(lista_contenido, 1) == identificador) result = true;
+    if(*(int*)list_get(lista_contenido, 1) == identificador) {
+        result = true;
+    }
+
     free(codigo_operacion);
-    eliminar_paquete(paquete_consult_cliente);
     eliminar_paquete_lista(lista_contenido);
     return result;
 }
@@ -85,10 +101,11 @@ bool handshakeKernel(int socket_kernel, int identificador) {
 /////////////////////////       < HANDSHAKE - UTILS >       /////////////////////////
 
 void verificarResultadoHandshake(bool result, char* nombreModuloCliente) {
-    if(result)
-        log_debug(logger, "%s Handshake - Exito", nombreModuloCliente);
+    if(result) {
+        log_debug(logger, "Handshake - %s - Success", nombreModuloCliente);
+    }
     else {
-        log_error(logger, "%s Handshake - Error", nombreModuloCliente);
+        log_error(logger, "Handshake - %s - Error", nombreModuloCliente);
         exit(EXIT_FAILURE);
     }
 }
@@ -96,11 +113,6 @@ void verificarResultadoHandshake(bool result, char* nombreModuloCliente) {
 
 
 /////////////////////////       < OTROS >       /////////////////////////
-
-void cerrarCPU(void) {
-    cerrarConfigYLog();
-    abort();
-}
 
 cpu_t *prepararCPU(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt) {
     cpu_t *cpu = malloc(sizeof(cpu));
@@ -119,6 +131,21 @@ cpu_t *prepararCPU(int socket_memoria, int socket_kernel_dispatch, int socket_ke
     pthread_mutex_init(&cpu->mutex_interrupcion, NULL);
 
     return cpu;
+}
+
+void cerrarCPU(cpu_t *args_cpu) {
+    //////////////////// Libero Cache ////////////////////
+    if(args_cpu->cache == NULL) return;
+    for(int i = 0; i < CACHE_SIZE; i++) {
+        free(args_cpu->cache->entradas[i].contenido);
+    }
+    free(args_cpu->cache->entradas);
+    free(args_cpu->cache);
+
+    //////////////////// Libero TLB ////////////////////
+    if(args_cpu->tlb == NULL) return;
+    free(args_cpu->tlb->entradas);
+    free(args_cpu->tlb);
 }
 
 void liberarConexiones(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt) {

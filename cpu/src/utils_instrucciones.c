@@ -1,7 +1,7 @@
 #include "utils_instrucciones.h"
 
 
-bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, int *estado_conexion) {
+bool recibirPIDyPCkernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, int *estado_conexion) {
     int *codigo_operacion = malloc(sizeof(int));
     t_list *lista_PIDyPC = recibir_paquete_lista(socket_kernel_dispatch, MSG_WAITALL, codigo_operacion);
 
@@ -11,7 +11,6 @@ bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, i
         return false;
     }
     else if(list_size(lista_PIDyPC) < 4 || *codigo_operacion != ASIGNACION_PROCESO_CPU) {
-        log_error(logger, "Error en recibirPIDyPC_kernel: paquete inválido o codigo de operación incorrecto.");
         *estado_conexion = -2; // Error al recibir el paquete //
         free(codigo_operacion);
         eliminar_paquete_lista(lista_PIDyPC);
@@ -20,6 +19,7 @@ bool recibirPIDyPC_kernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, i
     
     proc_AEjecutar->pid = *(int *)list_get(lista_PIDyPC, 1);
     proc_AEjecutar->pc = *(int *)list_get(lista_PIDyPC, 3);
+    log_debug(logger, "Instrucción recibida - PID: %d - Program Counter: %d", proc_AEjecutar->pid,  proc_AEjecutar->pc);
 
     free(codigo_operacion);
     eliminar_paquete_lista(lista_PIDyPC);
@@ -30,25 +30,21 @@ bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
     instruccionInfo instr_info;
 
     char *instruccion = fetch(cpu->socket_memoria, proc_AEjecutar);
-    log_info(logger, "## PID: %d - FETCH - Program Counter: %d", proc_AEjecutar->pid, proc_AEjecutar->pc);
-
-    t_list *instruccion_list = decode(instruccion, &instr_info);
-    bool fin_proceso = execute(cpu, instruccion_list, instr_info, proc_AEjecutar); //
-    log_info(logger, "## PID: %d - Ejecutando: %s - <PARAMETROS>",  proc_AEjecutar->pid, (char *)list_get(instruccion_list, 0)); //raro
-    if(checkInterrupt(cpu)) {
+    t_list *instruccion_list = decode(proc_AEjecutar, instruccion, &instr_info);
+    bool fin_proceso = execute(cpu, instruccion_list, instr_info, proc_AEjecutar);
+    if(checkInterrupt(cpu) || fin_proceso) {
         devolverProcesoKernel(cpu->socket_kernel_dispatch, proc_AEjecutar);
         free(instruccion);
         list_destroy(instruccion_list);
         return true;
     }
-    
+
     free(instruccion);
     list_destroy(instruccion_list);
-    return fin_proceso;
+    return false;
 }
 
-char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar) { // Funciona en casos de CACHE_MISS y TLB_MISS
-    // Pide una instrucccion a memoria a partir de proc_AEjecutar //
+char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar) {
     t_paquete *paquete_peticion_instr = crear_paquete(PETICION_INSTRUCCION_MEMORIA);
     agregar_a_paquete(paquete_peticion_instr, &(proc_AEjecutar->pid), sizeof(proc_AEjecutar->pid));
     agregar_a_paquete(paquete_peticion_instr, &(proc_AEjecutar->pc), sizeof(proc_AEjecutar->pc));
@@ -58,38 +54,35 @@ char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar) { // Funciona en casos 
     int *codigo_operacion;
     codigo_operacion = malloc(sizeof(int));
     t_list *lista_respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
-    if (lista_respuesta == NULL  || *codigo_operacion != RESPUESTA_INSTRUCCION_MEMORIA) {
-        log_error(logger, "Error en FETCH: no se pudo obtener instrucción de memoria.");
+    if(lista_respuesta == NULL  || *codigo_operacion != RESPUESTA_INSTRUCCION_MEMORIA) {
         free(codigo_operacion);
         eliminar_paquete_lista(lista_respuesta);
         return NULL;
     }
+
     char *instruccion = strdup((char *)list_get(lista_respuesta, 1));
+    log_info(logger, "## PID: %d - FETCH - Program Counter: %d", proc_AEjecutar->pid, proc_AEjecutar->pc);
 
     free(codigo_operacion);
     eliminar_paquete_lista(lista_respuesta);
     return instruccion;
 }
 
-t_list *decode(char *instruccion, instruccionInfo *instr_info) {
-    // Crear lista para los parámetros //
+t_list *decode(PCB_cpu *proc_AEjecutar, char *instruccion, instruccionInfo *instr_info) {
     t_list *instruccion_decodificada = list_create();
-
-    // Duplica la cadena para manipulación //
     char *copia_de_instruccion = strdup(instruccion);
-    char *token = strtok(copia_de_instruccion, " ");  // Primer token: Operación
+    char *token = strtok(copia_de_instruccion, " ");  // Primer token: Operación //
+    log_debug(logger, "## PID: %d - DECODE - Program Counter: %d - Instrucción: %s", proc_AEjecutar->pid, proc_AEjecutar->pc, token);
 
-    // Decodificar tipo de instrucción //
     instr_info->tipo_instruccion = instrucciones_string_to_enum(token);
     instr_info->requiere_traduccion = (instr_info->tipo_instruccion == INSTR_WRITE || instr_info->tipo_instruccion == INSTR_READ);
     list_add(instruccion_decodificada, strdup(token));
 
-    // Agregar los parámetros restantes a la lista //
     while ((token = strtok(NULL, " ")) != NULL) {
-        list_add(instruccion_decodificada, strdup(token));  // Copia del token
+        list_add(instruccion_decodificada, strdup(token));
     }
 
-    free(copia_de_instruccion);  // Liberar memoria duplicada
+    free(copia_de_instruccion);
     return instruccion_decodificada;
 }
 
@@ -136,10 +129,10 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
 
         if(cpu->cache->habilitada) {
             contenido_cache = buscarPaginaCACHE(cpu->cache, pcb->pid, nro_pagina);
-            if(contenido_cache == NULL) { // CACHE MISS //
+            if(contenido_cache == NULL) {
                 int marco = buscarMarcoAMemoria(socket_memoria, pcb->pid, nro_pagina);
-                void *pagina = pedirPaginaAMemoria(socket_memoria, pcb->pid, marco); // ----> MEMORIA me devuelve la página //
-                actualizarCACHE(cpu->cache, pcb->pid, nro_pagina, pagina);
+                void *pagina = pedirPaginaAMemoria(socket_memoria, pcb->pid, marco);
+                actualizarCACHE(cpu->socket_memoria, cpu->cache, pcb->pid, nro_pagina, pagina);
                 contenido_cache = pagina;
             }
         }
@@ -148,7 +141,6 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             if(direccion_fisica == -1) {
                 int marco = buscarMarcoAMemoria(socket_memoria, pcb->pid, nro_pagina);
                 actualizarTLB(cpu->tlb, pcb->pid, nro_pagina, marco);
-                // direccion_fisica = la hace...
             }
         }
     }
@@ -158,54 +150,50 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
     {
         case INSTR_NOOP:
         {
+            log_info(logger, "## PID: %d - Ejecutando: %s", pcb->pid, operacion);
             setProgramCounter(pcb, pcb->pc + 1);
             return false;
         }
         case INSTR_WRITE:
         {
-            char* datos = (char*)list_get(instruccion_list, 2);
             int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
+            char* datos = (char*)list_get(instruccion_list, 2);
             
             if(contenido_cache != NULL && cpu->cache->habilitada) {
                 // Write directamente en la caché //
                 int desplazamiento = getDesplazamiento(direccion_logica);
 
                 memcpy((char *)contenido_cache + desplazamiento, datos, strlen(datos) + 1);
-
-                log_info(logger, "PID: %d - Acción: ESCRIBIR - Dirección Física: %d - Valor: %s", pcb->pid, direccion_fisica, datos);
-
-                setProgramCounter(pcb, pcb->pc + 1);
-                return false;
+            }
+            else {
+                // WRITE en memoria //
+                escribirDatoMemoria(socket_memoria, pcb->pid, direccion_fisica, datos);
+                marcarModificadoEnCache(cpu->cache, pcb->pid, getNumeroPagina(direccion_logica));
             }
 
-            // WRITE en memoria //
-            escribirDatoMemoria(socket_memoria, pcb->pid, direccion_fisica, datos);
-            marcarModificadoEnCache(cpu->cache, pcb->pid, getNumeroPagina(direccion_logica));
-
+            log_info(logger, "## PID: %d - Ejecutando: %s - Dirección: %d - Datos: %s", pcb->pid, operacion, direccion_logica, datos);
             setProgramCounter(pcb, pcb->pc + 1);
             return false;
         }
         case INSTR_READ:
         {
+            int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
             int tamanio = atoi((char *)list_get(instruccion_list, 2));
 
             if(contenido_cache != NULL && cpu->cache->habilitada) {
                 // READ directamente desde la caché //
-                int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
                 int desplazamiento = getDesplazamiento(direccion_logica);
 
                 char *leido = strndup((char *)contenido_cache + desplazamiento, tamanio);
 
                 printf("READ: %s\n", leido);
-                log_info(logger, "PID: %d - Acción: READ - Dirección Física: %d - Valor: %s", pcb->pid, direccion_fisica, leido);
-
-                setProgramCounter(pcb, pcb->pc + 1);
-                return false;
             }
-            
-            // READ desde memoria //
-            leerDatoMemoria(socket_memoria, pcb->pid, direccion_fisica, tamanio);
+            else {
+                // READ desde memoria //
+                leerDatoMemoria(socket_memoria, pcb->pid, direccion_fisica, tamanio);
+            }
 
+            log_info(logger, "## PID: %d - Ejecutando: %s - Direccion: %d - Tamaño: %d", pcb->pid, operacion, direccion_logica, tamanio);
             setProgramCounter(pcb, pcb->pc + 1);
             return false;
         }
@@ -213,6 +201,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
         {
             int valor = atoi((char *)list_get(instruccion_list, 1));
 
+            log_info(logger, "## PID: %d - Ejecutando: %s - Valor: %d", pcb->pid, operacion, valor);
             setProgramCounter(pcb, valor);
             return false;
         }
@@ -226,12 +215,13 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             agregar_a_paquete(paquete_peticion_io, dispositivo, sizeof(strlen(dispositivo) + 1));
             agregar_a_paquete(paquete_peticion_io, &tiempo, sizeof(tiempo));
             enviar_paquete(paquete_peticion_io, socket_kernel);
-            setProgramCounter(pcb, pcb->pc + 1);
-
             eliminar_paquete(paquete_peticion_io);
+
+            log_info(logger, "## PID: %d - Ejecutando: %s - Dispositivo: %s - Tiempo: %d", pcb->pid, operacion, dispositivo, tiempo);
+            setProgramCounter(pcb, pcb->pc + 1);
             return true;
         }
-        case INSTR_INIT_PROC: // no terminaba creo...
+        case INSTR_INIT_PROC:
         {
             char *path = (char *)list_get(instruccion_list, 1);
             int tamanio = atoi((char *)list_get(instruccion_list, 2));
@@ -243,6 +233,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             enviar_paquete(paquete_peticion_init_proc, socket_kernel);
             setProgramCounter(pcb, pcb->pc + 1);
 
+            log_info(logger, "## PID: %d - Ejecutando: %s - Archivo de instrucciones: %s - Tamaño: %d", pcb->pid, operacion, path, tamanio);
             eliminar_paquete(paquete_peticion_init_proc);
             return true;
         }
@@ -251,9 +242,10 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             t_paquete *paquete_peticion_dump_memory = crear_paquete(SYSCALL_DUMP_MEMORY);
             agregar_a_paquete(paquete_peticion_dump_memory, &(pcb->pc), sizeof(pcb->pc));
             enviar_paquete(paquete_peticion_dump_memory, socket_kernel);
-            setProgramCounter(pcb, pcb->pc + 1);
-
             eliminar_paquete(paquete_peticion_dump_memory);
+
+            log_info(logger, "## PID: %d - Ejecutando: %s", pcb->pid, operacion);
+            setProgramCounter(pcb, pcb->pc + 1);
             return true;
         }
         case INSTR_EXIT:
@@ -261,9 +253,10 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             t_paquete *paquete_instr_exit = crear_paquete(SYSCALL_EXIT);
             agregar_a_paquete(paquete_instr_exit, &(pcb->pc), sizeof(pcb->pc));
             enviar_paquete(paquete_instr_exit, socket_kernel);
-            setProgramCounter(pcb, pcb->pc + 1);
-
             eliminar_paquete(paquete_instr_exit);
+
+            log_info(logger, "## PID: %d - Ejecutando: %s", pcb->pid, operacion);
+            setProgramCounter(pcb, pcb->pc + 1);
             return true;
         }
         default:
@@ -272,6 +265,8 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             break;
         }
     }
+
+    return false;
 }
 
 void marcarModificadoEnCache(CACHE *cache, int pid, int nro_pagina) {

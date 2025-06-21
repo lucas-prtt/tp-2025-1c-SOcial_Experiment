@@ -44,7 +44,7 @@ int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina) {
         entradas[nivel - 1] = getEntradaNivelX(nro_pagina, nivel);
     }
 
-    t_paquete *paquete_peticion_marco = crear_paquete(PETICION_MARCO_MEMORIA); //////// preguntar, porque me esta devolviendo la direccion fisica = marco * tam_pagina + offset
+    t_paquete *paquete_peticion_marco = crear_paquete(PETICION_MARCO_MEMORIA);
     agregar_a_paquete(paquete_peticion_marco, &pid, sizeof(int));
     agregar_a_paquete(paquete_peticion_marco, entradas, sizeof(int) * cantidad_niveles_tabla_paginas);
     enviar_paquete(paquete_peticion_marco, socket_memoria);
@@ -69,9 +69,10 @@ void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char
 
     int *codigo_operacion = malloc(sizeof(int));
     t_list* respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
-    if(codigo_operacion == RESPUESTA_ESCRIBIR_EN_MEMORIA) {
+    if(*codigo_operacion == RESPUESTA_ESCRIBIR_EN_MEMORIA) {
         log_info(logger, "PID: %d - Acción: ESCRIBIR - Dirección Física: %d - Valor: %s", pid, direccion_fisica, datos);
     }
+    eliminar_paquete_lista(respuesta);
 }
 
 void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio) {
@@ -87,7 +88,6 @@ void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tama
     if(respuesta == NULL || *codigo_operacion != RESPUESTA_LEER_DE_MEMORIA) {
         free(codigo_operacion);
         eliminar_paquete_lista(respuesta);
-        // Como deberia manejarlo?
     }
     
     char *leido = strndup((char *)list_get(respuesta, 1), tamanio);
@@ -99,7 +99,57 @@ void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tama
     eliminar_paquete_lista(respuesta);
 }
 
-void actualizarCACHE(CACHE *cache, int pid, int nro_pagina, void *contenido) {
+
+
+/////////////////////////       < CACHÉ DE PÁGINAS >       /////////////////////////
+
+void inicializarCACHE(CACHE *cache) {
+    if(CACHE_SIZE < 1) {
+        cache->habilitada = 0;
+        log_debug(logger, "Cache Deshabilitada");
+        return;
+    }
+    
+    cache->habilitada = 1;
+    cache->puntero_clock = 0;
+    cache->algoritmo = algoritmo_string_to_enum(config_get_string_value(config, "REEMPLAZO_CACHE"));
+    
+    cache->entradas = malloc(CACHE_SIZE * sizeof(r_CACHE));
+    for(int i = 0; i < CACHE_SIZE; i++) {
+        cache->entradas[i].contenido = NULL;
+        cache->entradas[i].pid = -1;
+        cache->entradas[i].pagina = -1;
+        cache->entradas[i].bit_modificado = 0;
+        cache->entradas[i].bit_uso = 0;
+    }
+
+    log_debug(logger, "Cache Habilitada");
+}
+
+void *buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
+    int pos_pagina = buscarIndicePaginaCACHE(cache, pid, nro_pagina);
+
+    if(pos_pagina == -1) {
+        log_info(logger, "PID: %d - Cache Miss - Pagina: %d", pid, nro_pagina);
+        return NULL; // CACHE MISS
+    }
+    
+    log_info(logger, "PID: %d - Cache Hit - Pagina: %d", pid, nro_pagina);
+    return cache->entradas[pos_pagina].contenido; // CACHE HIT
+}
+
+int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
+    for(int i = 0; i < CACHE_SIZE; i++) {
+        if(cache->entradas[i].contenido && cache->entradas[i].pid == pid && cache->entradas[i].pagina == nro_pagina) {
+            cache->entradas[i].bit_uso = 1;
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, void *contenido) {
     // Sucede cuando buscarPaginaCACHE() es NULL (CACHE MISS) //
     int indice_victima;
 
@@ -109,7 +159,7 @@ void actualizarCACHE(CACHE *cache, int pid, int nro_pagina, void *contenido) {
     else {
         indice_victima = seleccionarEntradaVictimaCACHE(cache);
         if(cache->entradas[indice_victima].bit_modificado) {
-            notificarActualizacionAMemoria();
+            notificarActualizacionPaginaAMemoria(socket_memoria, cache, pid);
         }
         limpiarEntradaCACHE(cache, indice_victima);
         insertarPaginaCACHE(cache, pid, indice_victima, nro_pagina, contenido);
@@ -139,6 +189,8 @@ void insertarPaginaCACHE(CACHE *cache, int pid, int indice_victima, int nro_pagi
 
     cache->entradas[indice_victima].bit_uso = 1;
     cache->entradas[indice_victima].bit_modificado = 0;
+
+    log_info(logger, "PID: %d - Cache Add - Pagina: %d", cache->entradas[indice_victima].pid, cache->entradas[indice_victima].pagina);
 }
 
 int seleccionarEntradaVictimaCACHE(CACHE *cache) {
@@ -207,7 +259,7 @@ int seleccionarEntradaVictimaCACHE(CACHE *cache) {
     }
 }
 
-void notificarActualizacionPaginaAMemoria(CACHE *cache, int socket_memoria, int pid) {
+void notificarActualizacionPaginaAMemoria(int socket_memoria, CACHE *cache, int pid) {
     for(int i = 0; i < CACHE_SIZE; i++) {
         r_CACHE *entrada = &cache->entradas[i];
 
@@ -221,11 +273,13 @@ void notificarActualizacionPaginaAMemoria(CACHE *cache, int socket_memoria, int 
             agregar_a_paquete(paquete_actualizacion_pagina, entrada->contenido, tamanio_pagina);
             enviar_paquete(paquete_actualizacion_pagina, socket_memoria);
             eliminar_paquete(paquete_actualizacion_pagina);
+
+            log_info(logger, "Página Actualizada de Caché a Memoria: PID: %d - Memory Update - Página: %d - Frame: %d", pid, entrada->pagina, marco);
         }
     }
 }
 
-void pedirPaginaAMemoria(int socket_memoria, int pid, int marco) {
+void *pedirPaginaAMemoria(int socket_memoria, int pid, int marco) {
     int direccion_fisica = marco * tamanio_pagina;
 
     t_paquete *paquete_peticion_pagina = crear_paquete(PETICION_LEER_DE_MEMORIA);
@@ -271,67 +325,21 @@ void limpiarProcesoCACHE(int socket_memoria, CACHE *cache, int pid) {
 }
 
 
-/////////////////////////       < CACHÉ DE PÁGINAS >       /////////////////////////
-
-int inicializarCACHE(CACHE *cache) {
-    if(CACHE_SIZE < 1) {
-        cache->habilitada = 0;
-        log_debug(logger, "CACHÉ Deshabilitada");
-        free(cache);
-        return 0;
-    }
-
-    cache->entradas = (r_CACHE *)malloc(sizeof(CACHE) + CACHE_SIZE * sizeof(r_CACHE)); // malloc(CACHE_SIZE * sizeof(r_CACHE));
-    cache->habilitada = 1;
-    cache->puntero_clock = 0;
-
-    for(int i = 0; i < CACHE_SIZE; i++) {
-        cache->entradas[i].contenido = NULL;
-    }
-    
-    cache->algoritmo = algoritmo_string_to_enum(config_get_string_value(config, "REEMPLAZO_CACHE"));
-    
-    log_debug(logger, "CACHÉ Habilitada");
-    return 1;
-}
-
-void *buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
-    int pos_pagina = buscarIndicePaginaCACHE(cache, pid, nro_pagina);
-
-    if(pos_pagina == -1) {
-        log_info(logger, "PID: %d - Cache Miss - Pagina: %d", pid, nro_pagina);
-        return NULL; // CACHE MISS
-    }
-    
-    log_info(logger, "PID: %d - Cache Hit - Pagina: %d", pid, nro_pagina);
-    return cache->entradas[pos_pagina].contenido; // CACHE HIT
-}
-
-int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
-    for(int i = 0; i < CACHE_SIZE; i++) {
-        if(cache->entradas[i].contenido && cache->entradas[i].pid == pid && cache->entradas[i].pagina == nro_pagina) {
-            cache->entradas[i].bit_uso = 1;
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-
 
 /////////////////////////       < TLB >       /////////////////////////
 
-int inicializarTLB(TLB *tlb) {
+void inicializarTLB(TLB *tlb) {
     if(TLB_SIZE == 0) {
         tlb->habilitada = 0;
         log_debug(logger, "TLB Deshabilitada");
-        return 0;
+        return;
     }
 
-    tlb->entradas = (r_TLB *)malloc(sizeof(TLB) + TLB_SIZE * sizeof(r_TLB));
     tlb->habilitada = 1;
+    tlb->proximo = 0;
+    tlb->contador_uso = 0;
 
+    tlb->entradas = malloc(TLB_SIZE * sizeof(r_TLB));
     for(int i = 0; i < TLB_SIZE; i++) {
         tlb->entradas[i].pid = -1;
         tlb->entradas[i].pagina = -1;
@@ -340,11 +348,9 @@ int inicializarTLB(TLB *tlb) {
         tlb->entradas[i].validez = 0;
     }
 
-    tlb->proximo = 0;
     tlb->algoritmo = algoritmo_string_to_enum(config_get_string_value(config, "REEMPLAZO_TLB"));
     
     log_debug(logger, "TLB Habilitada");
-    return 1;
 }
 
 int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina) {
@@ -406,7 +412,8 @@ void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, in
     tlb->entradas[indice_victima].ultimo_uso = tlb->contador_uso;
 
     tlb->entradas[indice_victima].validez = 1;
-    log_info(logger, "PID: %d - TLB Add - Pagina: %d - Marco: %d", pid, nro_pagina, marco);
+
+    log_debug(logger, "PID: %d - TLB Add - Pagina: %d", tlb->entradas[indice_victima].pid, tlb->entradas[indice_victima].pagina);
 }
 
 int seleccionarEntradaVictimaTLB(TLB *tlb) {
