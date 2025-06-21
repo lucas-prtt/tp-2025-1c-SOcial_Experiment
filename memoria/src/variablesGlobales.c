@@ -21,6 +21,7 @@ pthread_mutex_t MUTEX_MemoriaDeUsuario = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_SiguienteMarcoLibre = PTHREAD_MUTEX_INITIALIZER; // Mutex para que el valor de siguienteMarcoLibre() no quede desactualizado
 // @brief Se debe ejecutar antes de utilizar cualquier funcion o variable del archivo variablesGlobales.h
 void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * PathPseudocodigo, char * PathDUMP, int retAcc, int retSWAP){
+    log_debug(logger, "Inicializando variables");
     tablaDeProcesos = list_create();
     maximoEntradasTabla = sizeTabla;
     directorioPseudocodigo = PathPseudocodigo;
@@ -28,15 +29,19 @@ void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, 
     nivelesTablas = qNiveles;
     tamañoMarcos = SizeMarcos;
     tamañoMemoriaDeUsuario = sizeMemoria;
+    log_debug(logger, "Inicializacion antes de memoria de usuario");
     memoriaDeUsuario = malloc(sizeMemoria);
     numeroDeMarcos = tamañoMemoriaDeUsuario / tamañoMarcos;
-    PIDPorMarco = malloc(numeroDeMarcos);
+    //log_debug(logger, "Inicializacion antes de tabla de marcos");
+    PIDPorMarco = malloc(numeroDeMarcos * sizeof(int));
+    //log_debug(logger, "Luego de malloc de PIDPorMarco");
     retrasoAcceso = retAcc;
     retrasoSWAP = retSWAP;
+    //log_debug(logger, "Antes del ciclo PIDPORMARCO");
     for (int i = 0; i<numeroDeMarcos; i++){
         PIDPorMarco[i] = -1;
     }
-
+    //log_debug(logger, "Apertura archivo swap iniciada");
     //apertura del archivo SWAP
     FILE* swap = fopen("swapfile.bin", "wb");
     // Esto esta por si queremos definir un tamaño maximo de paginas en SWAP porque pense que lo habia pero sino seria solo sacar estas 2 lineas de abajo.
@@ -45,7 +50,7 @@ void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, 
     ftruncate(fileno(swap), paginasMaximasSwap * tamañoMarcos);//esto hace que el File tenga un tamaño maximo
     
     fclose(swap);
-
+    log_debug(logger, "Apertura swap finalizada");
     //Tabla donde vana  estar que procesos estan en SWAP
     tablaSwap = list_create();
     
@@ -416,4 +421,12 @@ int esPaginaValida(int PID, t_list * entradas){
     cantidadDePaginasDelProceso(PID) // N, (>=1)
       >   
     convertirEntradasAPagina(entradas) ; // de 0 a N-1 esta bien
+}
+
+int tamañoProceso(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDInfo * proceso = obtenerInfoProcesoConPID(PID);
+    int temp = proceso->TamMaxProceso;
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    return temp;
 }

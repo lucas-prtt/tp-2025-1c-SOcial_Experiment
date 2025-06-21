@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <pthread.h>
 #include <unistd.h>
 #include "utils/logConfig.h"
@@ -64,7 +65,7 @@ extern int retrasoSWAP;
 
 void agregarProcesoATabla(int nuevoPID, int tamañoMaximo);
 void eliminarProcesoDeTabla(int PIDEliminado);
-
+int tamañoProceso(int PID);
 // De Paginas
 
 void asignarMarcoAPaginaConPIDyEntradas(int PID, t_list * entradas, int marco);

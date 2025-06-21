@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
     config_get_int_value(config, "RETARDO_MEMORIA"),
     config_get_int_value(config, "RETARDO_SWAP")
     );
-
+    log_debug(logger, "Variables de config obtenidas");
     int socketServidor = crearSocketConfig(config, "PUERTO_ESCUCHA");
     if (socketServidor == -1) {
         log_error(logger, "No se pudo crear el socket servidor");
