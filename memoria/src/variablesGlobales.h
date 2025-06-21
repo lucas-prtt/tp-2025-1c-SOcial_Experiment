@@ -31,7 +31,7 @@ typedef struct {
     int offset;
 } EntradaSwap;
 // Tabla de la informacion que está en SWAP
-t_list* tablaSwap;
+extern t_list* tablaSwap;
 
 //@brief Vector:  PIDPorMarco[numeroDeMarco] = PID o -1 (vacio)
 extern int* PIDPorMarco;

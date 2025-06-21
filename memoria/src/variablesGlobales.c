@@ -13,6 +13,7 @@ char * directorioPseudocodigo;
 char * directorioDump;
 int retrasoAcceso;
 int retrasoSWAP; // Falta implementarlo
+t_list* tablaSwap = NULL;
 
 pthread_mutex_t MUTEX_tablaDeProcesos = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_PIDPorMarco = PTHREAD_MUTEX_INITIALIZER;

@@ -145,7 +145,7 @@ void * atenderKernel(void * socketPtr){
 
         PID = list_get(pedido, 1);
         aumentarMetricaBajadasASwap(*PID);
-        suspenderProceso(PID);
+        suspenderProceso(*PID);
         // No deberia poder tirar error, solo si se acaba el espacio de disco(yo hice como que esto no es posible)
         
         respuesta = crear_paquete(RESPUESTA_MEMORIA_PROCESO_ENVIADO_A_SWAP);
