@@ -235,7 +235,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
 
             log_info(logger, "## PID: %d - Ejecutando: %s - Archivo de instrucciones: %s - Tamaño: %d", pcb->pid, operacion, path, tamanio);
             eliminar_paquete(paquete_peticion_init_proc);
-            return true;
+            return false;
         }
         case INSTR_DUMP_MEMORY:
         {

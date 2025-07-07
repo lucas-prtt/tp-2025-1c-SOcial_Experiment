@@ -5,12 +5,14 @@
 #include <utils/threads.h>
 #include <string.h>
 #include <utils/paquetes.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include "utils/logConfig.h"
 #include <math.h>
 
 
 extern int CACHE_SIZE;
+extern int CACHE_RETARDO;
 extern int TLB_SIZE;
 
 extern int cantidad_niveles_tabla_paginas;
@@ -72,9 +74,13 @@ void inicializarCACHE(CACHE *cache);
 void *buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina);
 int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina);
 void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, void *contenido);
-bool hayEntradaVaciaCACHE(CACHE *cache, int *indice_victima);
+int hayEntradaVaciaCACHE(CACHE *cache);
 void insertarPaginaCACHE(CACHE *cache, int pid, int indice_victima, int nro_pagina, void *contenido);
 int seleccionarEntradaVictimaCACHE(CACHE *cache);
+void setBitUso(int *bit_uso);
+void clearBitUso(int *bit_uso);
+void setBitModificado(int *bit_modificado);
+void clearBitModificado(int *bit_modificado);
 void notificarActualizacionPaginaAMemoria(int socket_memoria, CACHE *cache, int pid);
 void *pedirPaginaAMemoria(int socket_memoria, int pid, int marco);
 void limpiarEntradaCACHE(CACHE *cache, int indice_victima);

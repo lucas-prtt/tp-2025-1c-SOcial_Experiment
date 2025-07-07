@@ -7,7 +7,7 @@ void *atenderCPU(void *socketPtr) {
     log_debug(logger, "Hilo atenderCPU creado, atendiendo socket %d", socket_cpu);
     free (socketPtr);
     
-    t_paquete *respuesta = crear_paquete(SOYCPU);
+    t_paquete *respuesta = crear_paquete(SOYMEMORIA);
     enviar_paquete(respuesta, socket_cpu);
     log_debug(logger, "Paquete enviado (pointer = %p)", respuesta); // que hace esto?
     // Respuesta: Esto era para comprobar que el paquete existia cuando escribí atencionKernel. Realmente se puede sacar

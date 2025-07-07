@@ -5,6 +5,7 @@
 /////////////////////////       < VARIABLES GLOBALES >       /////////////////////////
 
 int CACHE_SIZE;
+int CACHE_RETARDO;
 int TLB_SIZE;
 
 int cantidad_niveles_tabla_paginas;
@@ -12,8 +13,9 @@ int cantidad_entradas_tabla;
 int tamanio_pagina;
 
 void inicializarVariablesGlobales(int socket_memoria, int cant_niveles_t, int cant_entradas_t, int tam_pag) {
-    CACHE_SIZE = atoi(config_get_string_value(config, "ENTRADAS_CACHE"));
-    TLB_SIZE = atoi(config_get_string_value(config, "ENTRADAS_TLB"));
+    CACHE_SIZE = config_get_int_value(config, "ENTRADAS_CACHE");
+    CACHE_RETARDO = config_get_int_value(config, "RETARDO_CACHE");
+    TLB_SIZE = config_get_int_value(config, "ENTRADAS_TLB");
 
     tamanio_pagina = tam_pag;
     cantidad_entradas_tabla = cant_entradas_t;
@@ -129,6 +131,8 @@ void inicializarCACHE(CACHE *cache) {
 void *buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
     int pos_pagina = buscarIndicePaginaCACHE(cache, pid, nro_pagina);
 
+    usleep(CACHE_RETARDO * 1000);
+
     if(pos_pagina == -1) {
         log_info(logger, "PID: %d - Cache Miss - Pagina: %d", pid, nro_pagina);
         return NULL; // CACHE MISS
@@ -149,13 +153,23 @@ int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
     return -1;
 }
 
-void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, void *contenido) {
-    // Sucede cuando buscarPaginaCACHE() es NULL (CACHE MISS) //
-    int indice_victima;
+void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, void *contenido) { // el bit de modif
+    // Busca la página en la caché //
+    int indice_victima = buscarIndicePaginaCACHE(cache, pid, nro_pagina);
 
-    if(hayEntradaVaciaCACHE(cache, &indice_victima)) {
-        insertarPaginaCACHE(cache, pid, indice_victima, nro_pagina, contenido);
+    usleep(CACHE_RETARDO * 1000);
+
+    // CASO 1: Está //
+    if(indice_victima != -1) {
+        setBitUso(&cache->entradas[indice_victima].bit_uso);
     }
+    // CASO 2: No está, pero hay registros vacios //
+    indice_victima = hayEntradaVaciaCACHE(cache);
+    if(indice_victima != -1) {
+        insertarPaginaCACHE(cache, pid, indice_victima, nro_pagina, contenido);
+        cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
+    }
+    // CASO 3: No está y no hay registros vacios //
     else {
         indice_victima = seleccionarEntradaVictimaCACHE(cache);
         if(cache->entradas[indice_victima].bit_modificado) {
@@ -166,29 +180,28 @@ void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, 
     }
 }
 
-bool hayEntradaVaciaCACHE(CACHE *cache, int *indice_victima) {
+int hayEntradaVaciaCACHE(CACHE *cache) {
     for(int i = 0; i < CACHE_SIZE; i++) {
         if(cache->entradas[i].contenido == NULL) {
-            *indice_victima = i;
-            return true;
+            return i;
         }
     }
 
-    return false;
+    return -1;
 }
 
 void insertarPaginaCACHE(CACHE *cache, int pid, int indice_victima, int nro_pagina, void *contenido) {
     cache->entradas[indice_victima].pid = pid;
     cache->entradas[indice_victima].pagina = nro_pagina;
     
-    if (cache->entradas[indice_victima].contenido != NULL) {
+    if(cache->entradas[indice_victima].contenido != NULL) {
         free(cache->entradas[indice_victima].contenido);
     }
     cache->entradas[indice_victima].contenido = malloc(tamanio_pagina);
     memcpy(cache->entradas[indice_victima].contenido, contenido, tamanio_pagina);
 
     cache->entradas[indice_victima].bit_uso = 1;
-    cache->entradas[indice_victima].bit_modificado = 0;
+    // cache->entradas[indice_victima].bit_modificado = 0;
 
     log_info(logger, "PID: %d - Cache Add - Pagina: %d", cache->entradas[indice_victima].pid, cache->entradas[indice_victima].pagina);
 }
@@ -217,39 +230,35 @@ int seleccionarEntradaVictimaCACHE(CACHE *cache) {
         }
         case ALG_CLOCK_M:
         {
-            int puntero_inicial = cache->puntero_clock;
+            int puntero_inicial;
 
-            for(int i = 0; i < 2; i++) {
+            for(int ronda = 1; ronda <= 4; ronda++) {
+                puntero_inicial = cache->puntero_clock;
+
                 do {
-                    r_CACHE *registro_actual = &cache->entradas[cache->puntero_clock];
+                    r_CACHE *entrada = &cache->entradas[cache->puntero_clock];
+                    int u = entrada->bit_uso;
+                    int m = entrada->bit_modificado;
 
-                    if(i == 0) {
-                        if(registro_actual->bit_uso == 0 && registro_actual->bit_modificado == 0) {
-                            // Encontramos a la victima //
-                            indice_victima = cache->puntero_clock;
-                            cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
-                            return indice_victima;
-                        }
+                    // (0, 0) //
+                    if((ronda == 1 || ronda == 3) && u == 0 && m == 0) {
+                        indice_victima = cache->puntero_clock;
+                        cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
+                        return indice_victima;
                     }
-                    else {
-                        if(registro_actual->bit_uso == 0 && registro_actual->bit_modificado == 1) {
-                            // Encontramos a la victima //
-                            indice_victima = cache->puntero_clock;
-                            cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
-                            return indice_victima;
-                        }
+                    // (0, 1) //
+                    if((ronda == 2 || ronda == 4) && u == 0 && m == 1) {
+                        indice_victima = cache->puntero_clock;
+                        cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
+                        return indice_victima;
                     }
-
-                    // Limpia bit_uso //
-                    if(registro_actual->bit_uso == 1) {
-                        registro_actual->bit_uso = 0;
-                    }
+                    if((ronda % 2) == 0 && u == 1)
+                        clearBitUso(&entrada->bit_uso);
 
                     cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
                 } while(cache->puntero_clock != puntero_inicial);
             }
-
-            return -1;
+            break;
         }
         default:
         {
@@ -257,6 +266,24 @@ int seleccionarEntradaVictimaCACHE(CACHE *cache) {
             return 0;
         }
     }
+
+    return -1;
+}
+
+void setBitUso(int *bit_uso) {
+    *bit_uso = 1;
+}
+
+void clearBitUso(int *bit_uso) {
+    *bit_uso = 0;
+}
+
+void setBitModificado(int *bit_modificado) {
+    *bit_modificado = 1;
+}
+
+void clearBitModificado(int *bit_modificado) {
+    *bit_modificado = 0;
 }
 
 void notificarActualizacionPaginaAMemoria(int socket_memoria, CACHE *cache, int pid) {
@@ -384,6 +411,9 @@ void actualizarTLB(TLB *tlb, int pid, int nro_pagina, int marco) {
 
     if(hayEntradaVaciaTLB(tlb, &indice_victima)) {
         insertarPaginaTLB(tlb, pid, indice_victima, nro_pagina, marco);
+    }
+    else if(buscarPaginaTLB(tlb, pid, nro_pagina) != -1) {
+        tlb->entradas[indice_victima].ultimo_uso = tlb->contador_uso;
     }
     else {
         indice_victima = seleccionarEntradaVictimaTLB(tlb);
