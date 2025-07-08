@@ -177,7 +177,7 @@ void cerrarKernel() {
 void generarHilos(t_list * hilos, int cantidad, void * func(void *), t_list * parametros){
     pthread_t * nuevoHilo;
     log_debug(logger, "Inicio de generacion de hilos");
-    for (int i; i<cantidad; i++){
+    for (int i = 0; i < cantidad; i++) { // i no esta inicializado => No generaba los hilos
         nuevoHilo = malloc(sizeof(pthread_t));
         if (parametros == NULL)
         pthread_create(nuevoHilo, NULL, func, NULL);

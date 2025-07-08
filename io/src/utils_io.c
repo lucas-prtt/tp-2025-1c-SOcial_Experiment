@@ -2,15 +2,15 @@
 
 
 void cerrarIO(void) {
-    //Cerrar log y config
+    cerrarConfigYLog();
     abort();
 }
 
 void verificarConexionKernel(int socket_cliente) {
     if(socket_cliente == -1)
-        log_info(logger, "Kernel - Conexión Inicial - Error");
+        log_info(logger, "Conexión Inicial - Kernel - Error");
     else
-        log_info(logger, "Kernel - Conexión Inicial - Exito");
+        log_info(logger, "Conexión Inicial - Kernel - Success");
 }
 
 bool handshakeKernel(int socket_kernel, char* nombre) {
@@ -37,23 +37,28 @@ bool handshakeKernel(int socket_kernel, char* nombre) {
 
 void verificarResultadoHandshake_Kernel(bool result) {
     if(result)
-        log_info(logger, "Kernel Handshake - Exito");
+        log_debug(logger, "Handshake - Kernel - Success");
     else
-        log_info(logger, "Kernel Handshake - Error");
+        log_error(logger, "Handshake - Kernel - Error");
 }
 
 bool recibirPeticion(int socket_kernel, request_io *request) {
     int *codigo_operacion;
     codigo_operacion = malloc(sizeof(int));
     t_list *lista_request = recibir_paquete_lista(socket_kernel, MSG_WAITALL, codigo_operacion);
-    if(lista_request == NULL || list_size(lista_request) < 4 || *codigo_operacion != PETICION_IO) {
+    if(lista_request == NULL || *codigo_operacion != PETICION_IO) {
         free(codigo_operacion);
-        eliminar_paquete_lista(lista_request);
+        if(lista_request != NULL) {
+            eliminar_paquete_lista(lista_request);
+        }
         return false;
     }
     request->pid = *(int*)list_get(lista_request, 1);
     request->tiempo = *(int*)list_get(lista_request, 3);
-    
+    if(lista_request) {
+        log_debug(logger, "Request recibida (PID: %d, Tiempo: %d", request->pid, request->tiempo);
+    }
+
     free(codigo_operacion);
     eliminar_paquete_lista(lista_request);
     return true;

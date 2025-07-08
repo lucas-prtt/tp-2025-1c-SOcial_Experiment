@@ -4,7 +4,7 @@
 // VARIABLES GLOBALES: 
 t_list * listasProcesos[7];      // Vector de lista para guardar procesos
 t_list * lista_peticionesIO;     // Lista donde se guarda por cada IO su nombre, cola de peticiones y un Semaforo. La cola se maneja por FIFO
-int last_PID = 1;                //
+int last_PID = 0;                // Estaba en 1
 ///////////////////////////////////
 
 // SEMAFOROS:
@@ -31,7 +31,6 @@ void procesos_c_inicializarVariables(){
 }
 
 void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de la interaccion con las CPU a traves del socket dispatch
-
     IDySocket_CPU * cpu = (IDySocket_CPU*) IDYSOCKETDISPATCH;
     int codOp;
     t_list * paqueteRespuesta;
@@ -39,7 +38,8 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
     t_PCB * proceso;
     int continuar_mismo_proceso;
     float alfa = atof(config_get_string_value(config, "ALFA"));
-    while(1){
+
+    while(1) {
         {  // Extraer proceso de lista de READY, pasarlo a EXEC
             sem_wait(&sem_procesos_en_ready);
             pthread_mutex_lock(&mutex_listasProcesos);

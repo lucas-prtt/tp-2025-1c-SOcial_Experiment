@@ -46,7 +46,7 @@ t_PCB * crearPCB(int id, char * path, int size){
     t_PCB * pcb = malloc(sizeof(t_PCB));
     pcb->PID = id;
     pcb->SIZE = size;
-    pcb->PATH = path;
+    pcb->PATH = strdup(path); // path
     pcb->EJC_ANT = 0;
     pcb->EJC_ACT = 0;
     pcb->EST = 0;
@@ -73,7 +73,7 @@ void cambiarEstado(int idProceso, enum estado estadoSiguiente, t_list * listaPro
         if(encontrarProcesoPorPIDYLista(listaProcesos[i], idProceso) != NULL){
             estadoActual = i;
             break;
-            }
+            } 
     }
     cambiarEstado_EstadoActualConocido(idProceso, estadoActual, estadoSiguiente, listaProcesos);
 }

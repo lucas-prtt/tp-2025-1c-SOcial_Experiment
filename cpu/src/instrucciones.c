@@ -8,6 +8,8 @@ void *atenderKernelDispatch(void *cpu_args) {
         PCB_cpu proc_AEjecutar;
         int estado_conexion = 0;
         
+        log_debug(logger, "Empanada de POLLO");
+
         if(!recibirPIDyPCkernel(cpu->socket_kernel_dispatch, &proc_AEjecutar, &estado_conexion)) {
             switch(estado_conexion)
             {
@@ -41,15 +43,14 @@ void *atenderKernelDispatch(void *cpu_args) {
 void *atenderKernelInterrupt(void *cpu_args) {
     cpu_t *cpu = (cpu_t*)cpu_args;
     
-    while(true) {
-        if(recibirInterrupcion(cpu->socket_kernel_interrupt)) {
-            pthread_mutex_lock(&cpu->mutex_interrupcion);
-            cpu->hay_interrupcion = true;
-            pthread_mutex_unlock(&cpu->mutex_interrupcion);
+    while(recibirInterrupcion(cpu->socket_kernel_interrupt)) {
+        pthread_mutex_lock(&cpu->mutex_interrupcion);
+        cpu->hay_interrupcion = true;
+        pthread_mutex_unlock(&cpu->mutex_interrupcion);
 
-            log_info(logger, "## Llega interrupción al puerto Interrupt");
-        }
+        log_info(logger, "## Llega interrupción al puerto Interrupt");
     }
 
+    log_debug(logger, "Modulo Kernel desconectado. Terminando hilo interrupt CPU");
     pthread_exit(NULL);
 }

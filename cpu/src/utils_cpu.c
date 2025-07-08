@@ -40,12 +40,13 @@ bool handshakeMemoria(int socket_memoria, int identificador) {
         return false;
     }
     
+
     inicializarVariablesGlobales(socket_memoria, 
                                 *(int *)list_get(lista_contenido, 1),
                                 *(int *)list_get(lista_contenido, 3),
                                 *(int *)list_get(lista_contenido, 5)
                                 );
-    if(*(int *)list_get(lista_contenido, 1) == tamanio_pagina) {
+    if(*(int *)list_get(lista_contenido, 5) == tamanio_pagina) {
         log_debug(logger, "Crear variables globales - Success:");
         log_debug(logger, "  Tamaño caché             : %d", CACHE_SIZE);
         log_debug(logger, "  Tamaño TLB               : %d", TLB_SIZE);

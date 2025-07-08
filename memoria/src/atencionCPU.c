@@ -8,16 +8,18 @@ void *atenderCPU(void *socketPtr) {
     free (socketPtr);
     
     t_paquete *respuesta = crear_paquete(SOYMEMORIA);
+    agregar_a_paquete(respuesta, &nivelesTablas, sizeof(int));
+    agregar_a_paquete(respuesta, &maximoEntradasTabla, sizeof(int));
+    agregar_a_paquete(respuesta, &tamañoMarcos, sizeof(int));
     enviar_paquete(respuesta, socket_cpu);
-    log_debug(logger, "Paquete enviado (pointer = %p)", respuesta); // que hace esto?
-    // Respuesta: Esto era para comprobar que el paquete existia cuando escribí atencionKernel. Realmente se puede sacar
+    log_debug(logger, "Paquete enviado (pointer = %p)", respuesta);
     eliminar_paquete(respuesta);
     
-    while(1){ // si se pierde la conexion, entra al if de abajo y termina el hilo
+    while(1) { // si se pierde la conexion, entra al if de abajo y termina el hilo
 
     int codigo_operacion = -42;
-    t_list *pedido = recibir_paquete_lista(socket_cpu, MSG_WAITALL, &codigo_operacion);
-    log_debug(logger, "Paquete recibido (socket = %d, pointer = %p, codigo_operacion = %d)", *(int*)socketPtr, pedido, codigo_operacion);
+    t_list *pedido = recibir_paquete_lista(socket_cpu, MSG_WAITALL, &codigo_operacion); // problema //
+    log_debug(logger, "Paquete recibido (socket = %d, pointer = %p, codigo_operacion = %d)", socket_cpu, pedido, codigo_operacion);
     
     if(pedido == NULL) {
         liberarConexion(socket_cpu);

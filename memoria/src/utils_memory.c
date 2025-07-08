@@ -18,8 +18,8 @@ void* aceptarConexiones(void* socketPtr) {
     int socket = *(int*)socketPtr; 
     
     // Libero el socket repetido en HEAP
-    free(socketPtr);    
-
+    free(socketPtr);
+    
     while (1) { // Hasta que se cierre el thread:
         struct sockaddr_in dirCliente;
         socklen_t tamDireccion = sizeof(dirCliente);
@@ -41,7 +41,7 @@ void* aceptarConexiones(void* socketPtr) {
         char ipCliente[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &dirCliente.sin_addr, ipCliente, INET_ADDRSTRLEN);
         int puertoCliente = ntohs(dirCliente.sin_port);
-        log_debug(logger, "Conexión entrante desde %s:%d", ipCliente, puertoCliente);
+        log_debug(logger, "Conexión entrante desde %s: %d", ipCliente, puertoCliente);
 
         // Creo un hilo de atencion y le mando el socketCliente generado en este hilo
         pthread_t hiloCliente;
@@ -97,7 +97,7 @@ void* atenderConexion(void* socketPtr) {
             break;
         case SOYCPU:
             // Si el ID del paquete indica que es una CPU
-            log_debug(logger, "Se conectó una CPU.");
+            log_debug(logger, "## CPU Conectado - FD del socket: %d", *(int*)socketPtr);
             pthread_t hiloCPU;
             // Creo un thread para atender la CPU y le mando el socket de la conexion
             pthread_create(&hiloCPU, NULL, atenderCPU, socketPtr);

@@ -231,10 +231,10 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             agregar_a_paquete(paquete_peticion_init_proc, path, strlen(path) + 1);
             agregar_a_paquete(paquete_peticion_init_proc, &tamanio, sizeof(tamanio));
             enviar_paquete(paquete_peticion_init_proc, socket_kernel);
-            setProgramCounter(pcb, pcb->pc + 1);
+            eliminar_paquete(paquete_peticion_init_proc);
 
             log_info(logger, "## PID: %d - Ejecutando: %s - Archivo de instrucciones: %s - Tamaño: %d", pcb->pid, operacion, path, tamanio);
-            eliminar_paquete(paquete_peticion_init_proc);
+            setProgramCounter(pcb, pcb->pc + 1);
             return false;
         }
         case INSTR_DUMP_MEMORY:

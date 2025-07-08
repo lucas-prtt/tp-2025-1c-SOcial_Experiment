@@ -6,8 +6,11 @@ int cargarInstrucciones(int PID, char* PATH, int tamaño){
 
         char * PATHCompleto = malloc(strlen(PATH) + strlen(directorioPseudocodigo) + 1);
         strcpy(PATHCompleto, directorioPseudocodigo);
+        log_debug(logger, "XXXXXXX path_instrucciones: '%s'", PATHCompleto);
+        log_debug(logger, "XXXXXXX PATH recibido: '%s'", PATH);
         strcat(PATHCompleto, PATH);
-        FILE* archivo = fopen(PATHCompleto, "r"); 
+        FILE* archivo = fopen(PATHCompleto, "r");
+        
         if (!archivo) {
             log_error(logger, "No se pudo abrir el archivo de pseudocódigo para el PID %d", PID);
             return 1;
