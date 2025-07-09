@@ -32,7 +32,6 @@ void procesos_c_inicializarVariables(){
     }
     lista_peticionesIO = list_create();
 }
-
 void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de la interaccion con las CPU a traves del socket dispatch
     IDySocket_CPU * cpu = (IDySocket_CPU*) IDYSOCKETDISPATCH;
     int codOp;
@@ -45,6 +44,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
     while(1) {
         {  // Extraer proceso de lista de READY, pasarlo a EXEC
             sem_wait(&sem_procesos_en_ready);
+            log_trace(logger, "Extrayendo proceso de la cola de ready.");
             pthread_mutex_lock(&mutex_listasProcesos);
             proceso = list_get(listasProcesos[READY], 0);
             cambiarEstado_EstadoActualConocido(proceso->PID, READY, EXEC, listasProcesos);
@@ -52,17 +52,16 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             pthread_mutex_unlock(&mutex_listasProcesos);
             log_debug(logger, "Se eligio el proceso (%d) para ejecutar", proceso->PID);
         }
-        continuar_mismo_proceso = 0;
         do{
+            continuar_mismo_proceso = 0;
             paqueteEnviado = crear_paquete(ASIGNACION_PROCESO_CPU);
             agregar_a_paquete(paqueteEnviado, &(proceso->PID), sizeof(proceso->PID));
             agregar_a_paquete(paqueteEnviado, &(proceso->PC), sizeof(proceso->PC));
             enviar_paquete(paqueteEnviado, cpu->SOCKET);
             eliminar_paquete(paqueteEnviado);
-            log_trace(logger, "Se asigno el proceso (%d) a la cpu %d", proceso->PID, cpu->ID);
+            log_trace(logger, "Se asigno el proceso (%d) a la cpu %d en PC %d", proceso->PID, cpu->ID, proceso->PC);
             paqueteRespuesta = recibir_paquete_lista(cpu->SOCKET, MSG_WAITALL, &codOp);
             log_trace(logger, "Se recibio un paquete de respuesta de proceso (%d) de la cpu %d", proceso->PID, cpu->ID);
-            
             
             if (paqueteRespuesta == NULL){ // Si se cierra la conexion con el CPU, se cierra el hilo y se termina el proceso
                 pthread_mutex_lock(&mutex_listasProcesos);
@@ -73,8 +72,9 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 log_error(logger, "(%d) - Finaliza el proceso. Conexion con CPU (%d) perdida", proceso->PID, cpu->ID);
                 pthread_exit(NULL);
             }
-            int deltaPC = *(int*)list_get(paqueteRespuesta, 1);
-            proceso->PC += deltaPC;
+            int nuevoPC = *(int*)list_get(paqueteRespuesta, 1);
+            log_trace(logger, "El parquete dice: Codop: %d,  proceso (%d) de la cpu %d PC paso a %d",codOp ,  proceso->PID, cpu->ID, *(int*)list_get(paqueteRespuesta, 1));
+            proceso->PC = nuevoPC;
 
             // Las metricas (MT y ME) se actualizan solas en cambiarDeEstado()
             // cambiarDeEstado() tambien maneja los inicios y finalizaciones de los "timers" para cada estado y actualiza Ejecucion actual
@@ -105,6 +105,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 int size = *(int*)list_get(paqueteRespuesta, 5);
                 pthread_mutex_lock(&mutex_last_PID);
                 int pidNuevo = ++last_PID;
+                log_trace(logger, "Case init_proc con proceso (%d), path: %s, size: %d", pidNuevo, path, size);
                 pthread_mutex_unlock(&mutex_last_PID);
                 pthread_mutex_lock(&mutex_listasProcesos);
                 nuevoProceso(pidNuevo, path, size, listasProcesos);
@@ -171,16 +172,21 @@ void * orderThread(void * _){
     t_paquete * peticionInterrupt;
     while(1){
         sem_wait(&sem_ordenar_cola_ready);
+        log_trace(logger, "Me pidieron que ordene la cola de ready");
         pthread_mutex_lock(&mutex_listasProcesos);
+        log_trace(logger, "Ordenando cola de ready...");
         ordenar_cola_ready(listasProcesos, algoritmo_enum);
         t_PCB * procesoInterrumpido = procesoADesalojar(listasProcesos, algoritmo_enum);
         if(procesoInterrumpido != NULL){
+            log_trace(logger, "Hay que desalojar a alquien...");
             peticionInterrupt = crear_paquete(PETICION_INTERRUPT_A_CPU);
             enviar_paquete(peticionInterrupt, procesoInterrumpido->ProcesadorQueLoEjecuta->SOCKET);
+            log_trace(logger, "Ordenando cola de ready de nuevo...");
             ordenar_cola_ready(listasProcesos, algoritmo_enum);
             // Hay que reordenar para que el que se desalojo quede donde corresponde
         }
         pthread_mutex_unlock(&mutex_listasProcesos);
+        log_trace(logger, "Listo, ordenamiento finalizado");
         sem_post(&sem_procesos_en_ready); // Esto se ejecuta cada vez que entra un nuevo proceso a ready, reordenandose asi la cola
         // Si no entra nada a ready (de NEW, BLOCKED o SUSP_READY) no se ejecuta
     }
@@ -215,6 +221,7 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
                 log_error(logger, "Error: Archivo de configuracion no detalla un algoritmo de introduccion de proceso a ready valido.");
                 break;
             }
+        
         log_debug(logger, "Proceso elegido para pasar a READY: (%d)", proceso->PID);
         pthread_mutex_unlock(&mutex_listasProcesos);
         {   //Enviar solicitud a memoria
@@ -250,9 +257,18 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
             else
                 cambiarEstado_EstadoActualConocido(proceso->PID, SUSP_READY, READY, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
+            log_trace(logger, "Se cambio el estado, ahora hay que ordenar la cola de ready");
             sem_post(&sem_ordenar_cola_ready);
+            log_trace(logger, "Ya mande el mensaje de que ordene la cola, tengo que meter otro proceso?");
             if(!list_is_empty(listasProcesos[NEW]) || !list_is_empty(listasProcesos[SUSP_READY])) // Si quedan procesos pruebo meter otro
+                {
+                log_trace(logger, "Si, tengo que meter otro proceso");
                 sem_post(&sem_introducir_proceso_a_ready);
+                }
+            else{
+                log_trace(logger, "No, no tengo que meter otro proceso");
+            }
+    
         }
     }
 }
@@ -275,6 +291,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
         {
             // Obtener peticion
             sem_wait(&peticiones->sem_peticiones);
+            log_debug(logger, "Recibida peticion IO");
             pthread_mutex_lock(&mutex_peticionesIO);
             peticion = list_remove(peticiones->cola,0);
             pthread_mutex_unlock(&mutex_peticionesIO);
@@ -290,6 +307,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
     
         // Recibir respuesta
         respuesta = recibir_paquete_lista(io->SOCKET, MSG_WAITALL, NULL);
+        log_debug(logger, "IO me respondio");
         sem_wait(&(peticion->sem_estado));
         if(respuesta == NULL){ // Si se pierde la conexion, se termina el proceso
             log_error(logger, "Se perdio la conexion con IO: %s", io->NOMBRE);
@@ -323,15 +341,19 @@ void * IOThread(void * NOMBREYSOCKETIO)
 }
 
 void * confirmDumpMemoryThread(void * Params){
+    log_trace(logger, "inicio confirmDumpMemoryThread()");
     PIDySocket * infoDump = (PIDySocket*)Params;
     int resultado;
     t_list * paq = recibir_paquete_lista(infoDump->socket, MSG_WAITALL, &resultado);
+    log_debug(logger, "Recibida respuesta dump memory");
     eliminar_paquete_lista(paq);
     if(resultado == RESPUESTA_DUMP_COMPLETADO){
+        log_trace(logger, "Salio bien el dump");
         pthread_mutex_lock(&mutex_listasProcesos);
         cambiarEstado_EstadoActualConocido(infoDump->PID, BLOCKED, READY, listasProcesos);
         pthread_mutex_unlock(&mutex_listasProcesos);
     }else{
+            log_trace(logger, "Salio mal el dump");
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado_EstadoActualConocido(infoDump->PID, BLOCKED, EXIT, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
@@ -339,6 +361,7 @@ void * confirmDumpMemoryThread(void * Params){
     }
     free(infoDump);
     liberarConexion(infoDump->socket);
+    log_trace(logger, "Fin dump confirmDumpMemoryThread()");
     pthread_exit(NULL);
 }
 

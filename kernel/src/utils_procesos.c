@@ -80,6 +80,7 @@ void cambiarEstado(int idProceso, enum estado estadoSiguiente, t_list * listaPro
 
 int cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, enum estado estadoSiguiente, t_list * listaProcesos[])
 {   
+    log_trace(logger, "Inicia ejecucion de cambiarEstado_EstadoActualConocido()");
     log_debug(logger, "Peticion cambio de estado recibida");
     t_PCB * proceso;
     proceso = encontrarProcesoPorPIDYLista(listaProcesos[estadoActual], idProceso);
@@ -107,6 +108,7 @@ int cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, 
     if(estadoActual == EXEC && estadoSiguiente == READY){ // Unico caso es en interrupt
         log_info(logger, "## (%d) Desalojado por algoritmo SJF/SRT", proceso->PID);
     }
+    log_trace(logger, "Finaliza ejecucion de cambiarEstado_EstadoActualConocido()");
     return 0;
 }
 
