@@ -78,11 +78,11 @@ int verificarModuloMemoriaDisponible(void) {
     int socketMemoria = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
     int error = 0;
     if (socketMemoria == -1){
-        log_debug(logger, "verificarModuloMemoriaDisponible tiene socket = %d", socketMemoria);
+        log_trace(logger, "verificarModuloMemoriaDisponible tiene socket = %d", socketMemoria);
         error = 1;
     }else{
         error = handshakeMemoria(socketMemoria);
-        log_debug(logger, "Resultado de handshake: %d", error);
+        log_debug(logger, "Resultado de handshake de memoria: %d", error);
         liberarConexion(socketMemoria);
     }
     return error;
@@ -205,11 +205,11 @@ int handshakeMemoria(int socketMemoria){
     log_debug(logger, "Enviando hadshake a memoria en socket: %d", socketMemoria);
     int rta;
     enviar_paquete(saludo, socketMemoria);
-    log_debug(logger, "Paquete %p enviado", saludo);
+    log_trace(logger, "Paquete %p enviado", saludo);
     eliminar_paquete(saludo);
     t_list * respuesta;
     respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &rta);
-    log_debug(logger, "Paquete recibido, pointer = %p", respuesta);
+    log_trace(logger, "Paquete recibido, pointer = %p", respuesta);
     if(respuesta == NULL || rta != SOYMEMORIA){
         eliminar_paquete_lista(respuesta);
         return -1;

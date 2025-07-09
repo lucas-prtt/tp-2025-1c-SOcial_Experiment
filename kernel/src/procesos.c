@@ -153,6 +153,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_detach(hiloConfirmacion);
                 break;
             case INTERRUPT_ACKNOWLEDGE:
+                log_trace(logger, "Case interrupt acknoledge");
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, READY, listasProcesos); 
                 proceso->ProcesadorQueLoEjecuta = NULL;
@@ -226,7 +227,6 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
         pthread_mutex_unlock(&mutex_listasProcesos);
         {   //Enviar solicitud a memoria
             socketMemoria = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
-            log_debug(logger, "Socket memoria: %d", socketMemoria);
             handshakeMemoria(socketMemoria);
             if(listaQueImporta == NEW)
             {

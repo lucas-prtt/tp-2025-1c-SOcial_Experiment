@@ -37,6 +37,7 @@ bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
     log_trace(logger, "PUMBA!!! ejecute!. fin_proceso = %d", fin_proceso);
     if(checkInterrupt(cpu) || fin_proceso) {
         log_trace(logger, "Hubo un problema, los veré pronto mis instrucciones queridas");
+        log_trace(logger, "Le mando un mensaje a kernel");
         devolverProcesoKernel(cpu->socket_kernel_dispatch, proc_AEjecutar);
         free(instruccion);
         list_destroy(instruccion_list);
@@ -339,6 +340,7 @@ bool checkInterrupt(cpu_t *cpu) {
 
 void devolverProcesoKernel(int socket_kernel, PCB_cpu *proc_AEjecutar) {
     t_paquete *paquete_devolucion_proceso = crear_paquete(INTERRUPT_ACKNOWLEDGE);
+    log_trace(logger, "El mensaje dice: <El proceso que se estaba ejecutando quedo en PC: %d>", proc_AEjecutar->pc);
     agregar_a_paquete(paquete_devolucion_proceso, &(proc_AEjecutar->pc), sizeof(proc_AEjecutar->pc));
     enviar_paquete(paquete_devolucion_proceso, socket_kernel);
 
