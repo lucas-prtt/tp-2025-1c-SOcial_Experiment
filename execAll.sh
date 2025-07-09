@@ -2,7 +2,10 @@
 # Requiere instalarse gnome terminal
 # Ejecuta todo en la misma compu
 # Sirve para pruebas rapidas, pero es mejor usar un entorno distribuido
+# Ejecutable con ./execAll.sh
 
+# Registra cuantas pruebas hiciste, para que tu decenso a la locura quede justificado
+echo -n "x" >> ejecuciones.log
 
 # Módulo: memoria
 cd memoria
