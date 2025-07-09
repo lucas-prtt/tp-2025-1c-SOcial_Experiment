@@ -9,6 +9,8 @@
 #include <utils/threads.h>
 #include <utils/paquetes.h>
 #include <utils/logConfig.h>
+#include <semaphore.h>
+
 typedef struct {
     char* puerto;
     char* IP;
@@ -31,7 +33,7 @@ typedef struct {
     IPyPuerto ipYPuertoMemoria;
 } conexionesAModulos;
 
-
+extern sem_t evaluarFinKernel;
 extern conexionesAModulos conexiones; //Muy usada por hilos: Conviene que sea global
 void * esperarCPUDispatch(void * socket);
 void * esperarCPUInterrupt(void * socket);
@@ -40,6 +42,7 @@ int verificarModuloMemoriaDisponible();
 void eliminarConexiones(void);
 int crearSocketDesdeConfig(t_config * config, char opcion[]);
 void generarHilos(t_list * hilos, int cantidad, void * func(void *), t_list * parametros);
+void eliminarHilos(t_list * hilos);
 
 void *handshakeCPUInterrupt(void * socket);
 void *handshakeCPUDispatch(void * socket);

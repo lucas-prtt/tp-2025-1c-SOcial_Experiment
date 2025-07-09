@@ -29,8 +29,8 @@ typedef enum PeticionEstado{
 
 
 extern t_list * listasProcesos[7]; // Vector de lista para guardar procesos
-
-
+extern int qProcesosMolestando;     // Procesos que se deben ejecutar
+extern pthread_mutex_t mutex_procesos_molestando;
 void procesos_c_inicializarVariables(); // Necesaria para inicializar listas y semaforos globales
 void * confirmDumpMemoryThread(void * Params);
 void * IOThread(void * NOMBREYSOCKETIO);

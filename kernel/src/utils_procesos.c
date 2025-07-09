@@ -320,3 +320,19 @@ void enviarSolicitudDumpMemory(int PID, int * socketMemoria){
     //
 }
 
+void aparecioOtroProceso(){
+    pthread_mutex_lock(&mutex_procesos_molestando);
+    qProcesosMolestando++;
+    pthread_mutex_unlock(&mutex_procesos_molestando);
+}
+void eliminamosOtroProceso(){
+    pthread_mutex_lock(&mutex_procesos_molestando);
+    qProcesosMolestando--;
+    pthread_mutex_unlock(&mutex_procesos_molestando);
+}
+int getProcesosMolestando(){
+    pthread_mutex_lock(&mutex_procesos_molestando);
+    int a = qProcesosMolestando;
+    pthread_mutex_unlock(&mutex_procesos_molestando);
+    return a;
+}

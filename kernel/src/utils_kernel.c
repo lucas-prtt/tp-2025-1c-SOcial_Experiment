@@ -2,7 +2,7 @@
 
 
 conexionesAModulos conexiones;
-
+sem_t evaluarFinKernel;
 void * esperarCPUDispatch(void * socket) {
     conexiones.CPUsDispatch = list_create();
     t_list * createdThreads = list_create();
@@ -184,8 +184,19 @@ void generarHilos(t_list * hilos, int cantidad, void * func(void *), t_list * pa
         else
         pthread_create(nuevoHilo, NULL, func, list_get(parametros, i));
         list_add(hilos, nuevoHilo);
-        log_debug(logger, "   -Se inicio el hilo: %p", nuevoHilo);
+        log_debug(logger, "   -Se inicio el hilo: %ld", * nuevoHilo);
     }
+}
+void eliminarHilos(t_list * hilos){
+    pthread_t * hiloPorMorir;
+    log_debug(logger, "Inicio de eliminacion de hilos");
+    for (int i = 0; i < list_size(hilos); i++) {
+        hiloPorMorir = (pthread_t*) list_get(hilos, i);
+        log_debug(logger, "   -Se eliminará el hilo: %ld", * hiloPorMorir);
+        pthread_detach(*hiloPorMorir);
+        pthread_cancel(*hiloPorMorir);
+    }
+    log_debug(logger, "Terminamos de eliminar hilos");
 }
 
 

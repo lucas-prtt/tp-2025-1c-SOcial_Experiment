@@ -7,6 +7,7 @@
 #include <utils/logConfig.h>
 #include "procesos.h"
 #include "utils_procesos.h"
+#include <semaphore.h>
 
 
 

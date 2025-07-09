@@ -86,6 +86,21 @@ int main(int argc, char* argv[]) {
     generarHilos(hilos, cantidadDeCpus, dispatcherThread, conexiones.CPUsDispatch);
     nuevoProceso(0, argv[1], atoi(argv[2]), listasProcesos); // Agrega el proceso indicado por consola a la lista NEW
     post_sem_introducirAReady();
-    getchar();
+    sem_init(&evaluarFinKernel, 0, 0);
+    while(true){
+        sem_wait(&evaluarFinKernel);
+        log_debug(logger, "Un proceso se murio! Puedo finalizar?");
+        int procesosRestantes = getProcesosMolestando();
+        log_debug(logger, "ProcesosRestantes = %d", procesosRestantes);
+        if(procesosRestantes == 0){
+            log_debug(logger, "Finalizo");
+            break;
+        }
+        log_debug(logger, "Debo seguir ejecutando");
+    }
+    log_debug(logger, "========== FIN EXISTOSO =========");
+    sem_destroy(&evaluarFinKernel);
+    eliminarHilos(hilos);
+
     return 0;
 }

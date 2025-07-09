@@ -72,4 +72,9 @@ Peticion * crearPeticion(int PID, int milisegundos);
 // Funciones auxiliares
 t_PCB * encontrarProcesoPorPIDYLista(t_list * lista, int pid);
 int cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, enum estado estadoSiguiente, t_list * listaProcesos[]);
+void aparecioOtroProceso();
+void eliminamosOtroProceso();
+int getProcesosMolestando();
+
+
 #endif

@@ -5,6 +5,7 @@
 t_list * listasProcesos[7];      // Vector de lista para guardar procesos
 t_list * lista_peticionesIO;     // Lista donde se guarda por cada IO su nombre, cola de peticiones y un Semaforo. La cola se maneja por FIFO
 int last_PID = 0;                // Estaba en 1
+int qProcesosMolestando = 1;     // Cantidad de procesos que quedan ejecutar
 ///////////////////////////////////
 
 // SEMAFOROS:
@@ -14,6 +15,8 @@ pthread_mutex_t mutex_peticionesIO      // MUTEX para acceder a lista_peticiones
  = PTHREAD_MUTEX_INITIALIZER        ;   // 
 pthread_mutex_t mutex_last_PID          // MUTEX para acceder a last_PID
  = PTHREAD_MUTEX_INITIALIZER        ;   // 
+pthread_mutex_t mutex_procesos_molestando    // Mutex para acceder a qProcesosMolestando
+ = PTHREAD_MUTEX_INITIALIZER        ;       //
                                         // Los mutex podrian ser particulares de cada elemento de la lista en algunos casos, pero es complicarse de más
 sem_t sem_procesos_en_ready;            // Semeforo contador: Cantidad de procesos en READY
 sem_t sem_ordenar_cola_ready;           // Representa peticion para ordenar la cola de ready y luego hacer signal a procesos en cola de ready (ya que se ejecuta al entrar un proceso nuevo)
@@ -56,8 +59,9 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             agregar_a_paquete(paqueteEnviado, &(proceso->PC), sizeof(proceso->PC));
             enviar_paquete(paqueteEnviado, cpu->SOCKET);
             eliminar_paquete(paqueteEnviado);
+            log_trace(logger, "Se asigno el proceso (%d) a la cpu %d", proceso->PID, cpu->ID);
             paqueteRespuesta = recibir_paquete_lista(cpu->SOCKET, MSG_WAITALL, &codOp);
-            
+            log_trace(logger, "Se recibio un paquete de respuesta de proceso (%d) de la cpu %d", proceso->PID, cpu->ID);
             
             
             if (paqueteRespuesta == NULL){ // Si se cierra la conexion con el CPU, se cierra el hilo y se termina el proceso
@@ -85,11 +89,15 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             switch (codOp)//TODO: Cada caso con su logica: En funcion de codOp se hace cada syscall
             {
             case SYSCALL_EXIT:
+                log_trace(logger, "Ejecuto case EXIT");
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
+                log_trace(logger, "Se va el proceso (%d) a exit", proceso->PID);
+                sem_post(&evaluarFinKernel);
                 proceso->ProcesadorQueLoEjecuta = NULL;
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 liberarMemoria(proceso->PID); // Envia mensaje a Memoria para liberar el espacio
+                eliminamosOtroProceso();
                 sem_post(&sem_introducir_proceso_a_ready); 
                 break;
             case SYSCALL_INIT_PROC:
@@ -101,6 +109,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_lock(&mutex_listasProcesos);
                 nuevoProceso(pidNuevo, path, size, listasProcesos);
                 pthread_mutex_unlock(&mutex_listasProcesos);
+                aparecioOtroProceso();
                 sem_post(&sem_introducir_proceso_a_ready);
                 continuar_mismo_proceso = 1;
                 break;
