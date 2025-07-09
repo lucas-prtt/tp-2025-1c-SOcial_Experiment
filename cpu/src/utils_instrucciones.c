@@ -27,18 +27,23 @@ bool recibirPIDyPCkernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, in
 }
 
 bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
+    log_trace(logger, "EjecutarCicloInstruccion()");
     instruccionInfo instr_info;
 
     char *instruccion = fetch(cpu->socket_memoria, proc_AEjecutar);
     t_list *instruccion_list = decode(proc_AEjecutar, instruccion, &instr_info);
+    log_trace(logger, "Estoy a punto de hacer execute(), preparense todos!");
     bool fin_proceso = execute(cpu, instruccion_list, instr_info, proc_AEjecutar);
+    log_trace(logger, "PUMBA!!! ejecute!. fin_proceso = %d", fin_proceso);
     if(checkInterrupt(cpu) || fin_proceso) {
+        log_trace(logger, "Hubo un problema, los veré pronto mis instrucciones queridas");
         devolverProcesoKernel(cpu->socket_kernel_dispatch, proc_AEjecutar);
         free(instruccion);
         list_destroy(instruccion_list);
+        log_trace(logger, "Aquí me voy!");
         return true;
     }
-
+    log_trace(logger, "El mundo es hermoso. Sigo ejecutando");
     free(instruccion);
     list_destroy(instruccion_list);
     return false;
@@ -235,7 +240,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
 
             log_info(logger, "## PID: %d - Ejecutando: %s - Archivo de instrucciones: %s - Tamaño: %d", pcb->pid, operacion, path, tamanio);
             setProgramCounter(pcb, pcb->pc + 1);
-            return false;
+            return true;
         }
         case INSTR_DUMP_MEMORY:
         {
@@ -327,6 +332,7 @@ bool checkInterrupt(cpu_t *cpu) {
         log_debug(logger, "Interrupción activa: devuelvo el proceso al Kernel");
         return true;
     }
+    pthread_mutex_unlock(&cpu->mutex_interrupcion);
 
     return false;
 }
