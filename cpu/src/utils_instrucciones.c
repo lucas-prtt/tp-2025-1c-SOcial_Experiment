@@ -339,7 +339,7 @@ bool checkInterrupt(cpu_t *cpu) {
 }
 
 void devolverProcesoKernel(int socket_kernel, PCB_cpu *proc_AEjecutar) {
-    t_paquete *paquete_devolucion_proceso = crear_paquete(INTERRUPT_ACKNOWLEDGE);
+    t_paquete *paquete_devolucion_proceso = crear_paquete(INTERRUPT_ACKNOWLEDGE); // ACA ESTA EL ERRORRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR
     log_trace(logger, "El mensaje dice: <El proceso que se estaba ejecutando quedo en PC: %d>", proc_AEjecutar->pc);
     agregar_a_paquete(paquete_devolucion_proceso, &(proc_AEjecutar->pc), sizeof(proc_AEjecutar->pc));
     enviar_paquete(paquete_devolucion_proceso, socket_kernel);
