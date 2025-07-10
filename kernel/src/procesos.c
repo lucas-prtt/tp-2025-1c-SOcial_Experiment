@@ -262,7 +262,7 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
             else
                 cambiarEstado_EstadoActualConocido(proceso->PID, SUSP_READY, READY, listasProcesos);
             
-            int hayProcesosPendientes = !list_is_empty(listasProcesos[NEW]) || !list_is_empty(listasProcesos[SUSP_READY]);
+            //int hayProcesosPendientes = !list_is_empty(listasProcesos[NEW]) || !list_is_empty(listasProcesos[SUSP_READY]);
             
             pthread_mutex_unlock(&mutex_listasProcesos);
             log_trace(logger, "Se cambio el estado, ahora hay que ordenar la cola de ready");
