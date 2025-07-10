@@ -31,6 +31,7 @@ void procesos_c_inicializarVariables(){
         listasProcesos[i] = list_create();
     }
     lista_peticionesIO = list_create();
+    
 }
 void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de la interaccion con las CPU a traves del socket dispatch
     IDySocket_CPU * cpu = (IDySocket_CPU*) IDYSOCKETDISPATCH;
@@ -98,7 +99,8 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 liberarMemoria(proceso->PID); // Envia mensaje a Memoria para liberar el espacio
                 eliminamosOtroProceso();
-                sem_post(&sem_introducir_proceso_a_ready); 
+                //sem_post(&sem_introducir_proceso_a_ready);  //Esto causa segFault porque se ejecuta de mas el algoritmo.
+                // No lo saco porque me da miedo haberlo debugeado mal, pero estoy 90% seguro que el problema es este.
                 break;
             case SYSCALL_INIT_PROC:
                 char * path = list_get(paqueteRespuesta, 3);
@@ -206,6 +208,13 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
     while(1){
         sem_wait(&sem_introducir_proceso_a_ready);
         pthread_mutex_lock(&mutex_listasProcesos);
+
+        if (list_is_empty(listasProcesos[NEW]) && list_is_empty(listasProcesos[SUSP_READY])) {
+            log_warning(logger, "Despertó el thread para ingresoAReady pero no hay procesos en NEW ni SUSP_READY. No hago nada.");
+            pthread_mutex_unlock(&mutex_listasProcesos);
+            continue;
+        }
+
         if(list_is_empty(listasProcesos[SUSP_READY]))
             listaQueImporta = NEW; // Introduce nuevo proceso
         else
@@ -256,11 +265,15 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
                 cambiarEstado_EstadoActualConocido(proceso->PID, NEW, READY, listasProcesos);
             else
                 cambiarEstado_EstadoActualConocido(proceso->PID, SUSP_READY, READY, listasProcesos);
+            
+            int hayProcesosPendientes = !list_is_empty(listasProcesos[NEW]) || !list_is_empty(listasProcesos[SUSP_READY]);
+            
             pthread_mutex_unlock(&mutex_listasProcesos);
             log_trace(logger, "Se cambio el estado, ahora hay que ordenar la cola de ready");
             sem_post(&sem_ordenar_cola_ready);
             log_trace(logger, "Ya mande el mensaje de que ordene la cola, tengo que meter otro proceso?");
-            if(!list_is_empty(listasProcesos[NEW]) || !list_is_empty(listasProcesos[SUSP_READY])) // Si quedan procesos pruebo meter otro
+            log_trace(logger, "Validando si hay que meter otro proceso, list_size de: NEW=%d, SUSP_READY=%d",list_size(listasProcesos[NEW]), list_size(listasProcesos[SUSP_READY]));
+            if(hayProcesosPendientes) // Si quedan procesos pruebo meter otro
                 {
                 log_trace(logger, "Si, tengo que meter otro proceso");
                 sem_post(&sem_introducir_proceso_a_ready);
