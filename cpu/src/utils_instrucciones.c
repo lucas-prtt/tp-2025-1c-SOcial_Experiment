@@ -35,15 +35,16 @@ bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
     log_trace(logger, "Estoy a punto de hacer execute(), preparense todos!");
     bool fin_proceso = execute(cpu, instruccion_list, instr_info, proc_AEjecutar);
     log_trace(logger, "PUMBA!!! ejecute!. fin_proceso = %d", fin_proceso);
-    if(checkInterrupt(cpu) || fin_proceso) {
-        log_trace(logger, "Hubo un problema, los veré pronto mis instrucciones queridas");
+
+    if(checkInterrupt(cpu, proc_AEjecutar) || fin_proceso) {
+        log_trace(logger, "Hubo un problema, las veré pronto mis instrucciones queridas");
         log_trace(logger, "Le mando un mensaje a kernel");
-        devolverProcesoKernel(cpu->socket_kernel_dispatch, proc_AEjecutar);
         free(instruccion);
         list_destroy(instruccion_list);
         log_trace(logger, "Aquí me voy!");
         return true;
     }
+
     log_trace(logger, "El mundo es hermoso. Sigo ejecutando");
     free(instruccion);
     list_destroy(instruccion_list);
@@ -217,6 +218,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             int tiempo = atoi((char *)list_get(instruccion_list, 2));
 
             t_paquete *paquete_peticion_io = crear_paquete(SYSCALL_IO);
+            setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_peticion_io, &(pcb->pc), sizeof(pcb->pc));
             agregar_a_paquete(paquete_peticion_io, dispositivo, sizeof(strlen(dispositivo) + 1));
             agregar_a_paquete(paquete_peticion_io, &tiempo, sizeof(tiempo));
@@ -224,7 +226,6 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             eliminar_paquete(paquete_peticion_io);
 
             log_info(logger, "## PID: %d - Ejecutando: %s - Dispositivo: %s - Tiempo: %d", pcb->pid, operacion, dispositivo, tiempo);
-            setProgramCounter(pcb, pcb->pc + 1);
             return true;
         }
         case INSTR_INIT_PROC:
@@ -233,6 +234,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             int tamanio = atoi((char *)list_get(instruccion_list, 2));
 
             t_paquete *paquete_peticion_init_proc = crear_paquete(SYSCALL_INIT_PROC);
+            setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_peticion_init_proc, &(pcb->pc), sizeof(pcb->pc));
             agregar_a_paquete(paquete_peticion_init_proc, path, strlen(path) + 1);
             agregar_a_paquete(paquete_peticion_init_proc, &tamanio, sizeof(tamanio));
@@ -240,29 +242,28 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             eliminar_paquete(paquete_peticion_init_proc);
 
             log_info(logger, "## PID: %d - Ejecutando: %s - Archivo de instrucciones: %s - Tamaño: %d", pcb->pid, operacion, path, tamanio);
-            setProgramCounter(pcb, pcb->pc + 1);
             return true;
         }
         case INSTR_DUMP_MEMORY:
         {
             t_paquete *paquete_peticion_dump_memory = crear_paquete(SYSCALL_DUMP_MEMORY);
+            setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_peticion_dump_memory, &(pcb->pc), sizeof(pcb->pc));
             enviar_paquete(paquete_peticion_dump_memory, socket_kernel);
             eliminar_paquete(paquete_peticion_dump_memory);
 
             log_info(logger, "## PID: %d - Ejecutando: %s", pcb->pid, operacion);
-            setProgramCounter(pcb, pcb->pc + 1);
             return true;
         }
         case INSTR_EXIT:
         {
             t_paquete *paquete_instr_exit = crear_paquete(SYSCALL_EXIT);
+            setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_instr_exit, &(pcb->pc), sizeof(pcb->pc));
             enviar_paquete(paquete_instr_exit, socket_kernel);
             eliminar_paquete(paquete_instr_exit);
 
             log_info(logger, "## PID: %d - Ejecutando: %s", pcb->pid, operacion);
-            setProgramCounter(pcb, pcb->pc + 1);
             return true;
         }
         default:
@@ -324,13 +325,14 @@ bool recibirInterrupcion(int socket_kernel_dispatch) {
     return true;
 }
 
-bool checkInterrupt(cpu_t *cpu) {
+bool checkInterrupt(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
     pthread_mutex_lock(&cpu->mutex_interrupcion);
     if(cpu->hay_interrupcion) {
         cpu->hay_interrupcion = false;
         pthread_mutex_unlock(&cpu->mutex_interrupcion);
-
+        
         log_debug(logger, "Interrupción activa: devuelvo el proceso al Kernel");
+        devolverProcesoPorInterrupt(cpu->socket_kernel_dispatch, proc_AEjecutar);
         return true;
     }
     pthread_mutex_unlock(&cpu->mutex_interrupcion);
@@ -338,11 +340,8 @@ bool checkInterrupt(cpu_t *cpu) {
     return false;
 }
 
-void devolverProcesoKernel(int socket_kernel, PCB_cpu *proc_AEjecutar) {
-    t_paquete *paquete_devolucion_proceso = crear_paquete(INTERRUPT_ACKNOWLEDGE); // ACA ESTA EL ERRORRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR
-
-    //No siempre se devuelve por interrupcion, tambien se puede devolver por syscall
-    //Hay 2 codOps separadors para eso
+void devolverProcesoPorInterrupt(int socket_kernel, PCB_cpu *proc_AEjecutar) {
+    t_paquete *paquete_devolucion_proceso = crear_paquete(INTERRUPT_ACKNOWLEDGE);
     
     log_trace(logger, "El mensaje dice: <El proceso que se estaba ejecutando quedo en PC: %d>", proc_AEjecutar->pc);
     agregar_a_paquete(paquete_devolucion_proceso, &(proc_AEjecutar->pc), sizeof(proc_AEjecutar->pc));

@@ -8,8 +8,6 @@ void *atenderKernelDispatch(void *cpu_args) {
         PCB_cpu proc_AEjecutar;
         int estado_conexion = 0;
         
-        log_debug(logger, "Empanada de POLLO");
-
         if(!recibirPIDyPCkernel(cpu->socket_kernel_dispatch, &proc_AEjecutar, &estado_conexion)) {
             switch(estado_conexion)
             {

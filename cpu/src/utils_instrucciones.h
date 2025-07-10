@@ -47,9 +47,9 @@ void setProgramCounter(PCB_cpu *pcb, int newProgramCounter);
 bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar);
 void marcarModificadoEnCache(CACHE *cache, int pid, int nro_pagina);
 bool recibirInterrupcion(int socket_kernel_dispatch);
-void devolverProcesoKernel(int socket_kernel, PCB_cpu *proc_AEjecutar);
+void devolverProcesoPorInterrupt(int socket_kernel, PCB_cpu *proc_AEjecutar);
 
 char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar);
 t_list *decode(PCB_cpu *proc_AEjecutar, char *instruccion, instruccionInfo *instr_info);
 bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, PCB_cpu *pcb);
-bool checkInterrupt(cpu_t *cpu);
+bool checkInterrupt(cpu_t *cpu, PCB_cpu *proc_AEjecutar);
