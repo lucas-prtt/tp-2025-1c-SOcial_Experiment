@@ -66,7 +66,7 @@ bool recibirPeticion(int socket_kernel, request_io *request) {
 
 void ejecutarPeticion(request_io *request, MOTIVO_FIN_IO *motivo) {
     log_info(logger,"## PID: %d - Inicio de IO - Tiempo: %d", request->pid, request->tiempo);
-    usleep(request->tiempo);
+    usleep(request->tiempo*1000); // Son milisegundos, no microsegundos
     *motivo = IO_SUCCESS;
     log_info(logger, "## PID: %d - Fin de IO", request->pid);
 }

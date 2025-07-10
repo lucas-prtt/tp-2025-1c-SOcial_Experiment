@@ -44,6 +44,9 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
 
     while(1) {
         {  // Extraer proceso de lista de READY, pasarlo a EXEC
+            int a; 
+            sem_getvalue(&sem_procesos_en_ready, &a);
+            log_debug(logger, "Procesos en ready segun semaforo: %d", a);
             sem_wait(&sem_procesos_en_ready);
             log_trace(logger, "Extrayendo proceso de la cola de ready.");
             pthread_mutex_lock(&mutex_listasProcesos);
@@ -54,6 +57,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             log_debug(logger, "Se eligio el proceso (%d) para ejecutar", proceso->PID);
         }
         do{
+            
             continuar_mismo_proceso = 0;
             paqueteEnviado = crear_paquete(ASIGNACION_PROCESO_CPU);
             agregar_a_paquete(paqueteEnviado, &(proceso->PID), sizeof(proceso->PID));
@@ -61,6 +65,8 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             enviar_paquete(paqueteEnviado, cpu->SOCKET);
             eliminar_paquete(paqueteEnviado);
             log_trace(logger, "Se asigno el proceso (%d) a la cpu %d en PC %d", proceso->PID, cpu->ID, proceso->PC);
+            log_trace(logger, "El hilo de CPU %d se bloquea esperando respuesta", cpu->ID);
+            
             paqueteRespuesta = recibir_paquete_lista(cpu->SOCKET, MSG_WAITALL, &codOp);
             log_trace(logger, "Se recibio un paquete de respuesta de proceso (%d) de la cpu %d", proceso->PID, cpu->ID);
             
@@ -99,6 +105,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 liberarMemoria(proceso->PID); // Envia mensaje a Memoria para liberar el espacio
                 eliminamosOtroProceso();
+                log_trace(logger, "Termino el case EXIT");
                 //sem_post(&sem_introducir_proceso_a_ready);  //Esto causa segFault porque se ejecuta de mas el algoritmo.
                 // No lo saco porque me da miedo haberlo debugeado mal, pero estoy 90% seguro que el problema es este.
                 break;
@@ -159,8 +166,11 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 break;
             }
+            log_trace(logger, "Termino el switch");
             eliminar_paquete_lista(paqueteRespuesta);
+            log_trace(logger, "Termino un ciclo del do while");
         }while(continuar_mismo_proceso);
+        log_trace(logger, "Termino de ejecutar los ciclos de do while, busco nuevo proceso a ejecutar");
     }
 }
 
@@ -187,6 +197,9 @@ void * orderThread(void * _){
         pthread_mutex_unlock(&mutex_listasProcesos);
         log_trace(logger, "Listo, ordenamiento finalizado");
         sem_post(&sem_procesos_en_ready); // Esto se ejecuta cada vez que entra un nuevo proceso a ready, reordenandose asi la cola
+        int a; 
+        sem_getvalue(&sem_procesos_en_ready, &a);
+        log_debug(logger, "Procesos en ready segun semaforo: %d", a);
         // Si no entra nada a ready (de NEW, BLOCKED o SUSP_READY) no se ejecuta
     }
 }
@@ -341,6 +354,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
             log_info(logger, "## (%d) finalizo IO y pasa a READY", peticion->PID);
             peticion->estado = PETICION_FINALIZADA;
             sem_post(&(peticion->sem_estado));
+            sem_post(&sem_ordenar_cola_ready);    
         }else if(peticion->estado == PETICION_SUSPENDIDA){ // Si se suspendio
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado_EstadoActualConocido(peticion->PID, SUSP_BLOCKED, SUSP_READY, listasProcesos);
@@ -351,7 +365,6 @@ void * IOThread(void * NOMBREYSOCKETIO)
         }
         }
 
-        sem_post(&sem_ordenar_cola_ready);    
 }
 }
 

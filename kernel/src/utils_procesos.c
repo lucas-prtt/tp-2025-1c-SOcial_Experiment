@@ -292,7 +292,9 @@ char * syscallAsString(CODIGO_OP syscall){
 }
 
 void liberarMemoria(int PID){
+    log_trace(logger, "inicio ejecucion mandar mensaje a memoria para eliminar proceso");
     int socketMemoria = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
+    handshakeMemoria(socketMemoria);
     t_paquete * paq = crear_paquete(PROCESO_FINALIZADO_LIBERAR_MEMORIA);
     agregar_a_paquete(paq, &PID, sizeof(PID));
     enviar_paquete(paq, socketMemoria);
@@ -304,6 +306,7 @@ void liberarMemoria(int PID){
         //ERROR
     }
     liberarConexion(socketMemoria);
+    log_trace(logger, "termino ejecucion mandar mensaje a memoria para eliminar proceso");
 }
 void eliminarPeticion(Peticion * pet){
     sem_destroy(&(pet->sem_estado));
