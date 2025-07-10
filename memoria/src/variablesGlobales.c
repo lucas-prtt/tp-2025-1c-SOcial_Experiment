@@ -369,13 +369,13 @@ t_list * marcosDelPid(int PID){
 }
 
 void simularRetrasoMultinivel(){
-    usleep(retrasoAcceso*nivelesTablas);
+    usleep(retrasoAcceso*nivelesTablas*1000); // En milisegundos, no microsegundos
 }
 void simularRetrasoUnSoloNivel(){
-    usleep(retrasoAcceso);
+    usleep(retrasoAcceso*1000);
 }
 void simularRetrasoSWAP(){
-    usleep(retrasoSWAP);
+    usleep(retrasoSWAP*1000);
 }
 
 int siguienteMarcoLibre(){

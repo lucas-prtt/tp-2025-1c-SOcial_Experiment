@@ -51,6 +51,7 @@ void *atenderCPU(void *socketPtr) {
             t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_INSTRUCCION_MEMORIA);
             agregar_a_paquete(respuesta_cpu, instruccion, strlen(instruccion) + 1);
             // Se simula un retraso?
+            simularRetrasoUnSoloNivel(); // TODO: Ver si esto va aca o no
             enviar_paquete(respuesta_cpu, socket_cpu);
             eliminar_paquete(respuesta_cpu);
             break;
