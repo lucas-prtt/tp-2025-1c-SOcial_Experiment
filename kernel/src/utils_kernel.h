@@ -30,6 +30,12 @@ typedef struct {
 } NombreySocket_IO;
 
 typedef struct {
+    int * SOCKET;
+    NombreySocket_IO * datos;
+} IOThreadDTO;
+
+
+typedef struct {
     t_list * CPUsDispatch;
     t_list * CPUsInterrupt;
     t_list * IOEscucha;
@@ -45,6 +51,7 @@ int verificarModuloMemoriaDisponible();
 void eliminarConexiones(void);
 int crearSocketDesdeConfig(t_config * config, char opcion[]);
 void generarHilos(t_list * hilos, int cantidad, void * func(void *), t_list * parametros);
+void generarHilosIO(t_list * hilos, void * func(void *));
 void eliminarHilos(t_list * hilos);
 int cantidadDeIosEnLista(t_list * conexionesIos);
 

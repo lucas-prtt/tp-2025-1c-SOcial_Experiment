@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
     int cantidadDeIos = cantidadDeIosEnLista(conexiones.IOEscucha);
     int cantidadDeCpus = list_size(conexiones.CPUsDispatch); // = conexiones a interrupt
     log_debug(logger, "Cantidad de IOs: %d, Cantidad de CPUs: %d", cantidadDeIos, cantidadDeCpus);
-    generarHilos(hilos, cantidadDeIos, IOThread, conexiones.IOEscucha);
+    generarHilosIO(hilos, IOThread);
     generarHilos(hilos, cantidadDeCpus, dispatcherThread, conexiones.CPUsDispatch);
     nuevoProceso(0, argv[1], atoi(argv[2]), listasProcesos); // Agrega el proceso indicado por consola a la lista NEW
     post_sem_introducirAReady();

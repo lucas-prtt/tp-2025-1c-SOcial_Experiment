@@ -214,7 +214,7 @@ void cerrarKernel() {
 void generarHilos(t_list * hilos, int cantidad, void * func(void *), t_list * parametros){
     pthread_t * nuevoHilo;
     log_debug(logger, "Inicio de generacion de hilos");
-    for (int i = 0; i < cantidad; i++) { // i no esta inicializado => No generaba los hilos
+    for (int i = 0; i < cantidad; i++) {
         nuevoHilo = malloc(sizeof(pthread_t));
         if (parametros == NULL)
         pthread_create(nuevoHilo, NULL, func, NULL);
@@ -224,6 +224,25 @@ void generarHilos(t_list * hilos, int cantidad, void * func(void *), t_list * pa
         log_debug(logger, "   -Se inicio el hilo: %ld", * nuevoHilo);
     }
 }
+
+void generarHilosIO(t_list * hilos, void * func(void *)){
+    pthread_t * nuevoHilo;
+    int cantNombres = list_size(conexiones.IOEscucha);
+    for (int i = 0; i<cantNombres; i++){    // Por Cada nombre
+        int cantidadSockets = list_size((((NombreySocket_IO*)list_get(conexiones.IOEscucha, i))->SOCKET));
+        for(int j = 0; j < cantidadSockets; j++){   // Por Cada Socket
+            IOThreadDTO * p = malloc(sizeof(p));
+            p->SOCKET = list_get((*(NombreySocket_IO*)list_get(conexiones.IOEscucha, i)).SOCKET, j) ;
+            p->datos = (NombreySocket_IO*)list_get(conexiones.IOEscucha, i);
+            nuevoHilo = malloc(sizeof(pthread_t));
+            pthread_create(nuevoHilo, NULL, func, p);
+            list_add(hilos, nuevoHilo);
+            log_debug(logger, "   -Se inicio el hilo: %ld", * nuevoHilo);
+        }
+    }
+}
+
+
 void eliminarHilos(t_list * hilos){
     pthread_t * hiloPorMorir;
     log_debug(logger, "Inicio de eliminacion de hilos");
