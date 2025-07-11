@@ -247,10 +247,10 @@ void * procesoMasCorto(void * p1, void * p2){
     return p2;
 }
 
-PeticionesIO * encontrarPeticionesDeIOPorNombre(t_list * lista, char * nombreIO){
+NombreySocket_IO * encontrarPeticionesDeIOPorNombre(t_list * lista, char * nombreIO){
     #ifndef __INTELLISENSE__ // Lo marco asi para que me deje de marcar error. El compilador lo deberia tomar bien a la hora de crear el ejecutable
     bool _PIDCoincide(void * elemento){         // Esto el VSC lo marca como error pero GCC lo permite y esta en el manual de commons/list
-        return !strcmp(((PeticionesIO*)elemento)->nombre, nombreIO);
+        return !strcmp(((NombreySocket_IO*)elemento)->NOMBRE, nombreIO);
     }
     return list_find(lista, _PIDCoincide);
     #endif
@@ -264,9 +264,11 @@ Peticion * crearPeticion(int PID, int milisegundos){
     return peticion;
 }
 
-void encolarPeticionIO(char * nombreIO, Peticion * peticion, t_list * lista_peticiones){
-    PeticionesIO * io = encontrarPeticionesDeIOPorNombre(lista_peticiones, nombreIO);
+void encolarPeticionIO(char * nombreIO, Peticion * peticion){
+    NombreySocket_IO * io = encontrarPeticionesDeIOPorNombre(conexiones.IOEscucha, nombreIO);
+    pthread_mutex_lock(&(io->MUTEX_IO_SOCKETS));
     list_add(io->cola, peticion);
+    pthread_mutex_unlock(&(io->MUTEX_IO_SOCKETS));
     sem_post(&(io->sem_peticiones));
     return;
 }

@@ -27,6 +27,8 @@ typedef struct {
     char* NOMBRE;
     pthread_mutex_t MUTEX_IO_SOCKETS;
     t_list * SOCKET;
+    sem_t sem_peticiones;
+    t_list * cola;
 } NombreySocket_IO;
 
 typedef struct {

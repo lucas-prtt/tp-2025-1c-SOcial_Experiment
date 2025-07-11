@@ -12,12 +12,6 @@
 #include <unistd.h>
 #include "peticion.h"
 
-typedef struct{
-    char * nombre;
-    sem_t sem_peticiones;
-    t_list * cola;
-} PeticionesIO;
-
 
 typedef enum PeticionEstado{
     PETICION_BLOQUEADA, // No se realizo el IO y no se suspendio

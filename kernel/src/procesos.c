@@ -3,15 +3,12 @@
 
 // VARIABLES GLOBALES: 
 t_list * listasProcesos[7];      // Vector de lista para guardar procesos
-t_list * lista_peticionesIO;     // Lista donde se guarda por cada IO su nombre, cola de peticiones y un Semaforo. La cola se maneja por FIFO
 int last_PID = 0;                // Estaba en 1
 int qProcesosMolestando = 1;     // Cantidad de procesos que quedan ejecutar
 ///////////////////////////////////
 
 // SEMAFOROS:
 pthread_mutex_t mutex_listasProcesos    // MUTEX para interactuar con listasProcesos[7]
- = PTHREAD_MUTEX_INITIALIZER        ;   // 
-pthread_mutex_t mutex_peticionesIO      // MUTEX para acceder a lista_peticionesIO
  = PTHREAD_MUTEX_INITIALIZER        ;   // 
 pthread_mutex_t mutex_last_PID          // MUTEX para acceder a last_PID
  = PTHREAD_MUTEX_INITIALIZER        ;   // 
@@ -29,9 +26,11 @@ void procesos_c_inicializarVariables(){
     sem_init(&sem_introducir_proceso_a_ready, 0, 0);
     for(int i = 0; i<7; i++){
         listasProcesos[i] = list_create();
+    }    
+    for(int i = 0; i<list_size(conexiones.IOEscucha); i++){
+        sem_init(&((*(NombreySocket_IO*)list_get(conexiones.IOEscucha, i)).sem_peticiones), 0, 0);
+        (*(NombreySocket_IO*)list_get(conexiones.IOEscucha, i)).cola = list_create();
     }
-    lista_peticionesIO = list_create();
-    
 }
 void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de la interaccion con las CPU a traves del socket dispatch
     IDySocket_CPU * cpu = (IDySocket_CPU*) IDYSOCKETDISPATCH;
@@ -135,9 +134,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_create(&timerThread, NULL, temporizadorSuspenderThread, pet);
                 pthread_detach(timerThread);
 
-                pthread_mutex_lock(&mutex_peticionesIO);
-                encolarPeticionIO(nombreIO, pet, lista_peticionesIO); // Tambien hace señal a su semaforo
-                pthread_mutex_unlock(&mutex_peticionesIO);
+                encolarPeticionIO(nombreIO, pet); // Tambien hace señal a su semaforo
 
                 actualizarEstimacion(proceso, alfa);
                 log_info(logger, "## (%d) - Bloqueado por IO: %s", proceso->PID, nombreIO);
@@ -296,48 +293,40 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
     }
 }
 
-void * IOThread(void * NOMBREYSOCKETIO)
+void * IOThread(void * NOMBREYSOCKETIODTO)
 {   
+    IOThreadDTO this = *(IOThreadDTO*)NOMBREYSOCKETIODTO;
     t_paquete * paquete;
     Peticion * peticion;
     t_list * respuesta;
-    NombreySocket_IO * io = (NombreySocket_IO*)NOMBREYSOCKETIO;
-    PeticionesIO * peticiones = malloc(sizeof(PeticionesIO));
-    peticiones->nombre = malloc(strlen(io->NOMBRE)+1);
-    memcpy(peticiones->nombre, io->NOMBRE, strlen(io->NOMBRE)+1);
-    sem_init(&(peticiones->sem_peticiones), 0, 0);
-    peticiones->cola = list_create();
-    pthread_mutex_lock(&mutex_peticionesIO);
-    list_add(lista_peticionesIO, peticiones);
-    pthread_mutex_unlock(&mutex_peticionesIO);
     while(1){
         {
             // Obtener peticion
-            sem_wait(&peticiones->sem_peticiones);
+            sem_wait(&this.datos->sem_peticiones);
             log_debug(logger, "Recibida peticion IO");
-            pthread_mutex_lock(&mutex_peticionesIO);
-            peticion = list_remove(peticiones->cola,0);
-            pthread_mutex_unlock(&mutex_peticionesIO);
+            pthread_mutex_lock(&this.datos->MUTEX_IO_SOCKETS);
+            peticion = list_remove(this.datos->cola,0);
+            pthread_mutex_unlock(&this.datos->MUTEX_IO_SOCKETS);
         }
         {
             //Emviar Peticion
             paquete = crear_paquete(PETICION_IO);
             agregar_a_paquete(paquete, &(peticion->PID), sizeof(peticion->PID));
             agregar_a_paquete(paquete, &(peticion->milisegundos), sizeof(peticion->milisegundos));
-            enviar_paquete(paquete, io->SOCKET);
+            enviar_paquete(paquete, *(this.SOCKET));
             eliminar_paquete(paquete);
         }
     
         // Recibir respuesta
-        respuesta = recibir_paquete_lista(io->SOCKET, MSG_WAITALL, NULL);
+        respuesta = recibir_paquete_lista(*(this.SOCKET), MSG_WAITALL, NULL);
         log_debug(logger, "IO me respondio");
         sem_wait(&(peticion->sem_estado));
         if(respuesta == NULL){ // Si se pierde la conexion, se termina el proceso
-            log_error(logger, "Se perdio la conexion con IO: %s", io->NOMBRE);
+            log_error(logger, "Se perdio la conexion con IO: %s", this.datos->NOMBRE);
             peticion->estado = PETICION_FINALIZADA;
-            pthread_mutex_lock(&mutex_peticionesIO);
             cambiarEstado(peticion->PID, EXIT, listasProcesos);
-            pthread_mutex_unlock(&mutex_peticionesIO);
+            peticion->estado=PETICION_FINALIZADA;
+            sem_post(&(peticion->sem_estado));
             liberarMemoria(peticion->PID);
         }else{                  // Si no se pierde la conexion, liberar el paquete y continuar a ready o susp_ready
         eliminar_paquete_lista(respuesta);

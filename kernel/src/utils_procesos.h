@@ -64,7 +64,7 @@ char * estadoAsString(enum estado);
 enum algoritmo algoritmoStringToEnum(char * algoritmo);
 void ordenar_cola_ready(t_list * listaProcesos[], enum algoritmo algoritmo);
 void * procesoMasCorto(void * p1, void * p2);
-void encolarPeticionIO(char * nombreIO, Peticion * peticion, t_list * lista_peticiones);
+void encolarPeticionIO(char * nombreIO, Peticion * peticion);
 void actualizarEstimacion(t_PCB * proceso, float alfa);
 t_PCB * procesoADesalojar(t_list * listasProcesos[], enum algoritmo alg); // Puede devolver NULL si no requiere desalojo
 void eliminarPeticion(Peticion * pet);
