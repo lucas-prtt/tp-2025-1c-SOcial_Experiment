@@ -16,6 +16,7 @@ typedef struct{
     char * nombre;
     sem_t sem_peticiones;
     t_list * cola;
+    pthread_mutex_t MUTEX_cola;
 } PeticionesIO;
 
 

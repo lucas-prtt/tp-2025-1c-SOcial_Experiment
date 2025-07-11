@@ -300,24 +300,34 @@ void * IOThread(void * NOMBREYSOCKETIO)
 {   
     t_paquete * paquete;
     Peticion * peticion;
+    PeticionesIO * peticiones = NULL;
     t_list * respuesta;
     NombreySocket_IO * io = (NombreySocket_IO*)NOMBREYSOCKETIO;
-    PeticionesIO * peticiones = malloc(sizeof(PeticionesIO));
-    peticiones->nombre = malloc(strlen(io->NOMBRE)+1);
-    memcpy(peticiones->nombre, io->NOMBRE, strlen(io->NOMBRE)+1);
+    pthread_mutex_lock(&mutex_peticionesIO);
+    for(int i = 0; i < list_size( lista_peticionesIO); i++){
+        if(!strcmp(((PeticionesIO*)list_get(lista_peticionesIO, i))->nombre, io->NOMBRE))
+        {
+            peticiones = (PeticionesIO*)list_get(lista_peticionesIO, i);
+            break;
+        }
+    }
+    if(peticiones == NULL){
+    peticiones = malloc(sizeof(PeticionesIO));
+    peticiones->nombre = io->NOMBRE;
+    pthread_mutex_init(&(peticiones->MUTEX_cola), NULL);
     sem_init(&(peticiones->sem_peticiones), 0, 0);
     peticiones->cola = list_create();
-    pthread_mutex_lock(&mutex_peticionesIO);
     list_add(lista_peticionesIO, peticiones);
+    }
     pthread_mutex_unlock(&mutex_peticionesIO);
     while(1){
         {
             // Obtener peticion
             sem_wait(&peticiones->sem_peticiones);
             log_debug(logger, "Recibida peticion IO");
-            pthread_mutex_lock(&mutex_peticionesIO);
+            pthread_mutex_lock(&(peticiones->MUTEX_cola));
             peticion = list_remove(peticiones->cola,0);
-            pthread_mutex_unlock(&mutex_peticionesIO);
+            pthread_mutex_unlock(&(peticiones->MUTEX_cola));
         }
         {
             //Emviar Peticion
@@ -335,9 +345,9 @@ void * IOThread(void * NOMBREYSOCKETIO)
         if(respuesta == NULL){ // Si se pierde la conexion, se termina el proceso
             log_error(logger, "Se perdio la conexion con IO: %s", io->NOMBRE);
             peticion->estado = PETICION_FINALIZADA;
-            pthread_mutex_lock(&mutex_peticionesIO);
+            pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado(peticion->PID, EXIT, listasProcesos);
-            pthread_mutex_unlock(&mutex_peticionesIO);
+            pthread_mutex_unlock(&mutex_listasProcesos);
             liberarMemoria(peticion->PID);
         }else{                  // Si no se pierde la conexion, liberar el paquete y continuar a ready o susp_ready
         eliminar_paquete_lista(respuesta);
