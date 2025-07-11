@@ -106,8 +106,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 liberarMemoria(proceso->PID); // Envia mensaje a Memoria para liberar el espacio
                 eliminamosOtroProceso();
                 log_trace(logger, "Termino el case EXIT");
-                //sem_post(&sem_introducir_proceso_a_ready);  //Esto causa segFault porque se ejecuta de mas el algoritmo.
-                // No lo saco porque me da miedo haberlo debugeado mal, pero estoy 90% seguro que el problema es este.
+                sem_post(&sem_introducir_proceso_a_ready); 
                 break;
             case SYSCALL_INIT_PROC:
                 char * path = list_get(paqueteRespuesta, 3);
@@ -216,10 +215,11 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
     log_debug(logger, "Entrando a algoritmo introducir_proceso_a_ready");
     while(1){
         sem_wait(&sem_introducir_proceso_a_ready);
+        log_debug(logger, "Inicio el proceso para pasar procesos a ready");
         pthread_mutex_lock(&mutex_listasProcesos);
 
         if (list_is_empty(listasProcesos[NEW]) && list_is_empty(listasProcesos[SUSP_READY])) {
-            log_warning(logger, "Despertó el thread para ingresoAReady pero no hay procesos en NEW ni SUSP_READY. No hago nada.");
+            log_debug(logger, "Despertó el thread de ingresoAReady pero no hay procesos en NEW ni SUSP_READY. No hago nada.");
             pthread_mutex_unlock(&mutex_listasProcesos);
             continue;
         }
@@ -275,26 +275,22 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
             else
                 cambiarEstado_EstadoActualConocido(proceso->PID, SUSP_READY, READY, listasProcesos);
             
-            //int hayProcesosPendientes = !list_is_empty(listasProcesos[NEW]) || !list_is_empty(listasProcesos[SUSP_READY]);
+            int hayProcesosPendientes = !list_is_empty(listasProcesos[NEW]) || !list_is_empty(listasProcesos[SUSP_READY]);
             
             pthread_mutex_unlock(&mutex_listasProcesos);
             log_trace(logger, "Se cambio el estado, ahora hay que ordenar la cola de ready");
             sem_post(&sem_ordenar_cola_ready);
 
-
-            // En versiones anteriores, se producia un comportamiento "recursivo" dentro del hilo
-            // Ahora no, solo se ejecuta una vez cuando es llamado
-            // Se debe prestar atencion de llamarlo la cantidad de veces necesaria, para no causar errores
-                                        /*log_trace(logger, "Ya mande el mensaje de que ordene la cola, tengo que meter otro proceso?");
-                                        log_trace(logger, "Validando si hay que meter otro proceso, list_size de: NEW=%d, SUSP_READY=%d",list_size(listasProcesos[NEW]), list_size(listasProcesos[SUSP_READY]));
-                                        if(hayProcesosPendientes) // Si quedan procesos pruebo meter otro
-                                            {
-                                            log_trace(logger, "Si, tengo que meter otro proceso");
-                                            sem_post(&sem_introducir_proceso_a_ready);
-                                            }
-                                        else{
-                                            log_trace(logger, "No, no tengo que meter otro proceso");
-                                        }*/
+            log_trace(logger, "Ya mande el mensaje de que ordene la cola, tengo que meter otro proceso?");
+            log_trace(logger, "Validando si hay que meter otro proceso, list_size de: NEW=%d, SUSP_READY=%d",list_size(listasProcesos[NEW]), list_size(listasProcesos[SUSP_READY]));
+            if(hayProcesosPendientes) // Si quedan procesos pruebo meter otro
+                {
+                log_trace(logger, "Si, tengo que meter otro proceso");
+                sem_post(&sem_introducir_proceso_a_ready);
+                }
+            else{
+                log_trace(logger, "No, no tengo que meter otro proceso");
+            }
                                 
         }
     }
