@@ -3,6 +3,8 @@
 
 conexionesAModulos conexiones;
 sem_t evaluarFinKernel;
+pthread_mutex_t MUTEX_lista_ios = PTHREAD_MUTEX_INITIALIZER;
+
 void * esperarCPUDispatch(void * socket) {
     conexiones.CPUsDispatch = list_create();
     t_list * createdThreads = list_create();
@@ -54,23 +56,24 @@ void * esperarCPUInterrupt(void * socket) {
 void * esperarIOEscucha(void * socket) {
     conexiones.IOEscucha = list_create();
     t_list * createdThreads = list_create();
+    int * nuevoSocket;
     pthread_cleanup_push(closeTreadsFromListAndCleanUpList, createdThreads);
+    pthread_cleanup_push(free, nuevoSocket);
     while(1) {
-        int nuevoSocket;
-        nuevoSocket = accept(*(int*)socket, NULL, NULL);
-        if(nuevoSocket == -1) {
+        nuevoSocket = malloc(sizeof(int));
+        *nuevoSocket = accept(*(int*)socket, NULL, NULL);
+        if(*nuevoSocket == -1) {
             pthread_testcancel();
         }
-        NombreySocket_IO * IONombreYSocket = malloc(sizeof(NombreySocket_IO));
-        IONombreYSocket->SOCKET = nuevoSocket;
-        list_add(conexiones.IOEscucha, IONombreYSocket) ;
+        
         pthread_t * hilo = malloc(sizeof(pthread_t));
-        pthread_create(hilo, NULL, handshakeIO, IONombreYSocket);
+        pthread_create(hilo, NULL, handshakeIO, nuevoSocket);
         pthread_detach(*hilo);
         list_add(createdThreads, hilo);
         printf("- IO conectado\n");
         fflush(stdout);
     }
+    pthread_cleanup_pop(1);
     pthread_cleanup_pop(1);
 }
 
@@ -149,8 +152,9 @@ void *handshakeCPUInterrupt(void *CPUSocketEId) {
     pthread_exit(NULL);
 }
 
-void *handshakeIO(void *ioSocketYNombre) { 
-    int socket_io = ((NombreySocket_IO*)ioSocketYNombre)->SOCKET;
+void *handshakeIO(void *socketIOAsVoid) { 
+    int socket_io = socketIOAsVoid;
+    NombreySocket_IO * IONombreYSocket;
     t_list *lista_contenido = recibir_paquete_lista(socket_io, MSG_WAITALL, NULL);
     if(lista_contenido == NULL || list_size(lista_contenido) < 2) {
         enviar_paquete_error(socket_io, lista_contenido);
@@ -158,12 +162,42 @@ void *handshakeIO(void *ioSocketYNombre) {
     }
     char* nombre = (char*)list_get(lista_contenido, 1); //char[10] = {i,m,p,r,e,s,o,r,a,\0}
     int* tamaño = (int*)list_get(lista_contenido, 0); //10
-    ((NombreySocket_IO*)ioSocketYNombre)->NOMBRE = malloc(*tamaño); //Alocar 10 bytes en pointer nombre del struct socket y nombre
-    memcpy(((NombreySocket_IO*)ioSocketYNombre)->NOMBRE, nombre, *tamaño); //Copiar el nombre (funcionaria capaz strcpy tambien?)
+    pthread_mutex_lock(&MUTEX_lista_ios);
+    int tam_lista = list_size(conexiones.IOEscucha);
+    int indice = -1;
+    for(int i=0; i<tam_lista; i++){
+        if(!strcmp(((NombreySocket_IO*)list_get(conexiones.IOEscucha, i))->NOMBRE, nombre)){
+        indice = i;
+        break;
+        }
+    }
+    pthread_mutex_unlock(&MUTEX_lista_ios);
+    if (indice = -1)// Primero o Unico
+    {
+        // Crear nodo
+        IONombreYSocket = malloc(sizeof(NombreySocket_IO));
+        pthread_mutex_init(&(IONombreYSocket->MUTEX_IO_SOCKETS), NULL); // Mutex
+        IONombreYSocket->SOCKET = list_create();    // Sockets
+        IONombreYSocket->NOMBRE = malloc(*tamaño);  // Nombre
+        strcpy(IONombreYSocket->NOMBRE, nombre);
+        pthread_mutex_lock(&MUTEX_lista_ios);
+        list_add(conexiones.IOEscucha, IONombreYSocket) ;
+        pthread_mutex_unlock(&MUTEX_lista_ios);
+    }
+    else
+    {
+        pthread_mutex_lock(&MUTEX_lista_ios);
+        IONombreYSocket = list_get(conexiones.IOEscucha, indice);    
+        pthread_mutex_unlock(&MUTEX_lista_ios);
+    }
+    pthread_mutex_lock(&(IONombreYSocket->MUTEX_IO_SOCKETS));
+    list_add(IONombreYSocket->SOCKET, (int*) socketIOAsVoid);
+    pthread_mutex_unlock(&(IONombreYSocket->MUTEX_IO_SOCKETS));
+
     t_paquete *paquete_resp_io = crear_paquete(HANDSHAKE);
     agregar_a_paquete(paquete_resp_io, nombre, strlen(nombre) + 1);
     enviar_paquete(paquete_resp_io, socket_io);
-    log_debug(logger, "IO Handshake - NOMBRE: %s, Socket: %d", ((NombreySocket_IO*)ioSocketYNombre)->NOMBRE, ((NombreySocket_IO*)ioSocketYNombre)->SOCKET);
+    log_debug(logger, "IO Handshake - NOMBRE: %s, Socket: %d", IONombreYSocket->NOMBRE, *(int*)socketIOAsVoid);
     eliminar_paquete(paquete_resp_io);
     eliminar_paquete_lista(lista_contenido);
     pthread_exit(NULL);

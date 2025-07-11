@@ -10,6 +10,8 @@
 #include <utils/paquetes.h>
 #include <utils/logConfig.h>
 #include <semaphore.h>
+#include <pthread.h>
+
 
 typedef struct {
     char* puerto;
@@ -23,7 +25,8 @@ typedef struct {
 
 typedef struct {
     char* NOMBRE;
-    int SOCKET;
+    pthread_mutex_t MUTEX_IO_SOCKETS;
+    t_list * SOCKET;
 } NombreySocket_IO;
 
 typedef struct {
