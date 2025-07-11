@@ -96,7 +96,10 @@ void liberarConexion_IDYSOCKET_CPU(void * ids) {
 }
 
 void liberarConexion_NOMBREYSOCKET_IO(void * ids) {
-    close((*(NombreySocket_IO*)ids).SOCKET);
+    int tam = list_size((*(NombreySocket_IO*)ids).SOCKET);
+    for(int i = 0; i< tam; i++){
+        close(*(int*)list_get((*(NombreySocket_IO*)ids).SOCKET, i));
+    }   
 }
 
 void eliminarConexiones(void) {
@@ -153,7 +156,7 @@ void *handshakeCPUInterrupt(void *CPUSocketEId) {
 }
 
 void *handshakeIO(void *socketIOAsVoid) { 
-    int socket_io = socketIOAsVoid;
+    int socket_io = *(int*) socketIOAsVoid;
     NombreySocket_IO * IONombreYSocket;
     t_list *lista_contenido = recibir_paquete_lista(socket_io, MSG_WAITALL, NULL);
     if(lista_contenido == NULL || list_size(lista_contenido) < 2) {
@@ -172,7 +175,7 @@ void *handshakeIO(void *socketIOAsVoid) {
         }
     }
     pthread_mutex_unlock(&MUTEX_lista_ios);
-    if (indice = -1)// Primero o Unico
+    if (indice == -1)// Primero o Unico
     {
         // Crear nodo
         IONombreYSocket = malloc(sizeof(NombreySocket_IO));
@@ -253,4 +256,21 @@ int handshakeMemoria(int socketMemoria){
         eliminar_paquete_lista(respuesta);
         return 0;
     }
+}
+
+
+
+int cantidadDeIosEnLista(t_list * conexionesIos){
+    int cantidad = 0; 
+    #ifndef __INTELLISENSE__
+    void * sumarConexiones(void * IntCantidadAcumulada, void * sigElemento){
+        pthread_mutex_lock(&((*(NombreySocket_IO*)sigElemento).MUTEX_IO_SOCKETS));
+        * (int*) IntCantidadAcumulada += list_size((*(NombreySocket_IO*)sigElemento).SOCKET);
+        pthread_mutex_unlock(&((*(NombreySocket_IO*)sigElemento).MUTEX_IO_SOCKETS));
+
+        return IntCantidadAcumulada;
+    }
+    list_fold(conexionesIos, (void*)&cantidad, sumarConexiones);
+    #endif
+    return cantidad;
 }

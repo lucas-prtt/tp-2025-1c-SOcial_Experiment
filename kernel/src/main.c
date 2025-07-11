@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     pthread_t var_orderThread, var_ingresoAReadyThread;
     pthread_create(&var_orderThread, NULL, orderThread, NULL);
     pthread_create(&var_ingresoAReadyThread, NULL, ingresoAReadyThread, NULL);
-    int cantidadDeIos = list_size(conexiones.IOEscucha);
+    int cantidadDeIos = cantidadDeIosEnLista(conexiones.IOEscucha);
     int cantidadDeCpus = list_size(conexiones.CPUsDispatch); // = conexiones a interrupt
     log_debug(logger, "Cantidad de IOs: %d, Cantidad de CPUs: %d", cantidadDeIos, cantidadDeCpus);
     generarHilos(hilos, cantidadDeIos, IOThread, conexiones.IOEscucha);
