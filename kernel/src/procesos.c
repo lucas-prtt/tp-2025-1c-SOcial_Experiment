@@ -303,7 +303,7 @@ void * IOThread(void * NOMBREYSOCKETIODTO)
         {
             // Obtener peticion
             sem_wait(&this.datos->sem_peticiones);
-            log_debug(logger, "Recibida peticion IO");
+            log_debug(logger, "Recibida peticion IO, Nombre = %s, Socket = %d", this.datos->NOMBRE, *this.SOCKET);
             pthread_mutex_lock(&this.datos->MUTEX_IO_SOCKETS);
             peticion = list_remove(this.datos->cola,0);
             pthread_mutex_unlock(&this.datos->MUTEX_IO_SOCKETS);

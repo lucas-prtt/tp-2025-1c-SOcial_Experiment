@@ -34,4 +34,7 @@ cd io
 rm io.log
 make
 gnome-terminal --title="IO" -- bash -c "./bin/io DISCO"
+gnome-terminal --title="IO2" -- bash -c "./bin/io DISCO"
+
+
 cd ..
