@@ -29,7 +29,6 @@ int cargarInstrucciones(int PID, char* PATH, int tamaño){
             list_add(instrucciones, strdup(linea));
         }
         free(linea);
-        log_debug("fd archivo: %d", archivo);
         fclose(archivo);
         agregarInstruccionesAPID(PID, instrucciones);
         free(PATHCompleto);
