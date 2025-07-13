@@ -66,7 +66,7 @@ void * atenderKernel(void * socketPtr){
 
     int codOp=-42; // Nunca deberia tomar este valor. Si loguea codOp = -42, es que no asigno codOp al recibir el paquete
     t_list * pedido = recibir_paquete_lista(socket, MSG_WAITALL, &codOp);
-    log_debug(logger, "Paquete recibido (socket = %d, pointer = %p, codOp = %d)", *(int*)socketPtr, pedido, codOp);
+    //log_debug(logger, "Paquete recibido (socket = %d, pointer = %p, codOp = %d)", *(int*)socketPtr, pedido, codOp);
     // Recibo un paquete con el pedido
 
     if (pedido == NULL)

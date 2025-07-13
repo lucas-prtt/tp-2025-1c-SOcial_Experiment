@@ -43,7 +43,7 @@ void *atenderCPU(void *socketPtr) {
             }
 
             aumentarMetricaInstruccinoesSolicitadas(*pid);
-
+            
             char* instruccion = leerInstruccion(*pid, *pc);
             log_info(logger, "## PID: %d - Obtener instrucción: %d - Instrucción: %s", *pid, *pc, instruccion); 
             // Supongo que la instruccion ya tiene los parametros metidos

@@ -68,7 +68,7 @@ void ** crearNivelTablaDePaginas(int maximoEntradasTabla){
     void * buscarOCrearAux(void ** raiz, t_list * entradas, int niveles, int nivelActual, int maximoEntradasTabla)
     {   
         if (nivelActual == niveles+1)
-            return *raiz;
+            return raiz;
         int indice = *(int*)list_get(entradas, nivelActual-1);
         void ** siguienteTabla = raiz[indice];
         if (siguienteTabla == NULL)
@@ -93,6 +93,7 @@ int * buscarOCrear(void ** arbolDePaginas, t_list * entradas, int niveles, int m
 void asignarMarcoAPagina(int numeroMarco, void ** arbolDePaginas, t_list * entradas)
 {
     int * ubicacion = buscarOCrear (arbolDePaginas, entradas, nivelesTablas, maximoEntradasTabla);
+    log_debug(logger, "asignarMarcoAPagina devuelve ubicacion = %p, contenido = %d", ubicacion, *ubicacion);
     *ubicacion = numeroMarco;
 }
 // @brief Wrapper para buscarOCrear => Busca un marco de pagina en un arbol y si no esta lo crea y deja en -1
