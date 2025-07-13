@@ -9,6 +9,7 @@ int main(int argc, char* argv[]) {
     sprintf(nombre_log, "cpu_%d.log", identificadorCPU);
     
     if(abrirConfigYLog("cpu.config", nombre_log, "cpu", false)) {
+        cerrarConfigYLog();
         abort();
     }
 
