@@ -106,7 +106,7 @@ int cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, 
     if(estadoActual == EXEC)
         proceso->EJC_ACT += tiempoASumar;
     if(estadoActual == EXEC && estadoSiguiente == READY){ // Unico caso es en interrupt
-        log_info(logger, "## (%d) Desalojado por algoritmo SJF/SRT", proceso->PID);
+        log_info(logger, "## (%d) Desalojado por algoritmo SRT", proceso->PID);
     }
     log_trace(logger, "Finaliza ejecucion de cambiarEstado_EstadoActualConocido()");
     return 0;
@@ -215,12 +215,12 @@ t_PCB * procesoMasBreve(t_list * listaProcesos[], enum estado est){
 
 t_PCB * procesoMasDuradero(t_list * listaProcesos[], enum estado est){
     if(est == EXEC)
-        return list_get_maximum(listaProcesos[est], menorDuracionProcesoEXEC);
+        return list_get_maximum(listaProcesos[est], mayorDuracionProcesoEXEC);
     else
-        return list_get_maximum(listaProcesos[est], menorDuracionProceso);
+        return list_get_maximum(listaProcesos[est], mayorDuracionProceso);
 }
 t_PCB * procesoADesalojar(t_list * listasProcesos[], enum algoritmo alg){
-    if(alg == FIFO || alg == SJF || list_is_empty(listasProcesos[READY])){
+    if(alg == FIFO || alg == SJF || list_is_empty(listasProcesos[READY]) || list_is_empty(listasProcesos[EXEC])){
         return NULL;
     }else{
         t_PCB * pLargoExec = procesoMasDuradero(listasProcesos, EXEC);
