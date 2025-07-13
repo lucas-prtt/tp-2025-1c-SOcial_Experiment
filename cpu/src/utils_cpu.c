@@ -116,7 +116,7 @@ void verificarResultadoHandshake(bool result, char* nombreModuloCliente) {
 /////////////////////////       < OTROS >       /////////////////////////
 
 cpu_t *prepararCPU(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt) {
-    cpu_t *cpu = malloc(sizeof(cpu));
+    cpu_t *cpu = malloc(sizeof(cpu_t));
     
     cpu->socket_memoria = socket_memoria;
     cpu->socket_kernel_dispatch = socket_kernel_dispatch;
