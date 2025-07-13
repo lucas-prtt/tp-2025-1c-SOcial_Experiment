@@ -34,7 +34,8 @@ void procesos_c_inicializarVariables(){
     
 }
 void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de la interaccion con las CPU a traves del socket dispatch
-    IDySocket_CPU * cpu = (IDySocket_CPU*) IDYSOCKETDISPATCH;
+    IDySocket_CPU * cpuDispatch = (IDySocket_CPU*) IDYSOCKETDISPATCH;
+    IDySocket_CPU * cpuInterrupt = buscarCPUInterruptPorID(cpuDispatch->ID);
     int codOp;
     t_list * paqueteRespuesta;
     t_paquete * paqueteEnviado;
@@ -52,7 +53,8 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             pthread_mutex_lock(&mutex_listasProcesos);
             proceso = list_get(listasProcesos[READY], 0);
             cambiarEstado_EstadoActualConocido(proceso->PID, READY, EXEC, listasProcesos);
-            proceso->ProcesadorQueLoEjecuta = cpu;
+            proceso->ProcesadorQueLoEjecutaDispatch = cpuDispatch;
+            proceso->ProcesadorQueLoEjecutaInterrupt = cpuInterrupt;
             pthread_mutex_unlock(&mutex_listasProcesos);
             log_debug(logger, "Se eligio el proceso (%d) para ejecutar", proceso->PID);
         }
@@ -62,25 +64,27 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             paqueteEnviado = crear_paquete(ASIGNACION_PROCESO_CPU);
             agregar_a_paquete(paqueteEnviado, &(proceso->PID), sizeof(proceso->PID));
             agregar_a_paquete(paqueteEnviado, &(proceso->PC), sizeof(proceso->PC));
-            enviar_paquete(paqueteEnviado, cpu->SOCKET);
+            enviar_paquete(paqueteEnviado, cpuDispatch->SOCKET);
             eliminar_paquete(paqueteEnviado);
-            log_trace(logger, "Se asigno el proceso (%d) a la cpu %d en PC %d", proceso->PID, cpu->ID, proceso->PC);
-            log_trace(logger, "El hilo de CPU %d se bloquea esperando respuesta", cpu->ID);
+            log_trace(logger, "Se asigno el proceso (%d) a la cpu %d en PC %d", proceso->PID, cpuDispatch->ID, proceso->PC);
+            log_trace(logger, "El hilo de CPU %d se bloquea esperando respuesta", cpuDispatch->ID);
             
-            paqueteRespuesta = recibir_paquete_lista(cpu->SOCKET, MSG_WAITALL, &codOp);
-            log_trace(logger, "Se recibio un paquete de respuesta de proceso (%d) de la cpu %d", proceso->PID, cpu->ID);
+            paqueteRespuesta = recibir_paquete_lista(cpuDispatch->SOCKET, MSG_WAITALL, &codOp);
+            log_trace(logger, "Se recibio un paquete de respuesta de proceso (%d) de la cpu %d", proceso->PID, cpuDispatch->ID);
             
             if (paqueteRespuesta == NULL){ // Si se cierra la conexion con el CPU, se cierra el hilo y se termina el proceso
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
-                proceso->ProcesadorQueLoEjecuta = NULL;
+                proceso->ProcesadorQueLoEjecutaDispatch = NULL;
+                proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
+
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 liberarMemoria(proceso->PID);
-                log_error(logger, "(%d) - Finaliza el proceso. Conexion con CPU (%d) perdida", proceso->PID, cpu->ID);
+                log_error(logger, "(%d) - Finaliza el proceso. Conexion con CPU (%d) perdida", proceso->PID, cpuDispatch->ID);
                 pthread_exit(NULL);
             }
             int nuevoPC = *(int*)list_get(paqueteRespuesta, 1);
-            log_trace(logger, "El parquete dice: Codop: %d,  proceso (%d) de la cpu %d PC paso a %d",codOp ,  proceso->PID, cpu->ID, *(int*)list_get(paqueteRespuesta, 1));
+            log_trace(logger, "El parquete dice: Codop: %d,  proceso (%d) de la cpu %d PC paso a %d",codOp ,  proceso->PID, cpuDispatch->ID, *(int*)list_get(paqueteRespuesta, 1));
             proceso->PC = nuevoPC;
 
             // Las metricas (MT y ME) se actualizan solas en cambiarDeEstado()
@@ -101,7 +105,9 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
                 log_trace(logger, "Se va el proceso (%d) a exit", proceso->PID);
                 sem_post(&evaluarFinKernel);
-                proceso->ProcesadorQueLoEjecuta = NULL;
+                proceso->ProcesadorQueLoEjecutaDispatch = NULL;
+                proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
+
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 liberarMemoria(proceso->PID); // Envia mensaje a Memoria para liberar el espacio
                 eliminamosOtroProceso();
@@ -127,7 +133,9 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 int milisegundos = *(int*)list_get(paqueteRespuesta, 5);
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
-                proceso->ProcesadorQueLoEjecuta = NULL;
+                proceso->ProcesadorQueLoEjecutaDispatch = NULL;
+                proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
+
                 pthread_mutex_unlock(&mutex_listasProcesos);
 
                 pthread_t timerThread;
@@ -149,7 +157,8 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 enviarSolicitudDumpMemory(proceso->PID, &(infoDump->socket));
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
-                proceso->ProcesadorQueLoEjecuta = NULL;
+                proceso->ProcesadorQueLoEjecutaDispatch = NULL;
+                proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 actualizarEstimacion(proceso, alfa);
                 pthread_t hiloConfirmacion;
@@ -160,7 +169,8 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 log_trace(logger, "Case interrupt acknoledge");
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, READY, listasProcesos); 
-                proceso->ProcesadorQueLoEjecuta = NULL;
+                proceso->ProcesadorQueLoEjecutaDispatch = NULL;
+                proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
                 // CambiarEstado Ya actualiza a EXEC_ACT
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 break;
@@ -188,7 +198,7 @@ void * orderThread(void * _){
         if(procesoInterrumpido != NULL){
             log_trace(logger, "Hay que desalojar a alquien...");
             peticionInterrupt = crear_paquete(PETICION_INTERRUPT_A_CPU);
-            enviar_paquete(peticionInterrupt, procesoInterrumpido->ProcesadorQueLoEjecuta->SOCKET);
+            enviar_paquete(peticionInterrupt, procesoInterrumpido->ProcesadorQueLoEjecutaInterrupt->SOCKET);
             log_debug(logger, "Peticion de desalojo enviada: Se debe interrumpir (%d)", procesoInterrumpido->PID);
             log_trace(logger, "Ordenando cola de ready de nuevo...");
             ordenar_cola_ready(listasProcesos, algoritmo_enum);

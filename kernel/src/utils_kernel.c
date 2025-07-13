@@ -27,6 +27,17 @@ void * esperarCPUDispatch(void * socket) {
     pthread_cleanup_pop(1);
 }
 
+IDySocket_CPU * buscarCPUInterruptPorID(int id){
+    IDySocket_CPU * cpu = NULL;
+    #ifndef __INTELLISENSE__
+    bool coinicide (void * elem){
+        return ((IDySocket_CPU*)elem)->ID == id;
+    }
+    cpu = list_find(conexiones.CPUsInterrupt, coinicide);
+    #endif
+    return cpu;
+}
+
 void * esperarCPUInterrupt(void * socket) {
     conexiones.CPUsInterrupt = list_create();
     t_list * createdThreads = list_create();
