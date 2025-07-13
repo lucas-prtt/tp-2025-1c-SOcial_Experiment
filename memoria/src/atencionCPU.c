@@ -22,6 +22,7 @@ void *atenderCPU(void *socketPtr) {
     log_debug(logger, "Paquete recibido (socket = %d, pointer = %p, codigo_operacion = %d)", socket_cpu, pedido, codigo_operacion);
     
     if(pedido == NULL) {
+        log_debug(logger, "Se desconecto la CPU");
         liberarConexion(socket_cpu);
         pthread_exit(NULL);
     }

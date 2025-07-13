@@ -94,6 +94,9 @@ int verificarModuloMemoriaDisponible(void) {
     }else{
         error = handshakeMemoria(socketMemoria);
         log_debug(logger, "Resultado de handshake de memoria: %d", error);
+        t_paquete * respuesta = crear_paquete(VERIFICARCONEXION);
+        enviar_paquete(respuesta, socketMemoria);
+        eliminar_paquete(respuesta);
         liberarConexion(socketMemoria);
     }
     return error;

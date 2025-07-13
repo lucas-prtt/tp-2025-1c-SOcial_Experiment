@@ -72,6 +72,7 @@ void * atenderKernel(void * socketPtr){
     if (pedido == NULL)
     {
         // Si se cerro la conexion, finalizar el hilo
+        log_error(logger, "Se desconecto el kernel sin pedir nada");
         liberarConexion(socket);
         pthread_exit(NULL);
     }
@@ -151,6 +152,9 @@ void * atenderKernel(void * socketPtr){
         respuesta = crear_paquete(RESPUESTA_MEMORIA_PROCESO_ENVIADO_A_SWAP);
         enviar_paquete(respuesta,socket);
         eliminar_paquete(respuesta);
+        break;
+    case VERIFICARCONEXION:
+        log_debug(logger, "Kernel hizo un handshake pero no pidio hacer nada");
         break;
     default:
         // ERROR, se hizo una peticion que no correspondia 
