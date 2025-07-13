@@ -111,7 +111,6 @@ void* atenderConexion(void* socketPtr) {
             close(*(int*)socket);
             return NULL;
     }
-    close(*(int*)socket);
     // El hilo se cierra tras el handshake que indica el comportamiento necesario
     return NULL; 
 }
