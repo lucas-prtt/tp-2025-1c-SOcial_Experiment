@@ -318,6 +318,10 @@ bool recibirInterrupcion(int socket_kernel_interrupt) {
     if(lista_interrupcion == NULL || list_size(lista_interrupcion) < 2 || *codigo_operacion != PETICION_INTERRUPT_A_CPU) {
         log_error(logger, "Me mandaron cualquier cosa en el parquete de Interrupt");
         log_error(logger, "Pointer = %p", lista_interrupcion);
+        if (lista_interrupcion == NULL){
+        log_error(logger, "Se debe haber desconectado el kernel");
+        return false;
+        }
         log_error(logger, "Tamaño = %d, CodOp = %d", list_size(lista_interrupcion), *codigo_operacion);
         free(codigo_operacion);
         return false;

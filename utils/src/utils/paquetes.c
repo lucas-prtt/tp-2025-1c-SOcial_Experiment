@@ -106,5 +106,10 @@ void eliminar_paquete(t_paquete* paquete) { // libera la memoria utilizada por e
 }
 
 void eliminar_paquete_lista(t_list * listaDelPaquete){
-    list_destroy_and_destroy_elements(listaDelPaquete, free);
+    if(listaDelPaquete != NULL){
+        if(list_size(listaDelPaquete)>0)
+        list_destroy_and_destroy_elements(listaDelPaquete, free);   
+        else
+        list_destroy(listaDelPaquete);
+    }
 }

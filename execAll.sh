@@ -10,15 +10,16 @@ echo -n "x" >> ejecuciones.log
 cd memoria
 rm memory.log
 make
-exo-open --launch TerminalEmulator --title="Memoria" -e "bash -c './bin/memoria;'"
+exo-open --launch TerminalEmulator --title="Memoria" -e "bash -c './bin/memoria'"
 cd ..
 
 # Módulo: kernel
 cd kernel
 rm kernel.log
 make
-exo-open --launch TerminalEmulator --title="Kernel" -e "bash -c './bin/kernel PLANI_CORTO_PLAZO 0'"
+exo-open --launch TerminalEmulator --title="Kernel" -e "bash -c './bin/kernel PLANI_LYM_PLAZO 0'"
 cd ..
+sleep 2
 
 # Módulo: cpu
 cd cpu
