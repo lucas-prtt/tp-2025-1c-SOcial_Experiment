@@ -274,6 +274,7 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
             }
             log_trace(logger, "codOp = %d", solicitud->tipo_mensaje);
             enviar_paquete(solicitud, socketMemoria);
+            eliminar_paquete(solicitud);
         }
         respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &r);
         eliminar_paquete_lista(respuesta); // El contenido del paquete es vacio: Solo importa el codOp
