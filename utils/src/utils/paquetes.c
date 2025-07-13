@@ -51,8 +51,13 @@ int recibir_paquete(int socket, t_paquete* paquete, int flags) {
     if(recv(socket, &tamanio, sizeof(int), flags) <= 0) return 0;
     void* buffer = NULL;
     if(tamanio>0){
-    buffer = malloc(tamanio);
-    if(recv(socket, buffer, tamanio, flags) <= 0) return 0;}
+        buffer = malloc(tamanio);
+        if(recv(socket, buffer, tamanio, flags) <= 0) 
+        {
+            free(buffer);
+            return 0;
+        }
+    }
     paquete->tipo_mensaje = tipo_mensaje;
     paquete->tamanio = tamanio;
     paquete->buffer = buffer;
@@ -70,6 +75,7 @@ t_list *recibir_paquete_lista(int socket, int flags, int* codOp) { //CodOp se se
         *codOp = paq->tipo_mensaje;
     }
     if(paq->tamanio == 0){
+        eliminar_paquete(paq);
         return list_create();
     }
     t_list * listaDeContenido = list_create();
