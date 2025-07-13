@@ -46,7 +46,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
         {  // Extraer proceso de lista de READY, pasarlo a EXEC
             int a; 
             sem_getvalue(&sem_procesos_en_ready, &a);
-            log_debug(logger, "Procesos en ready segun semaforo: %d", a);
+            log_trace(logger, "Procesos en ready segun semaforo: %d", a);
             sem_wait(&sem_procesos_en_ready);
             log_trace(logger, "Extrayendo proceso de la cola de ready.");
             pthread_mutex_lock(&mutex_listasProcesos);
@@ -189,6 +189,7 @@ void * orderThread(void * _){
             log_trace(logger, "Hay que desalojar a alquien...");
             peticionInterrupt = crear_paquete(PETICION_INTERRUPT_A_CPU);
             enviar_paquete(peticionInterrupt, procesoInterrumpido->ProcesadorQueLoEjecuta->SOCKET);
+            log_debug(logger, "Peticion de desalojo enviada: Se debe interrumpir (%d)", procesoInterrumpido->PID);
             log_trace(logger, "Ordenando cola de ready de nuevo...");
             ordenar_cola_ready(listasProcesos, algoritmo_enum);
             // Hay que reordenar para que el que se desalojo quede donde corresponde
@@ -198,7 +199,7 @@ void * orderThread(void * _){
         sem_post(&sem_procesos_en_ready); // Esto se ejecuta cada vez que entra un nuevo proceso a ready, reordenandose asi la cola
         int a; 
         sem_getvalue(&sem_procesos_en_ready, &a);
-        log_debug(logger, "Procesos en ready segun semaforo: %d", a);
+        log_trace(logger, "Procesos en ready segun semaforo: %d", a);
         // Si no entra nada a ready (de NEW, BLOCKED o SUSP_READY) no se ejecuta
     }
 }
@@ -215,7 +216,7 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
     log_debug(logger, "Entrando a algoritmo introducir_proceso_a_ready");
     while(1){
         sem_wait(&sem_introducir_proceso_a_ready);
-        log_debug(logger, "Inicio el proceso para pasar procesos a ready");
+        log_trace(logger, "Inicio el proceso para pasar procesos a ready");
         pthread_mutex_lock(&mutex_listasProcesos);
 
         if (list_is_empty(listasProcesos[NEW]) && list_is_empty(listasProcesos[SUSP_READY])) {
@@ -241,14 +242,14 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
                 break;
             }
         
-        log_debug(logger, "Proceso elegido para pasar a READY: (%d)", proceso->PID);
+        log_trace(logger, "Proceso elegido para pasar a READY: (%d)", proceso->PID);
         pthread_mutex_unlock(&mutex_listasProcesos);
         {   //Enviar solicitud a memoria
             socketMemoria = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
             handshakeMemoria(socketMemoria);
             if(listaQueImporta == NEW)
             {
-            log_debug(logger, "Pido a memoria cargar un proceso de NEW");
+            log_trace(logger, "Pido a memoria cargar un proceso de NEW");
             solicitud = crear_paquete(SOLICITUD_MEMORIA_NUEVO_PROCESO);
             agregar_a_paquete(solicitud, &(proceso->PID), sizeof(proceso->PID));
             agregar_a_paquete(solicitud, proceso->PATH, strlen(proceso->PATH)+1);
@@ -256,11 +257,11 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
             }
             else
             {
-            log_debug(logger, "Pido a memoria desuspender un proceso");
+            log_trace(logger, "Pido a memoria desuspender un proceso");
             solicitud = crear_paquete(SOLICITUD_MEMORIA_CARGA_SWAP);
             agregar_a_paquete(solicitud, &(proceso->PID), sizeof(proceso->PID));
             }
-            log_debug(logger, "codOp = %d", solicitud->tipo_mensaje);
+            log_trace(logger, "codOp = %d", solicitud->tipo_mensaje);
             enviar_paquete(solicitud, socketMemoria);
         }
         respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &r);
@@ -268,7 +269,7 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
         
         liberarConexion(socketMemoria);
         if(r == RESPUESTA_MEMORIA_PROCESO_CARGADO){
-            log_debug(logger, "Hay espacio en memoria: Pasando (%d) a READY", proceso->PID);
+            log_trace(logger, "Hay espacio en memoria: Pasando (%d) a READY", proceso->PID);
             pthread_mutex_lock(&mutex_listasProcesos);
             if(listaQueImporta == NEW)
                 cambiarEstado_EstadoActualConocido(proceso->PID, NEW, READY, listasProcesos);
@@ -405,9 +406,9 @@ void post_sem_introducirAReady(){sem_post(&sem_introducir_proceso_a_ready);}
 void * temporizadorSuspenderThread(void * param){
     Peticion * peticion = ((Peticion * )param);
     int tiempo = config_get_int_value(config, "TIEMPO_SUSPENSION");
-    log_debug(logger, "Inicio de temporizador para suspender (%d) en %dms", peticion->PID, tiempo*1000);
+    log_trace(logger, "Inicio de temporizador para suspender (%d) en %dms", peticion->PID, tiempo*1000);
     usleep(tiempo*1000); // microsegundos a milisegundos
-    log_debug(logger, "Temporizador de (%d) finalizado", peticion->PID);
+    log_trace(logger, "Temporizador de (%d) finalizado", peticion->PID);
 
     sem_wait(&(peticion->sem_estado));
 
@@ -418,7 +419,7 @@ void * temporizadorSuspenderThread(void * param){
     pthread_mutex_unlock(&mutex_listasProcesos);
     peticion->estado = PETICION_SUSPENDIDA;
     if (r!=0)
-        log_debug(logger, "Cancelacion de la suspension de (%d), ya no esta mas bloqueado",peticion->PID);
+        log_trace(logger, "Cancelacion de la suspension de (%d), ya no esta mas bloqueado",peticion->PID);
     else
         log_debug(logger, "(%d) suspendido", peticion->PID);
     }

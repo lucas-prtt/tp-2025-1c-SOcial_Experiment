@@ -26,7 +26,7 @@ cd cpu
 rm cpu_1.log
 make
 gnome-terminal --title="Cpu" -- bash -c "./bin/cpu 1"
-gnome-terminal --title="Cpu" -- bash -c "./bin/cpu 2"
+#gnome-terminal --title="Cpu" -- bash -c "./bin/cpu 2"
 cd ..
 
 
@@ -35,5 +35,5 @@ cd io
 rm io.log
 make
 gnome-terminal --title="IO" -- bash -c "./bin/io DISCO"
-gnome-terminal --title="IO" -- bash -c "./bin/io DISCO"
+#gnome-terminal --title="IO" -- bash -c "./bin/io DISCO"
 cd ..

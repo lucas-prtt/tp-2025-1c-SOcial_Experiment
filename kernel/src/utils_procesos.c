@@ -221,14 +221,24 @@ t_PCB * procesoMasDuradero(t_list * listaProcesos[], enum estado est){
 }
 t_PCB * procesoADesalojar(t_list * listasProcesos[], enum algoritmo alg){
     if(alg == FIFO || alg == SJF || list_is_empty(listasProcesos[READY]) || list_is_empty(listasProcesos[EXEC])){
+        log_debug(logger,"Algoritmo no desaloja");
         return NULL;
     }else{
         t_PCB * pLargoExec = procesoMasDuradero(listasProcesos, EXEC);
         t_PCB * pBreveReady = procesoMasBreve(listasProcesos, READY);
-        if(duracionProceso(pBreveReady)<duracionProcesoEnEjecucion(pLargoExec))
+        int duracionChico = duracionProceso(pBreveReady);
+        int duracionLargo = duracionProcesoEnEjecucion(pLargoExec);
+        log_debug(logger, "Duracion candidato a desalojo: %d, Duracion proceso desalojable: %d", duracionChico, duracionLargo);
+        if(duracionChico < duracionLargo)
+            {   
+            log_debug(logger, "Algoritmo desaloja proceso (%d)", pLargoExec->PID);
             return pLargoExec;
+            }
         else
-            return NULL;
+        {   
+            log_debug(logger, "Algoritmo podría desalojar, pero no se cumplieron las condiciones");
+            return NULL;    
+        }
     }
 }
 void actualizarEstimacion(t_PCB * proceso, float alfa){ 
