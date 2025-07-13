@@ -18,7 +18,7 @@ void loguearMetricasDeEstado_PorPCB(t_PCB * proceso, t_list * listasProcesos[]){
     if(procesoEnExit(proceso, listasProcesos)){
     tiempoExit += milisegundosDesde(proceso->tiempoEnEstado.inicio);
     }
-    log_debug(logger, 
+    log_info(logger, 
         "(%d) - Métricas de estado: "
         "NEW (%d) (%d), "
         "READY (%d) (%d), "
