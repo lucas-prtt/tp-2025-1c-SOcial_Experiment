@@ -198,6 +198,7 @@ void * orderThread(void * _){
         if(procesoInterrumpido != NULL){
             log_trace(logger, "Hay que desalojar a alquien...");
             peticionInterrupt = crear_paquete(PETICION_INTERRUPT_A_CPU);
+            agregar_a_paquete(peticionInterrupt, &(procesoInterrumpido->PID), sizeof(int));
             enviar_paquete(peticionInterrupt, procesoInterrumpido->ProcesadorQueLoEjecutaInterrupt->SOCKET);
             log_debug(logger, "Peticion de desalojo enviada: Se debe interrumpir (%d)", procesoInterrumpido->PID);
             log_trace(logger, "Ordenando cola de ready de nuevo...");

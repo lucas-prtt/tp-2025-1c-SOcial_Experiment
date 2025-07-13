@@ -311,15 +311,18 @@ void setProgramCounter(PCB_cpu *pcb, int newProgramCounter) {
 
 /////////////////////////       < INTERRUPCIONES >       /////////////////////////
 
-bool recibirInterrupcion(int socket_kernel_dispatch) {
+bool recibirInterrupcion(int socket_kernel_interrupt) {
     int *codigo_operacion = malloc(sizeof(int));
-    t_list *lista_interrupcion = recibir_paquete_lista(socket_kernel_dispatch, MSG_WAITALL, codigo_operacion);
-
+    t_list *lista_interrupcion = recibir_paquete_lista(socket_kernel_interrupt, MSG_WAITALL, codigo_operacion);
+    log_debug(logger, "Se recibio paquete en puerto interrupt");
     if(lista_interrupcion == NULL || list_size(lista_interrupcion) < 2 || *codigo_operacion != PETICION_INTERRUPT_A_CPU) {
+        log_error(logger, "Me mandaron cualquier cosa en el parquete de Interrupt");
+        log_error(logger, "Pointer = %p", lista_interrupcion);
+        log_error(logger, "Tamaño = %d, CodOp = %d", list_size(lista_interrupcion), *codigo_operacion);
         free(codigo_operacion);
         return false;
     }
-
+    log_debug(logger, "Paquete de interrupt correcto");
     free(codigo_operacion);
     eliminar_paquete_lista(lista_interrupcion);
     return true;

@@ -26,9 +26,12 @@ int main(int argc, char* argv[]) {
         abort();
     }
 
+
     int socket_memoria = generarSocket(ip_memoria, puerto_memoria, "Memoria");
     int socket_kernel_dispatch = generarSocket(ip_kernel, puerto_kernel_dispatch, "Kernel (Dispatch)");
     int socket_kernel_interrupt = generarSocket(ip_kernel, puerto_kernel_interrupt, "Kernel (Interrupt)");
+
+    log_debug(logger, "Conectado con kernel en socket dispatch: %d, interrupt: %d", socket_kernel_dispatch, socket_kernel_interrupt);
 
     realizarHandshakeMemoria(socket_memoria, identificadorCPU, "Memoria");
     realizarHandshakeKernel(socket_kernel_dispatch, identificadorCPU, "Kernel (Dispatch)");
@@ -36,16 +39,17 @@ int main(int argc, char* argv[]) {
 
     cpu_t *args_cpu = prepararCPU(socket_memoria, socket_kernel_dispatch, socket_kernel_interrupt);
 
-    pthread_t atender_kernel_D; // atender_kernel_I;
+    pthread_t atender_kernel_D, atender_kernel_I;
     pthread_create(&atender_kernel_D, NULL, atenderKernelDispatch, args_cpu);
-    //pthread_create(&atender_kernel_I, NULL, atenderKernelInterrupt, args_cpu);
+    pthread_create(&atender_kernel_I, NULL, atenderKernelInterrupt, args_cpu);
     
     pthread_join(atender_kernel_D, NULL);
-    //pthread_join(atender_kernel_I, NULL);
+    pthread_join(atender_kernel_I, NULL);
 
-    threadCancelAndDetach(&atender_kernel_D);
+    //threadCancelAndDetach(&atender_kernel_D);
     //threadCancelAndDetach(&atender_kernel_I);
-
+    // No es necesario: El join ya cierra los threads
+    
     cerrarCPU(args_cpu);
     liberarConexiones(socket_memoria, socket_kernel_dispatch, socket_kernel_interrupt);
 	log_destroy(logger);
