@@ -46,13 +46,8 @@ int main(int argc, char* argv[]) {
     
     pthread_join(atender_kernel_D, NULL);
     pthread_join(atender_kernel_I, NULL);
-
-    //threadCancelAndDetach(&atender_kernel_D);
-    //threadCancelAndDetach(&atender_kernel_I);
-    // No es necesario: El join ya cierra los threads
     
     cerrarCPU(args_cpu);
     liberarConexiones(socket_memoria, socket_kernel_dispatch, socket_kernel_interrupt);
-	log_destroy(logger);
-	config_destroy(config);
+    cerrarConfigYLog();
 }

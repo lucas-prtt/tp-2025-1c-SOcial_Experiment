@@ -192,8 +192,8 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
                 int desplazamiento = getDesplazamiento(direccion_logica);
 
                 char *leido = strndup((char *)contenido_cache + desplazamiento, tamanio);
-
                 printf("READ: %s\n", leido);
+                free(leido);
             }
             else {
                 // READ desde memoria //
@@ -220,7 +220,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             t_paquete *paquete_peticion_io = crear_paquete(SYSCALL_IO);
             setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_peticion_io, &(pcb->pc), sizeof(pcb->pc));
-            agregar_a_paquete(paquete_peticion_io, dispositivo, sizeof(strlen(dispositivo) + 1));
+            agregar_a_paquete(paquete_peticion_io, dispositivo, strlen(dispositivo) + 1);
             agregar_a_paquete(paquete_peticion_io, &tiempo, sizeof(tiempo));
             enviar_paquete(paquete_peticion_io, socket_kernel);
             eliminar_paquete(paquete_peticion_io);
