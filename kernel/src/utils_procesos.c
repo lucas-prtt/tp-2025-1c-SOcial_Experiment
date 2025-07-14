@@ -64,6 +64,7 @@ void nuevoProceso(int id, char * path, int size, t_list * listaProcesos[]){
     nuevoProceso->ME[NEW]++;
     timeDifferenceStart(&(nuevoProceso->tiempoEnEstado));
     log_info(logger, "## (%d) Se crea el proceso - Estado:NEW", id);
+    aparecioOtroProceso();
 }
 
 void cambiarEstado(int idProceso, enum estado estadoSiguiente, t_list * listaProcesos[]){

@@ -5,3 +5,5 @@
 void threadCancelAndDetach(pthread_t * hilo);
 void closeTreadsFromListAndCleanUpList(void * list);
 void cancelThreadByPointer(void * thread);
+void joinTreadsFromListAndCleanUpList(void * list);
+void joinThreadByPointer(void * thread);

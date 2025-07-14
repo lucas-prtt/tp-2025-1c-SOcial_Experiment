@@ -5,7 +5,7 @@
 t_list * listasProcesos[7];      // Vector de lista para guardar procesos
 t_list * lista_peticionesIO;     // Lista donde se guarda por cada IO su nombre, cola de peticiones y un Semaforo. La cola se maneja por FIFO
 int last_PID = 0;                // Estaba en 1
-int qProcesosMolestando = 1;     // Cantidad de procesos que quedan ejecutar
+int qProcesosMolestando = 0;     // Cantidad de procesos que quedan ejecutar
 ///////////////////////////////////
 
 // SEMAFOROS:
@@ -124,7 +124,6 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_lock(&mutex_listasProcesos);
                 nuevoProceso(pidNuevo, path, size, listasProcesos);
                 pthread_mutex_unlock(&mutex_listasProcesos);
-                aparecioOtroProceso();
                 sem_post(&sem_introducir_proceso_a_ready);
                 continuar_mismo_proceso = 1;
                 break;

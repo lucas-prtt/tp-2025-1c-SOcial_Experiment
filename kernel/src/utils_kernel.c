@@ -6,7 +6,7 @@ sem_t evaluarFinKernel;
 void * esperarCPUDispatch(void * socket) {
     conexiones.CPUsDispatch = list_create();
     t_list * createdThreads = list_create();
-    pthread_cleanup_push(closeTreadsFromListAndCleanUpList, createdThreads);
+    pthread_cleanup_push(joinTreadsFromListAndCleanUpList, createdThreads);
     while(1) {
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
@@ -19,7 +19,6 @@ void * esperarCPUDispatch(void * socket) {
         list_add(conexiones.CPUsDispatch, CPUIDySocket);
         pthread_t *hilo = malloc(sizeof(pthread_t)); //
         pthread_create(hilo, NULL, handshakeCPUDispatch, CPUIDySocket);
-        pthread_detach(*hilo);
         list_add(createdThreads, hilo);
         printf("- CPU conectada para dispatch\n"); //Por ahi conviene poner esto en el handshake
         fflush(stdout);
@@ -41,7 +40,7 @@ IDySocket_CPU * buscarCPUInterruptPorID(int id){
 void * esperarCPUInterrupt(void * socket) {
     conexiones.CPUsInterrupt = list_create();
     t_list * createdThreads = list_create();
-    pthread_cleanup_push(closeTreadsFromListAndCleanUpList, createdThreads);
+    pthread_cleanup_push(joinTreadsFromListAndCleanUpList, createdThreads);
     while(1) {
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
@@ -54,7 +53,6 @@ void * esperarCPUInterrupt(void * socket) {
         list_add(conexiones.CPUsInterrupt, CPUIDySocket);
         pthread_t * hilo = malloc(sizeof(pthread_t));
         pthread_create(hilo, NULL, handshakeCPUInterrupt, CPUIDySocket);
-        pthread_detach(*hilo);
         list_add(createdThreads, hilo);
         printf("- CPU conectada para Interrupt\n");
         fflush(stdout);
@@ -65,7 +63,7 @@ void * esperarCPUInterrupt(void * socket) {
 void * esperarIOEscucha(void * socket) {
     conexiones.IOEscucha = list_create();
     t_list * createdThreads = list_create();
-    pthread_cleanup_push(closeTreadsFromListAndCleanUpList, createdThreads);
+    pthread_cleanup_push(joinTreadsFromListAndCleanUpList, createdThreads);
     while(1) {
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
@@ -77,7 +75,6 @@ void * esperarIOEscucha(void * socket) {
         list_add(conexiones.IOEscucha, IONombreYSocket) ;
         pthread_t * hilo = malloc(sizeof(pthread_t));
         pthread_create(hilo, NULL, handshakeIO, IONombreYSocket);
-        pthread_detach(*hilo);
         list_add(createdThreads, hilo);
         printf("- IO conectado\n");
         fflush(stdout);
