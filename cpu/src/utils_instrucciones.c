@@ -40,14 +40,14 @@ bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
         log_trace(logger, "Hubo un problema, las veré pronto mis instrucciones queridas");
         log_trace(logger, "Le mando un mensaje a kernel");
         free(instruccion);
-        list_destroy(instruccion_list);
+        list_destroy_and_destroy_elements(instruccion_list, free);
         log_trace(logger, "Aquí me voy!");
         return true;
     }
 
     log_trace(logger, "El mundo es hermoso. Sigo ejecutando");
     free(instruccion);
-    list_destroy(instruccion_list);
+    list_destroy_and_destroy_elements(instruccion_list, free);
     return false;
 }
 

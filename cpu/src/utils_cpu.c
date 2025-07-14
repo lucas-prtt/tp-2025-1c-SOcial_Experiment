@@ -150,7 +150,7 @@ void cerrarCPU(cpu_t *args_cpu) {
         free(args_cpu->tlb);
     }
 
-    ///////////////////// OTROS /////////////////////////
+    ///////////////////// Otros /////////////////////////
     pthread_mutex_destroy(&args_cpu->mutex_interrupcion);
     free(args_cpu);
 }
