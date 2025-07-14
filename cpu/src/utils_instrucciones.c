@@ -316,7 +316,7 @@ bool recibirInterrupcion(int socket_kernel_interrupt) {
     t_list *lista_interrupcion = recibir_paquete_lista(socket_kernel_interrupt, MSG_WAITALL, codigo_operacion);
     log_debug(logger, "Se recibio paquete en puerto interrupt");
     if(lista_interrupcion == NULL) {
-        log_error(logger, "Modulo Kernel desconectado. Terminando hilo interrupt CPU");
+        log_debug(logger, "Modulo Kernel desconectado. Terminando hilo interrupt CPU");
         free(codigo_operacion);
         return false;
     }
