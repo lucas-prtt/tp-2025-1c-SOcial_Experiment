@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
     
     if(abrirConfigYLog("cpu.config", nombre_log, "cpu", false)) {
         cerrarConfigYLog();
-        abort();
+        exit(EXIT_FAILURE);
     }
 
     free(nombre_log);
@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
     if(argc != 2) {
         log_debug(logger, "Parametros insuficientes para el inicio");
         cerrarConfigYLog();
-        abort();
+        exit(EXIT_FAILURE);
     }
 
 

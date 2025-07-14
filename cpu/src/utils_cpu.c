@@ -136,17 +136,23 @@ cpu_t *prepararCPU(int socket_memoria, int socket_kernel_dispatch, int socket_ke
 
 void cerrarCPU(cpu_t *args_cpu) {
     //////////////////// Libero Cache ////////////////////
-    if(args_cpu->cache == NULL) return;
-    for(int i = 0; i < CACHE_SIZE; i++) {
-        free(args_cpu->cache->entradas[i].contenido);
+    if(args_cpu->cache != NULL) {
+        for(int i = 0; i < CACHE_SIZE; i++) {
+            free(args_cpu->cache->entradas[i].contenido);
+        }
+        free(args_cpu->cache->entradas);
+        free(args_cpu->cache);
     }
-    free(args_cpu->cache->entradas);
-    free(args_cpu->cache);
 
     //////////////////// Libero TLB ////////////////////
-    if(args_cpu->tlb == NULL) return;
-    free(args_cpu->tlb->entradas);
-    free(args_cpu->tlb);
+    if(args_cpu->tlb != NULL) {
+        free(args_cpu->tlb->entradas);
+        free(args_cpu->tlb);
+    }
+
+    ///////////////////// OTROS /////////////////////////
+    pthread_mutex_destroy(&args_cpu->mutex_interrupcion);
+    free(args_cpu);
 }
 
 void liberarConexiones(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt) {
