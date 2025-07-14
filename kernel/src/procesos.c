@@ -105,13 +105,13 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
                 log_trace(logger, "Se va el proceso (%d) a exit", proceso->PID);
-                sem_post(&evaluarFinKernel);
+                eliminamosOtroProceso();
                 proceso->ProcesadorQueLoEjecutaDispatch = NULL;
                 proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
 
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 liberarMemoria(proceso->PID); // Envia mensaje a Memoria para liberar el espacio
-                eliminamosOtroProceso();
+                sem_post(&evaluarFinKernel);
                 log_trace(logger, "Termino el case EXIT");
                 sem_post(&sem_introducir_proceso_a_ready); 
                 break;
