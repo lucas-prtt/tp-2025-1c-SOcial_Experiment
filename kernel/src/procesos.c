@@ -75,6 +75,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             if (paqueteRespuesta == NULL){ // Si se cierra la conexion con el CPU, se cierra el hilo y se termina el proceso
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
+                eliminamosOtroProceso();
                 proceso->ProcesadorQueLoEjecutaDispatch = NULL;
                 proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
 
@@ -359,6 +360,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
             peticion->estado = PETICION_FINALIZADA;
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado(peticion->PID, EXIT, listasProcesos);
+            eliminamosOtroProceso();
             pthread_mutex_unlock(&mutex_listasProcesos);
             liberarMemoria(peticion->PID);
         }else{                  // Si no se pierde la conexion, liberar el paquete y continuar a ready o susp_ready
