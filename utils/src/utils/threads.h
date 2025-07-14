@@ -7,3 +7,5 @@ void closeTreadsFromListAndCleanUpList(void * list);
 void cancelThreadByPointer(void * thread);
 void joinTreadsFromListAndCleanUpList(void * list);
 void joinThreadByPointer(void * thread);
+void threadCancelAndJoin(pthread_t * hilo);
+

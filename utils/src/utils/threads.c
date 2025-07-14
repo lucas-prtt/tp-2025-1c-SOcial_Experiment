@@ -1,7 +1,7 @@
 #include "threads.h"
 void threadCancelAndDetach(pthread_t * hilo){
-    pthread_cancel(*hilo);
     pthread_detach(*hilo);
+    pthread_cancel(*hilo);
 }
 
 void closeTreadsFromListAndCleanUpList(void * list){
@@ -18,4 +18,8 @@ void joinTreadsFromListAndCleanUpList(void * list){
 void joinThreadByPointer(void * thread){
     pthread_cancel(*(pthread_t*)thread);
     pthread_join(*(pthread_t*)thread, NULL);
+}
+void threadCancelAndJoin(pthread_t * hilo){
+    pthread_cancel(*hilo);
+    pthread_join(*hilo, NULL);
 }

@@ -11,7 +11,7 @@ void * esperarCPUDispatch(void * socket) {
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
         if(nuevoSocket == -1) {
-            pthread_testcancel(); // Para asegurarse que el -1 que sale de shutdown no entre en la lista 
+            pthread_exit(NULL); // Para asegurarse que el -1 que sale de shutdown no entre en la lista 
         }
         IDySocket_CPU *CPUIDySocket = malloc(sizeof(IDySocket_CPU));
         CPUIDySocket->SOCKET = nuevoSocket;
@@ -45,7 +45,7 @@ void * esperarCPUInterrupt(void * socket) {
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
         if(nuevoSocket == -1) {
-            pthread_testcancel();
+            pthread_exit(NULL);
         }
         IDySocket_CPU * CPUIDySocket = malloc(sizeof(IDySocket_CPU));
         CPUIDySocket->SOCKET = nuevoSocket;
@@ -68,7 +68,7 @@ void * esperarIOEscucha(void * socket) {
         int nuevoSocket;
         nuevoSocket = accept(*(int*)socket, NULL, NULL);
         if(nuevoSocket == -1) {
-            pthread_testcancel();
+            pthread_exit(NULL);
         }
         NombreySocket_IO * IONombreYSocket = malloc(sizeof(NombreySocket_IO));
         IONombreYSocket->SOCKET = nuevoSocket;

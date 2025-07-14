@@ -38,13 +38,14 @@ int main(int argc, char* argv[]) {
     log_debug(logger, "Threads de conexion creados");
 
     getchar();
-
-    threadCancelAndDetach(&cpuDispatchConnect); //Envia un cancel request. No se cancela hasta que se haga shutdown (accept() es bloqueante)
-    threadCancelAndDetach(&cpuInterruptConnect);
-    threadCancelAndDetach(&ioConnect);
-    shutdown(cpuDispatchConnect, SHUT_RD); // RE util: hace que se finalice un accept con return -1
-    shutdown(cpuInterruptConnect, SHUT_RD);
-    shutdown(ioConnect, SHUT_RD);
+    
+    // RE util: hace que se finalice un accept con return -1
+    shutdown(socketCPUDispatch, SHUT_RD); 
+    shutdown(socketCPUInterrupt, SHUT_RD);
+    shutdown(socketEscuchaIO, SHUT_RD);
+    pthread_join(cpuDispatchConnect, NULL);
+    pthread_join(cpuInterruptConnect, NULL);
+    pthread_join(ioConnect, NULL);
     log_debug(logger, "Threads de conexion eliminados");
 
     // TODO: Filtrar lista de CPUs con CPUs que no tengan ID (No hicieron handshake, ID = -1)
@@ -101,6 +102,7 @@ int main(int argc, char* argv[]) {
     log_debug(logger, "========== FIN EXISTOSO =========");
     sem_destroy(&evaluarFinKernel);
     eliminarHilos(hilos);
+    list_destroy_and_destroy_elements(hilos, free);
 
     return 0;
 }
