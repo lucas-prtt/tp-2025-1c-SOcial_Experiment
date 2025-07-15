@@ -361,7 +361,7 @@ t_list * marcosDelPid(int PID){
     {
         if(PIDPorMarco[i] == PID){
             marco = malloc(sizeof(marco));
-            *marco = (PIDPorMarco[i]);
+            *marco = i;
             list_add(marcos, marco);
         }
     }
