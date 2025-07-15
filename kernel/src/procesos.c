@@ -407,8 +407,8 @@ void * confirmDumpMemoryThread(void * Params){
             pthread_mutex_unlock(&mutex_listasProcesos);
             liberarMemoria(infoDump->PID);
     }
-    free(infoDump);
     liberarConexion(infoDump->socket);
+    free(infoDump);
     log_trace(logger, "Fin dump confirmDumpMemoryThread()");
     pthread_exit(NULL);
 }
