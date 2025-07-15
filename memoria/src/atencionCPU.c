@@ -70,7 +70,6 @@ void *atenderCPU(void *socketPtr) {
                 list_add(entradas, &(entradasPaquete[i])); // Mientras exista el vector EntradasPaquete (y el pedido), va a existir los elementos de esta lista
             }
             int marco = obtenerMarcoDePaginaConPIDYEntradas(*pid, entradas);
-            list_destroy(entradas);
             if(marco != -1){
                 //int dirMarco = direccionFisicaMarco(marco); // Devuelve el Offset, no el puntero en si
                 // Habria que contemplar mandarle a la CPU un puntero en lugar de un entero que indique el offset
@@ -99,6 +98,7 @@ void *atenderCPU(void *socketPtr) {
                 enviar_paquete(respuesta_cpu, socket_cpu);
                 eliminar_paquete(respuesta_cpu);
             }
+            list_destroy(entradas);
             break;
         }
         case PETICION_ESCRIBIR_EN_MEMORIA:
