@@ -5,15 +5,19 @@ int main(int argc, char* argv[]) {
     int identificadorCPU = atoi(argv[1]);
 
     // snprintf() formatea y reserva memoria para la cadena (no considera '\0') //
-    char* nombre_log = malloc(snprintf(NULL, 0, "cpu_%d.log", identificadorCPU) + 1);
+    char *nombre_log = malloc(snprintf(NULL, 0, "cpu_%d.log", identificadorCPU) + 1);
     sprintf(nombre_log, "cpu_%d.log", identificadorCPU);
     
-    if(abrirConfigYLog("cpu.config", nombre_log, "cpu", false)) {
+    char *nombre_config = malloc(snprintf(NULL, 0, "cpu_%d.config", identificadorCPU) + 1);
+    sprintf(nombre_config, "cpu%d.config", identificadorCPU);
+
+    if(abrirConfigYLog(nombre_config, nombre_log, "cpu", false)) {
         cerrarConfigYLog();
         exit(EXIT_FAILURE);
     }
 
     free(nombre_log);
+    free(nombre_config);
 
     char *ip_memoria = config_get_string_value(config, "IP_MEMORIA");
     char *puerto_memoria = config_get_string_value(config, "PUERTO_MEMORIA");

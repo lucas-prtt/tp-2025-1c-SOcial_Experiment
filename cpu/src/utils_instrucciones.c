@@ -143,7 +143,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
                 contenido_cache = pagina;
             }
         }
-        else {
+        else if(cpu->tlb->habilitada) {
             direccion_fisica = traducirDireccionTLB(cpu->tlb, pcb->pid, direccion_logica);
             if(direccion_fisica == -1) {
                 int marco = buscarMarcoAMemoria(socket_memoria, pcb->pid, nro_pagina);
@@ -291,13 +291,11 @@ int traducirDireccionTLB(TLB *tlb, int pid, int direccion_logica) {
     int desplazamiento = getDesplazamiento(direccion_logica);
     int marco = -1;
 
-    if(tlb->habilitada) {
-        marco = buscarPaginaTLB(tlb, pid, nro_pagina);
+    marco = buscarPaginaTLB(tlb, pid, nro_pagina);
 
-        if(marco != -1) {
-            log_info(logger, "PID: %d - OBTENER MARCO - Página: %d - Marco: %d", pid, nro_pagina, marco);
-            return marco * tamanio_pagina + desplazamiento;
-        }
+    if(marco != -1) {
+        log_info(logger, "PID: %d - OBTENER MARCO - Página: %d - Marco: %d", pid, nro_pagina, marco);
+        return marco * tamanio_pagina + desplazamiento;
     }
 
     return -1;
