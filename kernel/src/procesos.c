@@ -400,6 +400,7 @@ void * confirmDumpMemoryThread(void * Params){
         pthread_mutex_lock(&mutex_listasProcesos);
         cambiarEstado_EstadoActualConocido(infoDump->PID, BLOCKED, READY, listasProcesos);
         pthread_mutex_unlock(&mutex_listasProcesos);
+        sem_post(&sem_ordenar_cola_ready);
     }else{
             log_error(logger, "Salio mal el dump");
             pthread_mutex_lock(&mutex_listasProcesos);
