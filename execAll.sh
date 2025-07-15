@@ -17,7 +17,7 @@ sleep 1
 cd kernel
 rm kernel.log
 make
-exo-open --launch TerminalEmulator --title="Kernel" -e "bash -c 'valgrind ./bin/kernel PLANI_LYM_PLAZO 0; read -n 1';"
+exo-open --launch TerminalEmulator --title="Kernel" -e "bash -c 'valgrind ./bin/kernel MEMORIA_IO 90; read -n 1';"
 cd ..
 sleep 1
 
