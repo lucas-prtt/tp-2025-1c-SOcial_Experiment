@@ -5,10 +5,10 @@ int main(int argc, char* argv[]) {
     int identificadorCPU = atoi(argv[1]);
 
     // snprintf() formatea y reserva memoria para la cadena (no considera '\0') //
-    char *nombre_log = malloc(snprintf(NULL, 0, "cpu_%d.log", identificadorCPU) + 1);
-    sprintf(nombre_log, "cpu_%d.log", identificadorCPU);
+    char *nombre_log = malloc(snprintf(NULL, 0, "cpu%d.log", identificadorCPU) + 1);
+    sprintf(nombre_log, "cpu%d.log", identificadorCPU);
     
-    char *nombre_config = malloc(snprintf(NULL, 0, "cpu_%d.config", identificadorCPU) + 1);
+    char *nombre_config = malloc(snprintf(NULL, 0, "cpu%d.config", identificadorCPU) + 1);
     sprintf(nombre_config, "cpu%d.config", identificadorCPU);
 
     if(abrirConfigYLog(nombre_config, nombre_log, "cpu", false)) {
@@ -30,7 +30,6 @@ int main(int argc, char* argv[]) {
         cerrarConfigYLog();
         exit(EXIT_FAILURE);
     }
-
 
     int socket_memoria = generarSocket(ip_memoria, puerto_memoria, "Memoria");
     int socket_kernel_dispatch = generarSocket(ip_kernel, puerto_kernel_dispatch, "Kernel (Dispatch)");

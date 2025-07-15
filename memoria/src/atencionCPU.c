@@ -57,20 +57,21 @@ void *atenderCPU(void *socketPtr) {
             eliminar_paquete(respuesta_cpu);
             break;
             
-        }case PETICION_MARCO_MEMORIA:
+        }
+        case PETICION_MARCO_MEMORIA:
         {   
             int *pid = (int*)list_get(pedido, 1);
-            log_debug(logger, "Se pide traducir direccion del proceso %d ", *pid);
-            int cantidadDeEntradas = (*(int*)list_get(pedido, 2))/sizeof(int);
+            log_debug(logger, "Se pide traducir direccion del proceso %d", *pid);
+            int cantidadDeEntradas = (*(int *)list_get(pedido, 2)) / sizeof(int);
             simularRetrasoMultinivel();
             aumentarMetricaAccesoATablaDePaginasPorNiveles(*pid);
-            int *entradasPaquete = (int*)list_get(pedido, 3);
-            t_list * entradas = list_create();
-            for (int i = 0; i < cantidadDeEntradas; i++){
+            int *entradasPaquete = (int *)list_get(pedido, 3);
+            t_list *entradas = list_create();
+            for(int i = 0; i < cantidadDeEntradas; i++) {
                 list_add(entradas, &(entradasPaquete[i])); // Mientras exista el vector EntradasPaquete (y el pedido), va a existir los elementos de esta lista
             }
             int marco = obtenerMarcoDePaginaConPIDYEntradas(*pid, entradas);
-            if(marco != -1){
+            if(marco != -1) {
                 //int dirMarco = direccionFisicaMarco(marco); // Devuelve el Offset, no el puntero en si
                 // Habria que contemplar mandarle a la CPU un puntero en lugar de un entero que indique el offset
                 // Mandar un puntero emularia mejor lo que realmente pasa, aunque si hay que reallocar la memoriaDeUsuario
@@ -78,12 +79,13 @@ void *atenderCPU(void *socketPtr) {
                 // un puntero al que no puede acceder, ya que direcciona a una ubicacion de otra pc.
                 // Por el momento esto manda el offset. Se puede usar la funcion punteroAMarco en lugar de direccionFisicaMarco para cambiarlo
                 t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_PETICION_MARCO);
-                agregar_a_paquete(respuesta_cpu, &marco/*dirMarco*/, sizeof(int));
+                agregar_a_paquete(respuesta_cpu, &marco, sizeof(int));
                 enviar_paquete(respuesta_cpu, socket_cpu);
                 eliminar_paquete(respuesta_cpu);
-            }else{
+            }
+            else {
                 log_debug(logger, "CPU de socket %d intentó acceder a una pagina sin marco asignado", socket_cpu);
-                if(!esPaginaValida(*pid, entradas)){
+                if(!esPaginaValida(*pid, entradas)) {
                     log_error(logger, "CPU de socket %d intentó acceder a una pagina por fuera de su tamaño. Posible error en el pseudocodigo", socket_cpu);
                     t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_PAGINA_NO_VALIDA);
                     enviar_paquete(respuesta_cpu, socket_cpu);
@@ -92,10 +94,11 @@ void *atenderCPU(void *socketPtr) {
                 }
                 int marco = asignarSiguienteMarcoLibreDadasLasEntradas(*pid, entradas);
                 log_debug(logger, "Se asigno el marco %d al PID %d", marco, *pid);
-                int dirMarco = direccionFisicaMarco(marco); // Devuelve el Offset, no el puntero en si
+                //int dirMarco = direccionFisicaMarco(marco); // Devuelve el Offset, no el puntero en si
                 t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_PETICION_MARCO);
-                agregar_a_paquete(respuesta_cpu, &dirMarco, sizeof(int));
+                agregar_a_paquete(respuesta_cpu, &marco, sizeof(int));
                 enviar_paquete(respuesta_cpu, socket_cpu);
+                log_info(logger, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX - Marco: %d", marco);
                 eliminar_paquete(respuesta_cpu);
             }
             list_destroy(entradas);
