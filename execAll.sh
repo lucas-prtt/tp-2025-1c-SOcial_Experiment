@@ -23,7 +23,7 @@ sleep 1
 
 # Módulo: cpu
 cd cpu
-rm cpu_1.log
+rm cpu1.log
 make
 exo-open --launch TerminalEmulator --title="Cpu" -e "bash -c 'valgrind ./bin/cpu 1; read -n 1;'"
 cd ..
