@@ -39,10 +39,16 @@ int getDesplazamiento(int direccion_logica) {
     return direccion_logica % tamanio_pagina;
 }
 
+int traducirDireccion(int direccion_logica, int marco) {
+    int desplazamiento = getDesplazamiento(direccion_logica);
+
+    return marco * tamanio_pagina + desplazamiento;
+}
+
 int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina) {
     int entradas[cantidad_niveles_tabla_paginas];
 
-    for (int nivel = 1; nivel <= cantidad_niveles_tabla_paginas; nivel++) {
+    for(int nivel = 1; nivel <= cantidad_niveles_tabla_paginas; nivel++) {
         entradas[nivel - 1] = getEntradaNivelX(nro_pagina, nivel);
     }
 
@@ -61,7 +67,7 @@ int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina) {
     return marco;
 }
 
-void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos) {
+void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos) { // escribirPaginaCompletaEnMemoria()
     t_paquete *paquete_peticion_write = crear_paquete(PETICION_ESCRIBIR_EN_MEMORIA);
     agregar_a_paquete(paquete_peticion_write, &pid, sizeof(int));
     agregar_a_paquete(paquete_peticion_write, &direccion_fisica, sizeof(int));
@@ -420,6 +426,20 @@ void actualizarTLB(TLB *tlb, int pid, int nro_pagina, int marco) {
         limpiarEntradaTLB(tlb, indice_victima);
         insertarPaginaTLB(tlb, pid, indice_victima, nro_pagina, marco);
     }
+}
+
+int traducirDireccionTLB(TLB *tlb, int pid, int direccion_logica) {
+    int nro_pagina = getNumeroPagina(direccion_logica);
+    int marco = -1;
+
+    marco = buscarPaginaTLB(tlb, pid, nro_pagina);
+
+    if(marco != -1) {
+        log_info(logger, "PID: %d - OBTENER MARCO - Página: %d - Marco: %d", pid, nro_pagina, marco);
+        return traducirDireccion(direccion_logica, marco);
+    }
+
+    return -1;
 }
 
 bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima) {

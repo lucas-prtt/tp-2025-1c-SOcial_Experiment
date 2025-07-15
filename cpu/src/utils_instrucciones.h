@@ -41,7 +41,6 @@ void *atenderKernelDispatch(void *cpu_args);
 void *atenderKernelInterrupt(void *cpu_args);
 
 bool recibirPIDyPCkernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, int *estado_conexion);
-int traducirDireccionTLB(TLB *tlb, int pid, int direccion_logica);
 enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion);
 void setProgramCounter(PCB_cpu *pcb, int newProgramCounter);
 bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar);

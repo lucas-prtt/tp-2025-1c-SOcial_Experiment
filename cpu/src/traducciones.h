@@ -67,6 +67,7 @@ int getNumeroPagina(int direccion_logica);
 int getEntradaNivelX(int nro_pagina, int nro_nivel);
 int getDesplazamiento(int direccion_logica);
 int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina);
+int traducirDireccion(int direccion_logica, int marco);
 void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos);
 void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio);
 
@@ -92,6 +93,7 @@ int buscarIndicePaginaTLB(TLB *tlb, int pid, int nro_pagina);
 void actualizarTLB(TLB *tlb, int pid, int nro_pagina, int marco);
 void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, int marco);
 bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima);
+int traducirDireccionTLB(TLB *tlb, int pid, int direccion_logica);
 int seleccionarEntradaVictimaTLB(TLB *tlb);
 void limpiarEntradaTLB(TLB *tlb, int indice_victima);
 void limpiarProcesoTLB(TLB *tlb, int pid);

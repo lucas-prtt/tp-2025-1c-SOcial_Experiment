@@ -148,7 +148,12 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             if(direccion_fisica == -1) {
                 int marco = buscarMarcoAMemoria(socket_memoria, pcb->pid, nro_pagina);
                 actualizarTLB(cpu->tlb, pcb->pid, nro_pagina, marco);
+                direccion_fisica = traducirDireccion(direccion_logica, marco);
             }
+        }
+        else {
+            int marco = buscarMarcoAMemoria(socket_memoria, pcb->pid, nro_pagina);
+            direccion_fisica = traducirDireccion(direccion_logica, marco);
         }
     }
     // E S T Á S   F U E R A   D E   L A   Z O N A   D E   P E L I G R O //
@@ -284,21 +289,6 @@ void marcarModificadoEnCache(CACHE *cache, int pid, int nro_pagina) {
             return;
         }
     }
-}
-
-int traducirDireccionTLB(TLB *tlb, int pid, int direccion_logica) {
-    int nro_pagina = getNumeroPagina(direccion_logica);
-    int desplazamiento = getDesplazamiento(direccion_logica);
-    int marco = -1;
-
-    marco = buscarPaginaTLB(tlb, pid, nro_pagina);
-
-    if(marco != -1) {
-        log_info(logger, "PID: %d - OBTENER MARCO - Página: %d - Marco: %d", pid, nro_pagina, marco);
-        return marco * tamanio_pagina + desplazamiento;
-    }
-
-    return -1;
 }
 
 void setProgramCounter(PCB_cpu *pcb, int newProgramCounter) {
