@@ -155,6 +155,7 @@ bool es_valida_dir_fisica(int* pid, int* direccion_fisica, int* tamanio) {
     for(int i=marco_inicio; i<=marco_fin; i++){
         if(PIDdelMarco(i) != *pid){
         log_error(logger, "Se intento escribir en una direccion que pertenece a otro proceso");
+        log_error(logger, "El marco %d es invalido, pertenece al proceso (%d)", i, PIDdelMarco(i));
         return false;}
     }
 
