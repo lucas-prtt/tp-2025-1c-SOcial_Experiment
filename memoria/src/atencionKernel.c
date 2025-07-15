@@ -26,7 +26,7 @@ int realizarDump(int PID){
     strcat(archivoDump, ".dmp");
     FILE * fpArchivoDump = fopen(archivoDump, "wb");
     if (fpArchivoDump == NULL){
-        log_error("No se pudo realizar el dump del proceso %d.", PID);
+        log_error(logger, "No se pudo realizar el dump del proceso %d.", PID);
         return 1;
     }
     pthread_mutex_lock(&MUTEX_MemoriaDeUsuario);
