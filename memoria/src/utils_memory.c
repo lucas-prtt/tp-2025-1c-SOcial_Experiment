@@ -142,15 +142,19 @@ bool es_valida_dir_fisica(int* pid, int* direccion_fisica, int* tamanio) {
     }
 
     // Validar que todas las pags que se pisan esten dentro del rango de marco
-    int pagina_inicio = inicio / tamañoMarcos;
-    int pagina_fin = (fin - 1) / tamañoMarcos;
+    int marco_inicio = inicio / tamañoMarcos;
+    int marco_fin = (fin - 1) / tamañoMarcos;
 
-
-    // Falta que se verifique que lo marcos escrito corresponden al proceso
-
-    if (pagina_inicio < 0 || pagina_fin >= numeroDeMarcos) {
+    if (marco_inicio < 0 || marco_fin >= numeroDeMarcos) {
         return false;
     }
+
+    for(int i=marco_inicio; i<=marco_fin; i++){
+        if(PIDdelMarco(i) != *pid)
+        return false;
+    }
+
+
     
     return true;
 }
