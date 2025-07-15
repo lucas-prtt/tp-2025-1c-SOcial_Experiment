@@ -30,15 +30,17 @@ int realizarDump(int PID){
         return 1;
     }
     pthread_mutex_lock(&MUTEX_MemoriaDeUsuario);
+    char * buffer = malloc(tamañoMarcos * qMarcos);
     for (int i = 0; i<qMarcos; i++){
-    char * contenido = mem_hexstring(punteroAMarcoPorNumeroDeMarco(*(int*)list_get(marcos, i)), tamañoMarcos);
+    memcpy(buffer+i*tamañoMarcos, punteroAMarcoPorNumeroDeMarco(*(int*)list_get(marcos, i)), tamañoMarcos);
+    }
+    char * contenido = mem_hexstring(buffer , tamañoMarcos*qMarcos);
     fwrite(
         contenido,
         sizeof(char),
         strlen(contenido),
         fpArchivoDump);
     free(contenido);
-    }
     pthread_mutex_unlock(&MUTEX_MemoriaDeUsuario);
     list_destroy_and_destroy_elements(marcos, free);
     fclose(fpArchivoDump);
