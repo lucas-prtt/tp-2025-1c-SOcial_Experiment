@@ -138,6 +138,7 @@ bool es_valida_dir_fisica(int* pid, int* direccion_fisica, int* tamanio) {
     int fin = inicio + *tamanio;
 
     if (inicio < 0 || fin > tamañoMemoriaDeUsuario) {
+        log_error(logger, "Se solicito escribir en una direccion fuera del espacio de la memoria");
         return false;
     }
 
@@ -146,12 +147,15 @@ bool es_valida_dir_fisica(int* pid, int* direccion_fisica, int* tamanio) {
     int marco_fin = (fin - 1) / tamañoMarcos;
 
     if (marco_inicio < 0 || marco_fin >= numeroDeMarcos) {
+        log_error(logger, "Se solicito escribir en un marco fuera del espacio de la memoria");
+        // No deberia salir nunca este error, debido a la comprobacion anterior
         return false;
     }
 
     for(int i=marco_inicio; i<=marco_fin; i++){
-        if(PIDdelMarco(i) != *pid)
-        return false;
+        if(PIDdelMarco(i) != *pid){
+        log_error(logger, "Se intento escribir en una direccion que pertenece a otro proceso");
+        return false;}
     }
 
 
