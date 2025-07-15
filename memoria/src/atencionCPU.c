@@ -155,6 +155,62 @@ void *atenderCPU(void *socketPtr) {
             break;
 
         }
+        case PETICION_ESCRIBIR_EN_MEMORIA_LIMITADO:
+        {                               
+            int *pid = (int*)list_get(pedido, 1); //
+            aumentarMetricaEscrituraDeMemoria(*pid);
+
+            int *direccion_fisica = (int*)list_get(pedido, 3); //
+            char *datos = (char*)list_get(pedido, 5); //
+            int * sizeEscritura = (int*)list_get(pedido, 7);
+
+            log_info(logger, "## PID: %d - Escritura - Dir. Física: %d - Tamaño: %d", *pid, *direccion_fisica, *sizeEscritura); //
+
+            if (!es_valida_dir_fisica(pid, direccion_fisica, sizeEscritura)) {
+                log_error(logger, "Dirección inválida: PID %d, dirección %d", *pid, *direccion_fisica);
+                break;
+            }
+
+            pthread_mutex_lock(&MUTEX_MemoriaDeUsuario);
+            memcpy(memoriaDeUsuario + *direccion_fisica, datos, *sizeEscritura);
+            pthread_mutex_unlock(&MUTEX_MemoriaDeUsuario);
+
+            t_paquete *respuesta = crear_paquete(RESPUESTA_ESCRIBIR_EN_MEMORIA);
+            enviar_paquete(respuesta, socket_cpu);
+            eliminar_paquete(respuesta);
+
+            break;
+        }
+        case PETICION_LEER_DE_MEMORIA_LIMITADO:
+        {
+            int *pid = (int*)list_get(pedido, 1); //
+            aumentarMetricaLecturaDeMemoria(*pid);
+
+            int *direccion_fisica = (int*)list_get(pedido, 3); //
+            int * sizeLectura = (int*)list_get(pedido, 5);
+
+            log_info(logger, "## PID: %d - Lectura - Dir. Física: %d - Tamaño: %d", *pid, *direccion_fisica, *sizeLectura);
+
+            if (!es_valida_dir_fisica(pid, direccion_fisica, &tamañoMarcos)) {
+                log_error(logger, "Dirección inválida: PID %d, dirección %d", *pid, *direccion_fisica);
+                break;
+            }
+
+            char *buffer = malloc(*sizeLectura);
+
+            pthread_mutex_lock(&MUTEX_MemoriaDeUsuario);
+            memcpy(buffer, memoriaDeUsuario + *direccion_fisica, *sizeLectura);
+            pthread_mutex_unlock(&MUTEX_MemoriaDeUsuario);
+
+            t_paquete *respuesta = crear_paquete(RESPUESTA_LEER_DE_MEMORIA);
+            agregar_a_paquete(respuesta, buffer, *sizeLectura);
+            enviar_paquete(respuesta, socket_cpu);
+            eliminar_paquete(respuesta);
+
+            free(buffer);
+            break;
+
+        }
         default:
         {
             // Error: una instruccion desconocida //

@@ -145,6 +145,9 @@ bool es_valida_dir_fisica(int* pid, int* direccion_fisica, int* tamanio) {
     int pagina_inicio = inicio / tamañoMarcos;
     int pagina_fin = (fin - 1) / tamañoMarcos;
 
+
+    // Falta que se verifique que lo marcos escrito corresponden al proceso
+
     if (pagina_inicio < 0 || pagina_fin >= numeroDeMarcos) {
         return false;
     }
