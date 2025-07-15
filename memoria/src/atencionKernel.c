@@ -12,6 +12,7 @@
 // y default (tirar un error)
 
 int realizarDump(int PID){
+    log_info(logger, "realizarDump de proceso %d", PID);
     t_list * marcos = marcosDelPid(PID);
     int qMarcos = list_size(marcos);
     char * timestamp = timestampNow();
@@ -25,6 +26,7 @@ int realizarDump(int PID){
     strcat(archivoDump, ".dmp");
     FILE * fpArchivoDump = fopen(archivoDump, "wb");
     if (fpArchivoDump == NULL){
+        log_error("No se pudo realizar el dump del proceso %d.", PID);
         return 1;
     }
     pthread_mutex_lock(&MUTEX_MemoriaDeUsuario);
@@ -37,7 +39,7 @@ int realizarDump(int PID){
         fpArchivoDump);
     free(contenido);
     }
-    pthread_mutex_lock(&MUTEX_MemoriaDeUsuario);
+    pthread_mutex_unlock(&MUTEX_MemoriaDeUsuario);
     list_destroy_and_destroy_elements(marcos, free);
     fclose(fpArchivoDump);
     free(pidAsString);
