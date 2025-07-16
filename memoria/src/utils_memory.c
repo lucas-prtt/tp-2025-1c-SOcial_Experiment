@@ -217,7 +217,7 @@ void suspenderProceso(int pid){
             compactarSwap();
             offsetInicial = list_size(tablaSwap) * tamañoMarcos;
         } else {
-            log_warn(logger, "No hay suficiente espacio total en huecos para PID %d, escribiendo al final igual (puede dejar fragmentación)", pid);
+            log_warning(logger, "No hay suficiente espacio total en huecos para PID %d, escribiendo al final igual (puede dejar fragmentación)", pid);
             offsetInicial = obtenerFinDeSwap();
         }
     }

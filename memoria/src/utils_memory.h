@@ -31,9 +31,9 @@ void compactarSwap();
 int obtenerFinDeSwap();
 void liberarEspacioSwap(int pid);
 void mergearEspaciosLibres();
-int compararEntradasSwap(void* a, void* b);
-int compararEntradasSwapPorPagina(void* a, void* b);
-int compararEspaciosPorInicio(void* a, void* b);
+int compararEntradasSwap(EntradaSwap* a, EntradaSwap* b);
+int compararEntradasSwapPorPagina(EntradaSwap* a, EntradaSwap* b);
+int compararEspaciosPorInicio(EspacioLibre* a, EspacioLibre* b);
 
 typedef struct {
     uint32_t pid;
