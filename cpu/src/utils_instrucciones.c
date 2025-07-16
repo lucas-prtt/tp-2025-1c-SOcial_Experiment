@@ -122,14 +122,13 @@ enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion) {
 }
 
 bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, PCB_cpu *pcb) {
-    int socket_memoria = cpu->socket_memoria;
     int socket_kernel = cpu->socket_kernel_dispatch;
 
     char *operacion = (char *)list_get(instruccion_list, 0);
-    void *contenido_cache = NULL;
-    int direccion_fisica = -1;
+    //void *contenido_cache = NULL;
+    // int direccion_fisica = -1;
 
-    // E S T Á S   E N   Z O N A   D E   P E L I G R O //
+    /* E S T Á S   E N   Z O N A   D E   P E L I G R O //
     if(instr_info.requiere_traduccion) {
         int direccion_logica = atoi((char *)list_get(instruccion_list, 1));
         int nro_pagina = getNumeroPagina(direccion_logica);
@@ -151,12 +150,8 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
                 direccion_fisica = traducirDireccion(direccion_logica, marco);
             }
         }
-        else {
-            int marco = buscarMarcoAMemoria(socket_memoria, pcb->pid, nro_pagina);
-            direccion_fisica = traducirDireccion(direccion_logica, marco);
-        }
     }
-    // E S T Á S   F U E R A   D E   L A   Z O N A   D E   P E L I G R O //
+    // E S T Á S   F U E R A   D E   L A   Z O N A   D E   P E L I G R O */
     
     switch(instr_info.tipo_instruccion)
     {
@@ -169,18 +164,15 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
         case INSTR_WRITE:
         {
             int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
-            char* datos = (char*)list_get(instruccion_list, 2);
-            
-            if(contenido_cache != NULL && cpu->cache->habilitada) {
-                // Write directamente en la caché //
-                int desplazamiento = getDesplazamiento(direccion_logica);
+            char *datos = (char *)list_get(instruccion_list, 2);            
 
-                memcpy((char *)contenido_cache + desplazamiento, datos, strlen(datos) + 1);
+            if(cpu->cache->habilitada) {
+                // WRITE en cache //
+                escribirEnCache(cpu, pcb->pid, direccion_logica, datos);
             }
             else {
                 // WRITE en memoria //
-                escribirDatoMemoria(socket_memoria, pcb->pid, direccion_fisica, datos);
-                marcarModificadoEnCache(cpu->cache, pcb->pid, getNumeroPagina(direccion_logica));
+                escribirEnMemoria(cpu, pcb->pid, direccion_logica, datos);
             }
 
             log_info(logger, "## PID: %d - Ejecutando: %s - Dirección: %d - Datos: %s", pcb->pid, operacion, direccion_logica, datos);
@@ -192,17 +184,12 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
             int tamanio = atoi((char *)list_get(instruccion_list, 2));
 
-            if(contenido_cache != NULL && cpu->cache->habilitada) {
-                // READ directamente desde la caché //
-                int desplazamiento = getDesplazamiento(direccion_logica);
-
-                char *leido = strndup((char *)contenido_cache + desplazamiento, tamanio);
-                printf("READ: %s\n", leido);
-                free(leido);
+            if(cpu->cache->habilitada) {
+                // READ desde cache //
+                leerDeCache(cpu, pcb->pid, direccion_logica, tamanio);
             }
             else {
-                // READ desde memoria //
-                leerDatoMemoria(socket_memoria, pcb->pid, direccion_fisica, tamanio);
+                leerDeMemoria(cpu, pcb->pid, direccion_logica, tamanio);
             }
 
             log_info(logger, "## PID: %d - Ejecutando: %s - Direccion: %d - Tamaño: %d", pcb->pid, operacion, direccion_logica, tamanio);

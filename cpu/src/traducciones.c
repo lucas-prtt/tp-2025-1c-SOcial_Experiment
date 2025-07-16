@@ -1,5 +1,5 @@
 #include "traducciones.h"
-
+#include "utils_cpu.h"
 
 
 /////////////////////////       < VARIABLES GLOBALES >       /////////////////////////
@@ -67,11 +67,50 @@ int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina) {
     return marco;
 }
 
-void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos) { // escribirPaginaCompletaEnMemoria()
+void escribirEnMemoria(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
+    int bytes_restantes = strlen(datos);
+    char *puntero_datos = datos;
+
+    while(bytes_restantes > 0) {
+        int nro_pagina_actual = getNumeroPagina(direccion_logica);
+        int desplazamiento = getDesplazamiento(direccion_logica);
+        int espacio_pagina_actual = tamanio_pagina - desplazamiento;
+        int bytes_a_escribir;
+
+        if(bytes_restantes < espacio_pagina_actual) {
+            bytes_a_escribir = bytes_restantes;
+        }
+        else {
+            bytes_a_escribir = espacio_pagina_actual;
+        }
+
+        int direccion_fisica;
+        if(cpu->tlb->habilitada) {
+            direccion_fisica = traducirDireccionTLB(cpu->tlb, pid, direccion_logica);
+            if(direccion_fisica == -1) {
+                int marco = buscarMarcoAMemoria(cpu->socket_memoria, pid, nro_pagina_actual);
+                actualizarTLB(cpu->tlb, pid, nro_pagina_actual, marco);
+                direccion_fisica = traducirDireccion(direccion_logica, marco);
+            }
+        }
+        else {
+            int marco = buscarMarcoAMemoria(cpu->socket_memoria, pid, nro_pagina_actual);
+            direccion_fisica = traducirDireccion(direccion_logica, marco);
+        }
+
+        escribirSeccionPaginaEnMemoria(cpu->socket_memoria, pid, direccion_fisica, puntero_datos, bytes_a_escribir);
+
+        puntero_datos += bytes_a_escribir;
+        bytes_restantes -= bytes_a_escribir;
+        direccion_logica += bytes_a_escribir;
+    }
+}
+
+void escribirPaginaCompletaEnMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos) {
     t_paquete *paquete_peticion_write = crear_paquete(PETICION_ESCRIBIR_EN_MEMORIA);
     agregar_a_paquete(paquete_peticion_write, &pid, sizeof(int));
     agregar_a_paquete(paquete_peticion_write, &direccion_fisica, sizeof(int));
-    agregar_a_paquete(paquete_peticion_write, datos, strlen(datos) + 1);
+    agregar_a_paquete(paquete_peticion_write, datos, tamanio_pagina);
     enviar_paquete(paquete_peticion_write, socket_memoria);
     eliminar_paquete(paquete_peticion_write);
 
@@ -83,7 +122,86 @@ void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char
     eliminar_paquete_lista(respuesta);
 }
 
-void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio) {
+void escribirSeccionPaginaEnMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos, int tamanio_datos) {
+    t_paquete *paquete_peticion_write = crear_paquete(PETICION_ESCRIBIR_EN_MEMORIA_LIMITADO);
+    agregar_a_paquete(paquete_peticion_write, &pid, sizeof(int));
+    agregar_a_paquete(paquete_peticion_write, &direccion_fisica, sizeof(int));
+    agregar_a_paquete(paquete_peticion_write, datos, tamanio_datos);
+    agregar_a_paquete(paquete_peticion_write, &tamanio_datos, sizeof(int));
+    enviar_paquete(paquete_peticion_write, socket_memoria);
+    eliminar_paquete(paquete_peticion_write);
+
+    int *codigo_operacion = malloc(sizeof(int));
+    t_list* respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
+    if(*codigo_operacion == RESPUESTA_ESCRIBIR_EN_MEMORIA) {
+        log_info(logger, "PID: %d - Acción: ESCRIBIR - Dirección Física: %d - Valor: %s", pid, direccion_fisica, datos);
+    }
+    eliminar_paquete_lista(respuesta);
+}
+
+void leerDeMemoria(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
+    int bytes_restantes = tamanio;
+    int datos_leidos = 0;
+
+    while(bytes_restantes > 0) {
+        int nro_pagina_actual = getNumeroPagina(direccion_logica);
+        int desplazamiento = getDesplazamiento(direccion_logica);
+        int espacio_pagina_actual = tamanio_pagina - desplazamiento;
+        int bytes_a_leer;
+
+        if(bytes_restantes < espacio_pagina_actual) {
+            bytes_a_leer = bytes_restantes;
+        }
+        else {
+            bytes_a_leer = espacio_pagina_actual;
+        }
+
+        int direccion_fisica;
+        if(cpu->tlb->habilitada) {
+            direccion_fisica = traducirDireccionTLB(cpu->tlb, pid, direccion_logica);
+            if(direccion_fisica == -1) {
+                int marco = buscarMarcoAMemoria(cpu->socket_memoria, pid, nro_pagina_actual);
+                actualizarTLB(cpu->tlb, pid, nro_pagina_actual, marco);
+                direccion_fisica = traducirDireccion(direccion_logica, marco);
+            }
+        }
+        else {
+            int marco = buscarMarcoAMemoria(cpu->socket_memoria, pid, nro_pagina_actual);
+            direccion_fisica = traducirDireccion(direccion_logica, marco);
+        }
+
+        leerSeccionPaginaMemoria(cpu->socket_memoria, pid, direccion_fisica, bytes_a_leer);
+
+        datos_leidos += bytes_a_leer;
+        bytes_restantes -= bytes_a_leer;
+    }  
+}
+
+void leerPaginaCompletaMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio) {
+    t_paquete *paquete_peticion_read = crear_paquete(PETICION_LEER_DE_MEMORIA_LIMITADO);
+    agregar_a_paquete(paquete_peticion_read, &pid, sizeof(int));
+    agregar_a_paquete(paquete_peticion_read, &direccion_fisica, sizeof(int));
+    agregar_a_paquete(paquete_peticion_read, &tamanio, sizeof(int));
+    enviar_paquete(paquete_peticion_read, socket_memoria);
+    eliminar_paquete(paquete_peticion_read);
+
+    int *codigo_operacion = malloc(sizeof(int));
+    t_list *respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
+    if(respuesta == NULL || *codigo_operacion != RESPUESTA_LEER_DE_MEMORIA) {
+        free(codigo_operacion);
+        eliminar_paquete_lista(respuesta);
+    }
+    
+    char *leido = strndup((char *)list_get(respuesta, 1), tamanio);
+
+    printf("READ: %s\n", leido);
+    log_info(logger, "PID: %d - Acción: READ - Dirección Física: %d - Valor: %s", pid, direccion_fisica, leido);
+
+    free(codigo_operacion);
+    eliminar_paquete_lista(respuesta);
+}
+
+void leerSeccionPaginaMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio) {
     t_paquete *paquete_peticion_read = crear_paquete(PETICION_LEER_DE_MEMORIA);
     agregar_a_paquete(paquete_peticion_read, &pid, sizeof(int));
     agregar_a_paquete(paquete_peticion_read, &direccion_fisica, sizeof(int));
@@ -159,7 +277,7 @@ int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
     return -1;
 }
 
-void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, void *contenido) { // el bit de modif
+void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, void *contenido) {
     // Busca la página en la caché //
     int indice_victima = buscarIndicePaginaCACHE(cache, pid, nro_pagina);
 
@@ -300,12 +418,7 @@ void notificarActualizacionPaginaAMemoria(int socket_memoria, CACHE *cache, int 
             int marco = buscarMarcoAMemoria(socket_memoria, pid, entrada->pagina);
             int direccion_fisica = marco * tamanio_pagina;
 
-            t_paquete* paquete_actualizacion_pagina = crear_paquete(PETICION_ESCRIBIR_EN_MEMORIA);
-            agregar_a_paquete(paquete_actualizacion_pagina, &pid, sizeof(int));
-            agregar_a_paquete(paquete_actualizacion_pagina, &direccion_fisica, sizeof(int));
-            agregar_a_paquete(paquete_actualizacion_pagina, entrada->contenido, tamanio_pagina);
-            enviar_paquete(paquete_actualizacion_pagina, socket_memoria);
-            eliminar_paquete(paquete_actualizacion_pagina);
+            escribirPaginaCompletaEnMemoria(socket_memoria, pid, direccion_fisica, entrada->contenido);
 
             log_info(logger, "Página Actualizada de Caché a Memoria: PID: %d - Memory Update - Página: %d - Frame: %d", pid, entrada->pagina, marco);
         }
@@ -357,6 +470,72 @@ void limpiarProcesoCACHE(int socket_memoria, CACHE *cache, int pid) {
     }
 }
 
+void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
+    int bytes_restantes = strlen(datos);
+    char *puntero_datos = datos;
+
+    while(bytes_restantes > 0) {
+        int nro_pagina_actual = getNumeroPagina(direccion_logica);
+        int desplazamiento = getDesplazamiento(direccion_logica);
+        int espacio_pagina_actual = tamanio_pagina - desplazamiento;
+        int bytes_a_escribir;
+
+        if(bytes_restantes < espacio_pagina_actual) {
+            bytes_a_escribir = bytes_restantes;
+        }
+        else {
+            bytes_a_escribir = espacio_pagina_actual;
+        }
+
+        void *contenido_cache = buscarPaginaCACHE(cpu->cache, pid, nro_pagina_actual);
+        if(contenido_cache == NULL) {
+            int marco = buscarMarcoAMemoria(cpu->socket_memoria, pid, nro_pagina_actual);
+            void *pagina = pedirPaginaAMemoria(cpu->socket_memoria, pid, marco);
+            actualizarCACHE(cpu->socket_memoria, cpu->cache, pid, nro_pagina_actual, pagina);
+            contenido_cache = pagina;
+        }
+
+        memcpy((char *)contenido_cache + desplazamiento, puntero_datos, bytes_a_escribir);
+        marcarModificadoEnCache(cpu->cache, pid, nro_pagina_actual);
+
+        puntero_datos += bytes_a_escribir;
+        bytes_restantes -= bytes_a_escribir;
+    }
+}
+
+void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
+    int bytes_restantes = tamanio;
+    int datos_leidos = 0;
+
+    while(bytes_restantes > 0) {
+        int nro_pagina_actual = getNumeroPagina(direccion_logica);
+        int desplazamiento = getDesplazamiento(direccion_logica);
+        int espacio_pagina_actual = tamanio_pagina - desplazamiento;
+        int bytes_a_leer;
+
+        if(bytes_restantes < espacio_pagina_actual) {
+            bytes_a_leer = bytes_restantes;
+        }
+        else {
+            bytes_a_leer = espacio_pagina_actual;
+        }
+
+        void *contenido_cache = buscarPaginaCACHE(cpu->cache, pid, nro_pagina_actual);
+        if(contenido_cache == NULL) {
+            int marco = buscarMarcoAMemoria(cpu->socket_memoria, pid, nro_pagina_actual);
+            void *pagina = pedirPaginaAMemoria(cpu->socket_memoria, pid, marco);
+            actualizarCACHE(cpu->socket_memoria, cpu->cache, pid, nro_pagina_actual, pagina);
+            contenido_cache = pagina;
+        }
+
+        char *leido = strndup((char *)contenido_cache + desplazamiento, tamanio);
+        printf("READ: %s\n", leido);
+        free(leido);
+
+        datos_leidos += bytes_a_leer;
+        bytes_restantes -= bytes_a_leer;
+    }
+}
 
 
 /////////////////////////       < TLB >       /////////////////////////

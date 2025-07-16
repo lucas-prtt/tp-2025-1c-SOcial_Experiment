@@ -59,17 +59,24 @@ enum TIPO_ALGORITMO_REEMPLAZO {
     ERROR_NO_ALG,
 };
 
-
+/* forward declaration */
+typedef struct cpu_t cpu_t;
+void escribirEnMemoria(cpu_t *cpu, int pid, int direccion_logica, char *datos);
+void leerDeMemoria(cpu_t *cpu, int pid, int direccion_logica, int tamanio);
+void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos);
+void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio);
 
 void inicializarVariablesGlobales(int socket_memoria, int cant_niveles_t, int cant_entradas_t, int tam_pag);
 
 int getNumeroPagina(int direccion_logica);
 int getEntradaNivelX(int nro_pagina, int nro_nivel);
 int getDesplazamiento(int direccion_logica);
-int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina);
 int traducirDireccion(int direccion_logica, int marco);
-void escribirDatoMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos);
-void leerDatoMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio);
+int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina);
+void escribirPaginaCompletaEnMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos);
+void escribirSeccionPaginaEnMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos, int tamanio_datos);
+void leerPaginaCompletaMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio);
+void leerSeccionPaginaMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio);
 
 void inicializarCACHE(CACHE *cache);
 void *buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina);
@@ -86,6 +93,7 @@ void notificarActualizacionPaginaAMemoria(int socket_memoria, CACHE *cache, int 
 void *pedirPaginaAMemoria(int socket_memoria, int pid, int marco);
 void limpiarEntradaCACHE(CACHE *cache, int indice_victima);
 void limpiarProcesoCACHE(int socket_memoria, CACHE *cache, int pid);
+void marcarModificadoEnCache(CACHE *cache, int pid, int nro_pagina);
 
 void inicializarTLB(TLB *tlb);
 int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina);

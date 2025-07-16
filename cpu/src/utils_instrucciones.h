@@ -44,7 +44,6 @@ bool recibirPIDyPCkernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, in
 enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion);
 void setProgramCounter(PCB_cpu *pcb, int newProgramCounter);
 bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar);
-void marcarModificadoEnCache(CACHE *cache, int pid, int nro_pagina);
 bool recibirInterrupcion(int socket_kernel_interrupt);
 void devolverProcesoPorInterrupt(int socket_kernel, PCB_cpu *proc_AEjecutar);
 
