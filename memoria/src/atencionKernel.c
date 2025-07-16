@@ -12,7 +12,7 @@
 // y default (tirar un error)
 
 int realizarDump(int PID){
-    log_info(logger, "realizarDump de proceso %d", PID);
+    log_debug(logger, "realizarDump de proceso %d", PID);
     t_list * marcos = marcosDelPid(PID);
     int qMarcos = list_size(marcos);
     char * timestamp = timestampNow();
@@ -30,7 +30,7 @@ int realizarDump(int PID){
         return 1;
     }
     pthread_mutex_lock(&MUTEX_MemoriaDeUsuario);
-    char * buffer = malloc(tamañoMarcos * qMarcos);
+    char * buffer = malloc(tamañoMarcos * qMarcos + 1);
     for (int i = 0; i<qMarcos; i++){
     memcpy(buffer+i*tamañoMarcos, punteroAMarcoPorNumeroDeMarco(*(int*)list_get(marcos, i)), tamañoMarcos);
     }
