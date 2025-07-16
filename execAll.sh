@@ -13,6 +13,7 @@ make
 exo-open --launch TerminalEmulator --title="Memoria" -e "bash -c 'valgrind ./bin/memoria; read -n 1'"
 cd ..
 sleep 1
+
 # Módulo: kernel
 cd kernel
 rm kernel.log

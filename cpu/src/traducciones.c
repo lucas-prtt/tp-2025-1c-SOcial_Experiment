@@ -278,6 +278,8 @@ int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
 }
 
 void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, void *contenido) {
+    log_debug(logger, "actualizarCACHE: Contenido: %s", (char*) contenido);
+
     // Busca la página en la caché //
     int indice_victima = buscarIndicePaginaCACHE(cache, pid, nro_pagina);
 
@@ -295,6 +297,7 @@ void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, 
     }
     // CASO 3: No está y no hay registros vacios //
     else {
+        log_debug(logger, "actualizarCACHE: VAalor: %s", (char*)cache->entradas[indice_victima].contenido);
         indice_victima = seleccionarEntradaVictimaCACHE(cache);
         if(cache->entradas[indice_victima].bit_modificado) {
             notificarActualizacionPaginaAMemoria(socket_memoria, cache, pid);
@@ -317,13 +320,14 @@ int hayEntradaVaciaCACHE(CACHE *cache) {
 void insertarPaginaCACHE(CACHE *cache, int pid, int indice_victima, int nro_pagina, void *contenido) {
     cache->entradas[indice_victima].pid = pid;
     cache->entradas[indice_victima].pagina = nro_pagina;
-    
     if(cache->entradas[indice_victima].contenido != NULL) {
         free(cache->entradas[indice_victima].contenido);
     }
+    log_debug(logger, "Vamos a insertar: VAalor: %s", (char*) contenido);
     cache->entradas[indice_victima].contenido = malloc(tamanio_pagina + 1);
     memcpy(cache->entradas[indice_victima].contenido, contenido, tamanio_pagina);
     ((char*)cache->entradas[indice_victima].contenido)[tamanio_pagina] = '\0';
+    log_debug(logger, "INSERTOOOOOOOOOOO: VAalor: %s", (char*) cache->entradas[indice_victima].contenido);
     
     cache->entradas[indice_victima].bit_uso = 1;
 
@@ -420,7 +424,6 @@ void notificarActualizacionPaginaAMemoria(int socket_memoria, CACHE *cache, int 
             int direccion_fisica = marco * tamanio_pagina;
             log_info(logger, "Lo que se escribió en memeria: %s", (char *)entrada->contenido);
             escribirPaginaCompletaEnMemoria(socket_memoria, pid, direccion_fisica, entrada->contenido);
-
             log_info(logger, "Página Actualizada de Caché a Memoria: PID: %d - Memory Update - Página: %d - Frame: %d", pid, entrada->pagina, marco);
         }
     }
@@ -443,7 +446,7 @@ void *pedirPaginaAMemoria(int socket_memoria, int pid, int marco) {
         free(codigo_operacion);
         return NULL;
     }
-
+    log_debug(logger, "peticionPaginaAMemoria: Lei de memoria, me respondio:%d - %s", *codigo_operacion, (char*) list_get(respuesta, 1));
     void *pagina = malloc(tamanio_pagina);
     memcpy(pagina, list_get(respuesta, 1), tamanio_pagina);
 
@@ -465,16 +468,29 @@ void limpiarProcesoCACHE(int socket_memoria, CACHE *cache, int pid) {
     for(int i = 0; i < CACHE_SIZE; i++) {
         if(cache->entradas[i].pid == pid) {
             if(cache->entradas[i].bit_modificado) {
+                log_debug(logger, "limpiarProcesosCACHE: VAalor: %s", (char*)cache->entradas[i].contenido);
                 notificarActualizacionPaginaAMemoria(socket_memoria, cache, pid);
             }
             limpiarEntradaCACHE(cache, i);
         }
     }
 }
+void limpiarProcesoCACHETrucho(int socket_memoria, CACHE *cache, int pid) {
+    for(int i = 0; i < CACHE_SIZE; i++) {
+        if(cache->entradas[i].pid == pid) {
+            if(cache->entradas[i].bit_modificado) {
+                log_debug(logger, "limpiarProcesosCACHE: VAalor: %s", (char*)cache->entradas[i].contenido);
+                notificarActualizacionPaginaAMemoria(socket_memoria, cache, pid);
+            }
+        }
+    }
+}
+
 
 void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
     int bytes_restantes = strlen(datos);
     char *puntero_datos = datos;
+    log_debug(logger, "En escribirEnCache, me pidieron que escriba %s en %d", datos, direccion_logica   );
 
     while(bytes_restantes > 0) {
         int nro_pagina_actual = getNumeroPagina(direccion_logica);
@@ -488,13 +504,22 @@ void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
         else {
             bytes_a_escribir = espacio_pagina_actual;
         }
+        log_debug(logger, "En escribirEnCache, me pidieron que escriba %s en %d", datos, direccion_logica   );
 
         void *contenido_cache = buscarPaginaCACHE(cpu->cache, pid, nro_pagina_actual);
+        log_debug(logger, "actualizarCACHE: EncontrelaPagina?: %p", contenido_cache);
         if(contenido_cache == NULL) {
             // Falta buscar primero en la tlb
             int marco = buscarMarcoAMemoria(cpu->socket_memoria, pid, nro_pagina_actual);
+            log_debug(logger, "actualizarCACHE: Obtengo marco: %d", marco);
             void *pagina = pedirPaginaAMemoria(cpu->socket_memoria, pid, marco);
-            actualizarCACHE(cpu->socket_memoria, cpu->cache, pid, nro_pagina_actual, pagina);
+            log_debug(logger, "escribirEnCache: Llega la pagina de memoria?: %s", (char*) pagina);
+            log_debug(logger, "Voy a escribir %s en %s", datos, (char*)pagina);
+            void * paginaComoCorresponde = malloc(tamanio_pagina);
+            memcpy(paginaComoCorresponde, pagina, tamanio_pagina);
+            memcpy(paginaComoCorresponde + desplazamiento, datos, bytes_a_escribir);
+            actualizarCACHE(cpu->socket_memoria, cpu->cache, pid, nro_pagina_actual, paginaComoCorresponde);
+            log_debug(logger, "Ya escribí, y me quedo %s en %d",(char*) datos, marco);
             contenido_cache = pagina;
         }
 

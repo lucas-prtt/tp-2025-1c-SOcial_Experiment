@@ -164,15 +164,18 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
         case INSTR_WRITE:
         {
             int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
-            char *datos = (char *)list_get(instruccion_list, 2);            
-
+            char *datos = (char *)list_get(instruccion_list, 2);    
+            char * datos2 = malloc(tamanio_pagina+1);       
+            memcpy(datos2, datos, tamanio_pagina);
+            datos2[tamanio_pagina] = '\0';
+            log_debug(logger, "Me pidieron que escriba %s en %d", datos2, *(int*)list_get(instruccion_list, 1));
             if(cpu->cache->habilitada) {
                 // WRITE en cache //
-                escribirEnCache(cpu, pcb->pid, direccion_logica, datos);
+                escribirEnCache(cpu, pcb->pid, direccion_logica, datos2);
             }
             else {
                 // WRITE en memoria //
-                escribirEnMemoria(cpu, pcb->pid, direccion_logica, datos);
+                escribirEnMemoria(cpu, pcb->pid, direccion_logica, datos2);
             }
 
             log_info(logger, "## PID: %d - Ejecutando: %s - Dirección: %d - Datos: %s", pcb->pid, operacion, direccion_logica, datos);
@@ -238,6 +241,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
         }
         case INSTR_DUMP_MEMORY:
         {
+            limpiarProcesoCACHETrucho(cpu->socket_memoria, cpu->cache, pcb->pid);
             t_paquete *paquete_peticion_dump_memory = crear_paquete(SYSCALL_DUMP_MEMORY);
             setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_peticion_dump_memory, &(pcb->pc), sizeof(pcb->pc));

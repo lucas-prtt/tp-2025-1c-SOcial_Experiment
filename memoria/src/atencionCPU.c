@@ -137,7 +137,7 @@ void *atenderCPU(void *socketPtr) {
             int *direccion_fisica = (int*)list_get(pedido, 3); //
 
             log_info(logger, "## PID: %d - Lectura - Dir. Física: %d - Tamaño: %d", *pid, *direccion_fisica, tamañoMarcos);
-
+            
             if (!es_valida_dir_fisica(pid, direccion_fisica, &tamañoMarcos)) {
                 log_error(logger, "Dirección inválida: PID %d, dirección %d", *pid, *direccion_fisica);
                 break;
@@ -148,6 +148,7 @@ void *atenderCPU(void *socketPtr) {
             pthread_mutex_lock(&MUTEX_MemoriaDeUsuario);
             memcpy(buffer, memoriaDeUsuario + *direccion_fisica, tamañoMarcos);
             pthread_mutex_unlock(&MUTEX_MemoriaDeUsuario);
+            log_debug(logger, "A memoria le respondo con %s", buffer);
 
             t_paquete *respuesta = crear_paquete(RESPUESTA_LEER_DE_MEMORIA);
             agregar_a_paquete(respuesta, buffer, tamañoMarcos);
