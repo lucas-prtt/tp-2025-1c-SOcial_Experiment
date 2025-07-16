@@ -394,7 +394,6 @@ void * confirmDumpMemoryThread(void * Params){
     int resultado;
     t_list * paq = recibir_paquete_lista(infoDump->socket, MSG_WAITALL, &resultado);
     log_debug(logger, "Recibida respuesta dump memory");
-    eliminar_paquete_lista(paq);
     if(resultado == RESPUESTA_DUMP_COMPLETADO){
         log_trace(logger, "Salio bien el dump");
         pthread_mutex_lock(&mutex_listasProcesos);
@@ -403,11 +402,19 @@ void * confirmDumpMemoryThread(void * Params){
         sem_post(&sem_ordenar_cola_ready);
     }else{
             log_error(logger, "Salio mal el dump");
+            if(resultado == -42 && paq == NULL){
+                log_error(logger, "Se perdio la conexion con Memoria");
+            }else if(resultado == RESPUESTA_DUMP_ERROR){
+                log_error(logger, "Memoria falló al completar el dump");
+            }else{
+                log_error(logger, "Se produjo un error no previsto");
+            }
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado_EstadoActualConocido(infoDump->PID, BLOCKED, EXIT, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
             liberarMemoria(infoDump->PID);
     }
+    eliminar_paquete_lista(paq);
     liberarConexion(infoDump->socket);
     free(infoDump);
     log_trace(logger, "Fin dump confirmDumpMemoryThread()");
