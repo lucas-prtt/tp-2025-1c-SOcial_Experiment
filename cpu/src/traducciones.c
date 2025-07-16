@@ -415,6 +415,7 @@ void notificarActualizacionPaginaAMemoria(int socket_memoria, CACHE *cache, int 
         r_CACHE *entrada = &cache->entradas[i];
 
         if(entrada->pid == pid && entrada->bit_modificado == 1) {
+            // Contemplar uso TLB
             int marco = buscarMarcoAMemoria(socket_memoria, pid, entrada->pagina);
             int direccion_fisica = marco * tamanio_pagina;
 
@@ -490,6 +491,7 @@ void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
 
         void *contenido_cache = buscarPaginaCACHE(cpu->cache, pid, nro_pagina_actual);
         if(contenido_cache == NULL) {
+            // Falta buscar primero en la tlb
             int marco = buscarMarcoAMemoria(cpu->socket_memoria, pid, nro_pagina_actual);
             void *pagina = pedirPaginaAMemoria(cpu->socket_memoria, pid, marco);
             actualizarCACHE(cpu->socket_memoria, cpu->cache, pid, nro_pagina_actual, pagina);
