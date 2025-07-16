@@ -27,6 +27,13 @@ t_list* entradasDesdeNumeroDePagina(int numeroPagina);
 int* int_de(int valor);
 void suspenderProceso(int pid);
 void dessuspenderProceso(int pid);
+void compactarSwap();
+int obtenerFinDeSwap();
+void liberarEspacioSwap(int pid);
+void mergearEspaciosLibres();
+int compararEntradasSwap(void* a, void* b);
+int compararEntradasSwapPorPagina(void* a, void* b);
+int compararEspaciosPorInicio(void* a, void* b);
 
 typedef struct {
     uint32_t pid;
