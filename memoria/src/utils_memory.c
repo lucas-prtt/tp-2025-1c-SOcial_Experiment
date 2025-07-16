@@ -195,6 +195,33 @@ void suspenderProceso(int pid){
 
     int cantidadPaginas = cantidadDePaginasDelProceso(pid);
 
+// 1. Buscar primer espacio libre contiguo que alcance
+    int offsetInicial = -1;
+    EspacioLibre* hueco;
+    for (int i = 0; i < list_size(espaciosLibresSwapentrePaginas); i++) {
+        hueco = list_get(espaciosLibresSwapentrePaginas, i);
+        if (hueco->paginasLibres >= cantidadPaginas) {
+            offsetInicial = hueco->punto_incio;
+            hueco->punto_incio += cantidadPaginas * tamañoMarcos;
+            hueco->paginasLibres -= cantidadPaginas;
+            if (hueco->paginasLibres == 0) list_remove_and_destroy_element(espaciosLibresSwapentrePaginas, i, free);
+            paginasLibresTotalesSwapEntreProcesos -= cantidadPaginas;
+            break;
+        }
+    }
+
+    // 2. Si no hay hueco contiguo, compactar si hay espacio disperso
+    if (offsetInicial == -1) {
+        if (paginasLibresTotalesSwapEntreProcesos >= cantidadPaginas) {
+            log_info(logger, "Compactando SWAP para PID %d", pid);
+            compactarSwap();
+            offsetInicial = list_size(tablaSwap) * tamañoMarcos;
+        } else {
+            log_warn(logger, "No hay suficiente espacio total en huecos para PID %d, escribiendo al final igual (puede dejar fragmentación)", pid);
+            offsetInicial = obtenerFinDeSwap();
+        }
+    }
+
     for (int nroPagina = 0; nroPagina < cantidadPaginas; nroPagina++) {
         // Obtener entradas del árbol a partir del número de página es decir el camino a seguir en el arbol en forma de lista
         t_list* entradas = entradasDesdeNumeroDePagina(nroPagina);
@@ -212,8 +239,7 @@ void suspenderProceso(int pid){
         memcpy(contenido, punteroAMarcoPorNumeroDeMarco(marco), tamañoMarcos);//guardo el contenido de la pagina
 
         // Calcular offset dentro del swapfile
-        int cantidadMaximaPaginasPorProceso = pow(maximoEntradasTabla, nivelesTablas);//esto se puede cambiar porque podria hacer de alguna forma que sea variable pero quedarian espacios y seria mucho más complejo
-        int offset = (pid * cantidadMaximaPaginasPorProceso + nroPagina) * tamañoMarcos;
+        int offset = offsetInicial + nroPagina * tamañoMarcos;
 
         fseek(swap, offset, SEEK_SET);
         fwrite(contenido, tamañoMarcos, 1, swap);
@@ -258,6 +284,64 @@ int* int_de(int n) {
     return p;
 }
 
+void compactarSwap() {
+    FILE* swap = fopen("swapfile.bin", "rb+");
+    if (!swap) {
+        log_error(logger, "Error al abrir el archivo swapfile.bin para compactación");
+        return;
+    }
+    
+    if (list_size(tablaSwap) <= 1) {
+        fclose(swap);
+        return; // No hace falta compactar si hay 0 o 1 páginas
+    }
+
+    list_sort(tablaSwap, (void*)compararEntradasSwap); // ordena por offset
+
+    int nuevoOffset = 0;
+    EntradaSwap* entrada;
+    for (int i = 0; i < list_size(tablaSwap); i++) {
+        entrada = list_get(tablaSwap, i);
+
+        if (entrada->offset != nuevoOffset) {
+            void* buffer = malloc(tamañoMarcos);
+            //copia el contenido de la pagina a reubicar al buffer
+            fseek(swap, entrada->offset, SEEK_SET);
+            fread(buffer, tamañoMarcos, 1, swap);
+
+            //copia el contenido del buffer en la nueva posicion para eliminar el hueco
+            fseek(swap, nuevoOffset, SEEK_SET);
+            fwrite(buffer, tamañoMarcos, 1, swap);
+
+            entrada->offset = nuevoOffset; // actualiza nuevo offset
+            free(buffer);
+        }
+
+        nuevoOffset += tamañoMarcos;
+    }
+
+    // reconstruye espaciosLibres
+    list_clean_and_destroy_elements(espaciosLibresSwapentrePaginas, free);
+
+    fclose(swap);
+}
+
+int compararEntradasSwap(EntradaSwap* a, EntradaSwap* b) {
+    return a->offset - b->offset;
+}
+
+int obtenerFinDeSwap() {
+    int maxOffset = 0;
+    for (int i = 0; i < list_size(tablaSwap); i++) {
+        EntradaSwap* entrada = list_get(tablaSwap, i);
+        int finPagina = entrada->offset + tamañoMarcos;
+        if (finPagina > maxOffset) {
+            maxOffset = finPagina;
+        }
+    }
+    return maxOffset;
+}
+
 void dessuspenderProceso(int pid) {
     FILE* swap = fopen("swapfile.bin", "rb");
     if (!swap) {
@@ -265,22 +349,39 @@ void dessuspenderProceso(int pid) {
         return;
     }
 
-    int cantidadPaginas = cantidadDePaginasDelProceso(pid);
-    int cantidadMaximaPaginasPorProceso = pow(maximoEntradasTabla, nivelesTablas);
+    // Entradas de swap del PID
+    t_list* paginasDelProceso = list_create();
 
-    for (int nroPagina = 0; nroPagina < cantidadPaginas; nroPagina++) {
-        // Calcular offset exacto donde está la página del proceso en el swap
-        int offset = (pid * cantidadMaximaPaginasPorProceso + nroPagina) * tamañoMarcos;
+    // Buscar todas las entradas de tablaSwap que pertenezcan al PID
+    for (int i = 0; i < list_size(tablaSwap); i++) {
+        EntradaSwap* entrada = list_get(tablaSwap, i);
+        if (entrada->pid == pid) {
+            list_add(paginasDelProceso, entrada);
+        }
+    }
+
+    if (list_size(paginasDelProceso) == 0) {
+        log_error(logger, "No hay entradas en swap para el PID %d", pid);
+        fclose(swap);
+        list_destroy(paginasDelProceso);
+        return;
+    }
+
+    // Ordenamos por número de página para restaurarlas en orden correcto
+    list_sort(paginasDelProceso, (void*)compararEntradasSwapPorPagina);
+
+    for (int i = 0; i < list_size(paginasDelProceso); i++) {
+        EntradaSwap* entrada = list_get(paginasDelProceso, i);
 
         // Leer la página desde el archivo swap
         void* buffer = malloc(tamañoMarcos);
-        fseek(swap, offset, SEEK_SET);
+        fseek(swap, entrada->offset, SEEK_SET);
         fread(buffer, tamañoMarcos, 1, swap);
 
         // Buscar un marco libre
         int marcoLibre = siguienteMarcoLibre();
         if (marcoLibre == -1) {
-            log_error(logger, "No hay marcos disponibles para cargar página %d del PID %d", nroPagina, pid);
+            log_error(logger, "No hay marcos disponibles para cargar página %d del PID %d", entrada->nro_pagina, pid);
             free(buffer);
             continue;// No se que hacer si no hay espacio por que en teoria no deberia pasar por la memoria cuando tiene el espacio deberia avisar para que mande un proceso
         }
@@ -289,7 +390,7 @@ void dessuspenderProceso(int pid) {
         memcpy(punteroAMarcoPorNumeroDeMarco(marcoLibre), buffer, tamañoMarcos);
 
         // Calcular las entradas del árbol de páginas para esta página
-        t_list* entradas = entradasDesdeNumeroDePagina(nroPagina);
+        t_list* entradas = entradasDesdeNumeroDePagina(entrada->nro_pagina);
 
         // Asignar el marco a la página en la tabla de páginas del proceso
         asignarMarcoAPaginaConPIDyEntradas(pid, entradas, marcoLibre);// Esta funcion entiendo que hace eso pero tengo que preguntar todavia
@@ -300,5 +401,76 @@ void dessuspenderProceso(int pid) {
         free(buffer);
     }
 
+    // Eliminar entradas de tablaSwap y actualizar espacios libres
+    liberarEspacioSwap(pid);
+
+    list_destroy(paginasDelProceso);
     fclose(swap);
+}
+
+int compararEntradasSwapPorPagina(EntradaSwap* a, EntradaSwap* b) {
+    return a->nro_pagina - b->nro_pagina;
+}
+
+void liberarEspacioSwap(int pid) {
+    int paginasLiberadas = 0;
+    int inicioBloque = -1;
+
+    for (int i = 0; i < list_size(tablaSwap); ) {
+        EntradaSwap* entrada = list_get(tablaSwap, i);
+        if (entrada->pid == pid) {
+            if (inicioBloque == -1 || entrada->offset < inicioBloque) {
+                inicioBloque = entrada->offset;
+            }
+
+            paginasLiberadas++;
+
+            // Eliminar directamente y no incrementar el índice, porque se reacomodan
+            list_remove_and_destroy_element(tablaSwap, i, free);
+        } else {
+            i++; // Solo avanzamos si no borramos
+        }
+    }
+
+    if (paginasLiberadas == 0) {
+        log_warning(logger, "No se encontraron páginas en swap para liberar del PID %d", pid);
+        return;
+    }
+
+    int finBloqueLiberado = inicioBloque + paginasLiberadas * tamañoMarcos;
+    if (finBloqueLiberado < obtenerFinDeSwap()) {//me fijo que no sea el ultimo proceso en SWAP
+    // Crear nuevo hueco
+    EspacioLibre* nuevoEspacio = malloc(sizeof(EspacioLibre));
+    nuevoEspacio->punto_incio = inicioBloque;
+    nuevoEspacio->paginasLibres = paginasLiberadas;
+
+    list_add(espaciosLibresSwapentrePaginas, nuevoEspacio);
+    paginasLibresTotalesSwapEntreProcesos += paginasLiberadas;
+
+    mergearEspaciosLibres(); // Función que junta huecos adyacentes
+    }
+}
+
+void mergearEspaciosLibres() {
+    // Ordenamos por punto de inicio
+    list_sort(espaciosLibresSwapentrePaginas, (void*)compararEspaciosPorInicio);
+
+    for (int i = 0; i < list_size(espaciosLibresSwapentrePaginas) - 1; ) {
+        EspacioLibre* actual = list_get(espaciosLibresSwapentrePaginas, i);
+        EspacioLibre* siguiente = list_get(espaciosLibresSwapentrePaginas, i + 1);
+
+        int fin_actual = actual->punto_incio + actual->paginasLibres * tamañoMarcos;
+        if (fin_actual == siguiente->punto_incio) {
+            // Son adyacentes, fusionar
+            actual->paginasLibres += siguiente->paginasLibres;
+            list_remove_and_destroy_element(espaciosLibresSwapentrePaginas, i + 1, free);
+            // No incrementamos i porque puede seguir habiendo adyacentes
+        } else {
+            i++; // Sólo avanzamos si no hubo merge
+        }
+    }
+}
+
+int compararEspaciosPorInicio(EspacioLibre* a, EspacioLibre* b) {
+    return a->punto_incio - b->punto_incio;
 }
