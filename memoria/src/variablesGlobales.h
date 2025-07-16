@@ -33,6 +33,14 @@ typedef struct {
 } EntradaSwap;
 // Tabla de la informacion que está en SWAP
 extern t_list* tablaSwap;
+typedef struct {
+    int punto_incio; // inicial del hueco
+    int paginasLibres;
+} EspacioLibre;
+
+extern t_list* espaciosLibresSwapentrePaginas; // Lista de huecos entre paginas sin contar el espacio del final despues de la ultima pagina
+
+extern int paginasLibresTotalesSwapEntreProcesos;
 
 //@brief Vector:  PIDPorMarco[numeroDeMarco] = PID o -1 (vacio)
 extern int* PIDPorMarco;

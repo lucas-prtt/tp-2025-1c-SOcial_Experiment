@@ -14,6 +14,8 @@ char * directorioDump;
 int retrasoAcceso;
 int retrasoSWAP; // Falta implementarlo
 t_list* tablaSwap = NULL;
+t_list* espaciosLibresSwapentrePaginas = NULL;
+int paginasLibresTotalesSwapEntreProcesos = 0;
 
 pthread_mutex_t MUTEX_tablaDeProcesos = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_PIDPorMarco = PTHREAD_MUTEX_INITIALIZER;
@@ -43,16 +45,18 @@ void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, 
     }
     //log_debug(logger, "Apertura archivo swap iniciada");
     //apertura del archivo SWAP
-    FILE* swap = fopen("swapfile.bin", "wb");
+    //FILE* swap = fopen("swapfile.bin", "wb");
     // Esto esta por si queremos definir un tamaño maximo de paginas en SWAP porque pense que lo habia pero sino seria solo sacar estas 2 lineas de abajo.
     // Por lo que pregunte que haya tamaño variable puede traer otros problema relacionado a huecos vacios pero si lo manejamos bien no deberia haber problema
-    int paginasMaximasSwap = 1000; 
-    ftruncate(fileno(swap), paginasMaximasSwap * tamañoMarcos);//esto hace que el File tenga un tamaño maximo
+    //int paginasMaximasSwap = 1000; 
+    //ftruncate(fileno(swap), paginasMaximasSwap * tamañoMarcos);//esto hace que el File tenga un tamaño maximo
     
-    fclose(swap);
+    //fclose(swap);
     log_debug(logger, "Apertura swap finalizada");
     //Tabla donde vana  estar que procesos estan en SWAP
     tablaSwap = list_create();
+    //Tabla de los espacios libres del Swap
+    espaciosLibresSwapentrePaginas = list_create();
     
 }
 
