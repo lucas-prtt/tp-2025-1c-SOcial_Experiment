@@ -455,6 +455,7 @@ void limpiarEntradaCACHE(CACHE *cache, int indice_victima) {
     cache->entradas[indice_victima].pid = -1;
     cache->entradas[indice_victima].pagina = -1;
     free(cache->entradas[indice_victima].contenido);
+    cache->entradas[indice_victima].contenido = NULL;
     cache->entradas[indice_victima].bit_uso = 0;
     cache->entradas[indice_victima].bit_modificado = 0;
 }
