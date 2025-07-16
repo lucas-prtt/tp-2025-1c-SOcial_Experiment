@@ -321,11 +321,11 @@ void insertarPaginaCACHE(CACHE *cache, int pid, int indice_victima, int nro_pagi
     if(cache->entradas[indice_victima].contenido != NULL) {
         free(cache->entradas[indice_victima].contenido);
     }
-    cache->entradas[indice_victima].contenido = malloc(tamanio_pagina);
+    cache->entradas[indice_victima].contenido = malloc(tamanio_pagina + 1);
     memcpy(cache->entradas[indice_victima].contenido, contenido, tamanio_pagina);
-
+    ((char*)cache->entradas[indice_victima].contenido)[tamanio_pagina] = '\0';
+    
     cache->entradas[indice_victima].bit_uso = 1;
-    // cache->entradas[indice_victima].bit_modificado = 0;
 
     log_info(logger, "PID: %d - Cache Add - Pagina: %d", cache->entradas[indice_victima].pid, cache->entradas[indice_victima].pagina);
 }
@@ -418,7 +418,7 @@ void notificarActualizacionPaginaAMemoria(int socket_memoria, CACHE *cache, int 
             // Contemplar uso TLB
             int marco = buscarMarcoAMemoria(socket_memoria, pid, entrada->pagina);
             int direccion_fisica = marco * tamanio_pagina;
-
+            log_info(logger, "Lo que se escribió en memeria: %s", (char *)entrada->contenido);
             escribirPaginaCompletaEnMemoria(socket_memoria, pid, direccion_fisica, entrada->contenido);
 
             log_info(logger, "Página Actualizada de Caché a Memoria: PID: %d - Memory Update - Página: %d - Frame: %d", pid, entrada->pagina, marco);
