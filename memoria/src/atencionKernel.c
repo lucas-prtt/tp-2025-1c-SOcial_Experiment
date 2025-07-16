@@ -34,7 +34,7 @@ int realizarDump(int PID){
     for (int i = 0; i<qMarcos; i++){
     memcpy(buffer+i*tamañoMarcos, punteroAMarcoPorNumeroDeMarco(*(int*)list_get(marcos, i)), tamañoMarcos);
     }
-    char * contenido = mem_hexstring(buffer , tamañoMarcos*qMarcos);
+    char * contenido = mem_hexstring(buffer , tamañoMarcos*qMarcos); // El hexString tira warnings de Valgrind. No lo puedo resolver sin tocar la libreria.
     fwrite(
         contenido,
         sizeof(char),
