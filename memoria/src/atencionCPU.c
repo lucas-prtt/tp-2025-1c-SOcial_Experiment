@@ -33,7 +33,7 @@ void *atenderCPU(void *socketPtr) {
         {
             int *pid = (int*)list_get(pedido, 1);
             int *pc = (int*)list_get(pedido, 3);
-
+            log_debug(logger, "Fetch de proceso %d instruccion #%d", *pid, *pc);
             char pid_str[10];
             sprintf(pid_str, "%d", *pid);// transforma el numero de pid en un string
 

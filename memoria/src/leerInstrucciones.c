@@ -3,7 +3,6 @@
 
 
 int cargarInstrucciones(int PID, char* PATH, int tamaño){
-
         char * PATHCompleto = malloc(strlen(PATH) + strlen(directorioPseudocodigo) + 1);
         strcpy(PATHCompleto, directorioPseudocodigo);
         strcat(PATHCompleto, PATH);
@@ -28,7 +27,9 @@ int cargarInstrucciones(int PID, char* PATH, int tamaño){
         }
         free(linea);
         fclose(archivo);
+        pthread_mutex_lock(&mutex_lista_instrucciones);
         agregarInstruccionesAPID(PID, instrucciones);
+        pthread_mutex_unlock(&mutex_lista_instrucciones);
         free(PATHCompleto);
         return 0;
 }

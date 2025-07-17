@@ -123,6 +123,7 @@ void * atenderKernel(void * socketPtr){
         agregarProcesoATabla(*PID, *TAMAÑO);
         log_info(logger, "## PID: %d - Proceso Creado - Tamaño: %d", *PID, *TAMAÑO);
         cargarInstrucciones(*PID, PATH, *TAMAÑO);
+        log_debug(logger, "Se cargan las instrucciones de (%d) provenientes de %s", *PID, PATH);
         aumentarMetricaSubidasAMemoriaPrincipal(*PID); // Subida inicial a memoria
         }else{
             error = 1;

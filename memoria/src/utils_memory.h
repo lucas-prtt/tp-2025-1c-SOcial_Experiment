@@ -41,5 +41,6 @@ typedef struct {
 } t_instrucciones_por_pid;
 
 extern t_list* lista_instrucciones;
+extern pthread_mutex_t mutex_lista_instrucciones;
 
 #endif

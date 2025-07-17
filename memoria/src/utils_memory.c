@@ -1,9 +1,11 @@
 #include "utils_memory.h"
 extern pthread_mutex_t MUTEX_PIDPorMarco;
 t_list* lista_instrucciones = NULL;
+pthread_mutex_t mutex_lista_instrucciones = PTHREAD_MUTEX_INITIALIZER;
 
 ModulosConectados conexiones;
 t_dictionary* instrucciones_por_pid;
+
 
 int crearSocketConfig(t_config* config, char opcion[]){
     int puertoConfig = config_get_int_value(config, opcion);
@@ -117,13 +119,18 @@ void* atenderConexion(void* socketPtr) {
 
 // busca las instrucciones por PID
 t_list* obtener_instrucciones_por_pid(uint32_t pid){
-    for (int i = 0; i < list_size(lista_instrucciones); i++)
+    pthread_mutex_lock(&mutex_lista_instrucciones); // No quiero que se agregen mas Procesos mientras se busca
+    int a = list_size(lista_instrucciones);
+    for (int i = 0; i < a; i++)
     {
         t_instrucciones_por_pid* entrada = list_get(lista_instrucciones, i);
         if (entrada->pid == pid){
+            pthread_mutex_unlock(&mutex_lista_instrucciones);
             return entrada->instrucciones;
         }
     }
+    pthread_mutex_unlock(&mutex_lista_instrucciones);
+
     return NULL;
     
 }

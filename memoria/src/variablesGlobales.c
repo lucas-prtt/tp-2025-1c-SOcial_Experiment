@@ -185,11 +185,11 @@ void eliminarProcesoDePIDPorMarco(int PID){
 }
 // @brief Elimina el arbol de paginas del PID pero lo deja inicializado para poder buscar y crear en el mismo a futuro (Desde afuera, se verá como si todos los marcos fueran -1)
 void vaciarTablaDePaginasDePID(int PID){
-    pthread_mutex_lock(&MUTEX_PIDPorMarco);
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
     PIDInfo * proceso = obtenerInfoProcesoConPID(PID);
     liberarArbolDePaginas(proceso->TP);
     proceso->TP = crearNivelTablaDePaginas(maximoEntradasTabla);
-    pthread_mutex_unlock(&MUTEX_PIDPorMarco);
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
 }
 // @brief Elimina un proceso de la tabla y libera los recursos asociados al proceso. No actualiza el PIDporMarco
 void eliminarProcesoDeTabla(int PIDEliminado){
@@ -353,6 +353,7 @@ void agregarInstruccionesAPID(int PID, t_list * instruccionesNuevas){ // No libe
 //@brief obtiene lista de instrucciones del proceso: No es una copia: No liberar ni modificar innecesariamente
 t_list * obtenerInstruccionesPorPID(int PID){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    log_debug(logger, "Se van a obtener las instrucciones de %d", PID);
     t_list * inst = obtenerInfoProcesoConPID(PID)->instrucciones;
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return inst;
