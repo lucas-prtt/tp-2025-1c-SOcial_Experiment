@@ -306,7 +306,7 @@ void devolverProcesoPorInterrupt(int socket_kernel, PCB_cpu *proc_AEjecutar) {
     
     log_trace(logger, "El mensaje dice: <El proceso que se estaba ejecutando quedo en PC: %d>", proc_AEjecutar->pc);
     agregar_a_paquete(paquete_devolucion_proceso, &(proc_AEjecutar->pc), sizeof(proc_AEjecutar->pc));
-    agregar_a_paquete(paquete_devolucion_proceso, proc_AEjecutar->pid, sizeof(int));
+    agregar_a_paquete(paquete_devolucion_proceso, &(proc_AEjecutar->pid), sizeof(int));
     enviar_paquete(paquete_devolucion_proceso, socket_kernel);
 
     eliminar_paquete(paquete_devolucion_proceso);
