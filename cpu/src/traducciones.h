@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include "utils/logConfig.h"
 #include <math.h>
+#include <limits.h>
 
 
 extern int CACHE_SIZE;
@@ -39,7 +40,7 @@ typedef struct {
     int pid;
     int pagina;
     int marco;
-    int validez;
+    int validez; //
     int ultimo_uso;
 } r_TLB;
 
