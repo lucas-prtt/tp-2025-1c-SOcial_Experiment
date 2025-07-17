@@ -213,11 +213,11 @@ void suspenderProceso(int pid){
     // 2. Si no hay hueco contiguo, compactar si hay espacio disperso
     if (offsetInicial == -1) {
         if (paginasLibresTotalesSwapEntreProcesos >= cantidadPaginas) {
-            log_info(logger, "Compactando SWAP para PID %d", pid);
+            log_debug(logger, "Compactando SWAP para PID %d", pid);
             compactarSwap();
             offsetInicial = list_size(tablaSwap) * tamañoMarcos;
         } else {
-            log_warning(logger, "No hay suficiente espacio total en huecos para PID %d, escribiendo al final igual (puede dejar fragmentación)", pid);
+            log_debug(logger, "No hay suficiente espacio total en huecos para PID %d, escribiendo al final igual (puede dejar fragmentación)", pid);
             offsetInicial = obtenerFinDeSwap();
         }
     }
