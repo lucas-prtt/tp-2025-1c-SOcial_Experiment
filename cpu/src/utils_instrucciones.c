@@ -185,12 +185,12 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
         {
             char *dispositivo = (char *)list_get(instruccion_list, 1);
             int tiempo = atoi((char *)list_get(instruccion_list, 2));
-
             t_paquete *paquete_peticion_io = crear_paquete(SYSCALL_IO);
             setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_peticion_io, &(pcb->pc), sizeof(pcb->pc));
             agregar_a_paquete(paquete_peticion_io, dispositivo, strlen(dispositivo) + 1);
             agregar_a_paquete(paquete_peticion_io, &tiempo, sizeof(tiempo));
+            agregar_a_paquete(paquete_peticion_io, &(pcb->pid), sizeof(int));
             enviar_paquete(paquete_peticion_io, socket_kernel);
             eliminar_paquete(paquete_peticion_io);
 
@@ -207,6 +207,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             agregar_a_paquete(paquete_peticion_init_proc, &(pcb->pc), sizeof(pcb->pc));
             agregar_a_paquete(paquete_peticion_init_proc, path, strlen(path) + 1);
             agregar_a_paquete(paquete_peticion_init_proc, &tamanio, sizeof(tamanio));
+            agregar_a_paquete(paquete_peticion_init_proc, &(pcb->pid), sizeof(int));
             enviar_paquete(paquete_peticion_init_proc, socket_kernel);
             eliminar_paquete(paquete_peticion_init_proc);
 
@@ -230,6 +231,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             t_paquete *paquete_instr_exit = crear_paquete(SYSCALL_EXIT);
             setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_instr_exit, &(pcb->pc), sizeof(pcb->pc));
+            agregar_a_paquete(paquete_instr_exit, &(pcb->pid), sizeof(int));
             enviar_paquete(paquete_instr_exit, socket_kernel);
             eliminar_paquete(paquete_instr_exit);
 

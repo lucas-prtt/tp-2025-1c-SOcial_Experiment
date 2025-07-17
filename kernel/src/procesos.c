@@ -40,6 +40,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
     t_list * paqueteRespuesta;
     t_paquete * paqueteEnviado;
     t_PCB * proceso;
+    int * pid;
     int continuar_mismo_proceso;
     float alfa = atof(config_get_string_value(config, "ALFA"));
 
@@ -102,6 +103,10 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             {
             case SYSCALL_EXIT:
                 log_trace(logger, "Ejecuto case EXIT");
+                pid = list_get(paqueteRespuesta, 3);
+                if(*pid != proceso->PID){
+                    log_error(logger, "Se recibio un EXIT de otro proceso");
+                }
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
                 log_trace(logger, "Se va el proceso (%d) a exit", proceso->PID);
@@ -118,6 +123,10 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             case SYSCALL_INIT_PROC:
                 char * path = list_get(paqueteRespuesta, 3);
                 int size = *(int*)list_get(paqueteRespuesta, 5);
+                pid = list_get(paqueteRespuesta, 7);
+                if(*pid != proceso->PID){
+                    log_error(logger, "Se recibio un INIT_PROC de otro proceso");
+                }
                 pthread_mutex_lock(&mutex_last_PID);
                 int pidNuevo = ++last_PID;
                 log_trace(logger, "Case init_proc con proceso (%d), path: %s, size: %d", pidNuevo, path, size);
@@ -131,6 +140,10 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
             case SYSCALL_IO:
                 char * nombreIO = list_get(paqueteRespuesta, 3);
                 int milisegundos = *(int*)list_get(paqueteRespuesta, 5);
+                pid = list_get(paqueteRespuesta, 7);
+                if(*pid != proceso->PID){
+                    log_error(logger, "Se recibio un IO de otro proceso");
+                }
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
                 proceso->ProcesadorQueLoEjecutaDispatch = NULL;
@@ -167,7 +180,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 break;
             case INTERRUPT_ACKNOWLEDGE:
                 log_trace(logger, "Case interrupt acknoledge");
-                int * pid = list_get(paqueteRespuesta, 3);
+                pid = list_get(paqueteRespuesta, 3);
                 if(*pid != proceso->PID){
                     log_error(logger, "Se recibio un interrupt acknowledge de otro proceso");
                 }else{
@@ -178,6 +191,9 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 // CambiarEstado Ya actualiza a EXEC_ACT
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 }
+                break;
+            default:
+                log_error(logger, "Se recibio una respuesta de CPU no valida: codop = %d", codOp);
                 break;
             }
             log_trace(logger, "Termino el switch");
