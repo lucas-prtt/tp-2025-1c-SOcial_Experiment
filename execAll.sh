@@ -15,7 +15,7 @@ sleep 1
 cd kernel
 rm -f kernel.log
 make
-xterm -T "Kernel" -e bash -c "valgrind ./bin/kernel MEMORIA_BASE_TLB 256; read -n 1" &
+xterm -T "Kernel" -e bash -c "valgrind ./bin/kernel ESTABILIDAD_GENERAL 0; read -n 1" &
 cd ..
 sleep 1
 
@@ -24,6 +24,9 @@ cd cpu
 rm -f cpu1.log
 make
 xterm -T "Cpu" -e bash -c "valgrind ./bin/cpu 1; read -n 1" &
+xterm -T "Cpu" -e bash -c "valgrind ./bin/cpu 2; read -n 1" &
+xterm -T "Cpu" -e bash -c "valgrind ./bin/cpu 3; read -n 1" &
+xterm -T "Cpu" -e bash -c "valgrind ./bin/cpu 4; read -n 1" &
 cd ..
 sleep 1
 
@@ -31,4 +34,7 @@ sleep 1
 cd io
 rm -f io.log
 make
+xterm -T "IO" -e bash -c "valgrind ./bin/io DISCO"&
+xterm -T "IO" -e bash -c "valgrind ./bin/io DISCO"&
+xterm -T "IO" -e bash -c "valgrind ./bin/io DISCO"&
 xterm -T "IO" -e bash -c "valgrind ./bin/io DISCO"
