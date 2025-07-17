@@ -151,7 +151,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
                 // WRITE en memoria //
                 escribirEnMemoria(cpu, pcb->pid, direccion_logica, datos2);
             }
-
+            free(datos2);
             log_info(logger, "## PID: %d - Ejecutando: %s - Dirección: %d - Datos: %s", pcb->pid, operacion, direccion_logica, datos);
             setProgramCounter(pcb, pcb->pc + 1);
             return false;

@@ -119,7 +119,9 @@ void escribirPaginaCompletaEnMemoria(int socket_memoria, int pid, int direccion_
     if(*codigo_operacion == RESPUESTA_ESCRIBIR_EN_MEMORIA) {
         log_info(logger, "PID: %d - Acción: ESCRIBIR - Dirección Física: %d - Valor: %s", pid, direccion_fisica, datos);
     }
-    eliminar_paquete_lista(respuesta);
+
+    free(codigo_operacion);
+    list_destroy_and_destroy_elements(respuesta, free);
 }
 
 void escribirSeccionPaginaEnMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos, int tamanio_datos) {
@@ -458,7 +460,9 @@ void *pedirPaginaAMemoria(int socket_memoria, int pid, int marco) {
 void limpiarEntradaCACHE(CACHE *cache, int indice_victima) {
     cache->entradas[indice_victima].pid = -1;
     cache->entradas[indice_victima].pagina = -1;
-    free(cache->entradas[indice_victima].contenido);
+    if(cache->entradas[indice_victima].contenido != NULL) {
+        free(cache->entradas[indice_victima].contenido);
+    }
     cache->entradas[indice_victima].contenido = NULL;
     cache->entradas[indice_victima].bit_uso = 0;
     cache->entradas[indice_victima].bit_modificado = 0;
@@ -475,6 +479,7 @@ void limpiarProcesoCACHE(int socket_memoria, CACHE *cache, int pid) {
         }
     }
 }
+
 void limpiarProcesoCACHETrucho(int socket_memoria, CACHE *cache, int pid) {
     for(int i = 0; i < CACHE_SIZE; i++) {
         if(cache->entradas[i].pid == pid) {
@@ -491,7 +496,7 @@ void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
     int bytes_restantes = strlen(datos);
     char *puntero_datos = datos;
     log_debug(logger, "En escribirEnCache, me pidieron que escriba %s en %d", datos, direccion_logica   );
-
+    
     while(bytes_restantes > 0) {
         int nro_pagina_actual = getNumeroPagina(direccion_logica);
         int desplazamiento = getDesplazamiento(direccion_logica);
@@ -515,19 +520,22 @@ void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
             void *pagina = pedirPaginaAMemoria(cpu->socket_memoria, pid, marco);
             log_debug(logger, "escribirEnCache: Llega la pagina de memoria?: %s", (char*) pagina);
             log_debug(logger, "Voy a escribir %s en %s", datos, (char*)pagina);
+
             void * paginaComoCorresponde = malloc(tamanio_pagina);
             memcpy(paginaComoCorresponde, pagina, tamanio_pagina);
             memcpy(paginaComoCorresponde + desplazamiento, datos, bytes_a_escribir);
             actualizarCACHE(cpu->socket_memoria, cpu->cache, pid, nro_pagina_actual, paginaComoCorresponde);
+            free(pagina);
             log_debug(logger, "Ya escribí, y me quedo %s en %d",(char*) datos, marco);
-            contenido_cache = pagina;
+            contenido_cache = paginaComoCorresponde;
         }
-
+        
         memcpy((char *)contenido_cache + desplazamiento, puntero_datos, bytes_a_escribir);
         marcarModificadoEnCache(cpu->cache, pid, nro_pagina_actual);
 
         puntero_datos += bytes_a_escribir;
         bytes_restantes -= bytes_a_escribir;
+        // direccion_logica += bytes_a_escribir;
     }
 }
 
@@ -559,7 +567,7 @@ void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
         char *leido = strndup((char *)contenido_cache + desplazamiento, tamanio);
         printf("READ: %s\n", leido);
         free(leido);
-
+        
         datos_leidos += bytes_a_leer;
         bytes_restantes -= bytes_a_leer;
     }
@@ -571,6 +579,7 @@ void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
 void inicializarTLB(TLB *tlb) {
     if(TLB_SIZE == 0) {
         tlb->habilitada = 0;
+        tlb->entradas = NULL;
         log_debug(logger, "TLB Deshabilitada");
         return;
     }
