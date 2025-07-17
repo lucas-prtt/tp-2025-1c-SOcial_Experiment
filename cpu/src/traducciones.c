@@ -232,6 +232,7 @@ void leerSeccionPaginaMemoria(int socket_memoria, int pid, int direccion_fisica,
 void inicializarCACHE(CACHE *cache) {
     if(CACHE_SIZE < 1) {
         cache->habilitada = 0;
+        cache->entradas = NULL;
         log_debug(logger, "Cache Deshabilitada");
         return;
     }
@@ -297,7 +298,6 @@ void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, 
     }
     // CASO 3: No está y no hay registros vacios //
     else {
-        log_debug(logger, "actualizarCACHE: VAalor: %s", (char*)cache->entradas[indice_victima].contenido);
         indice_victima = seleccionarEntradaVictimaCACHE(cache);
         if(cache->entradas[indice_victima].bit_modificado) {
             notificarActualizacionPaginaAMemoria(socket_memoria, cache, pid);
@@ -625,7 +625,7 @@ void actualizarTLB(TLB *tlb, int pid, int nro_pagina, int marco) {
     if(hayEntradaVaciaTLB(tlb, &indice_victima)) {
         insertarPaginaTLB(tlb, pid, indice_victima, nro_pagina, marco);
     }
-    else if(buscarPaginaTLB(tlb, pid, nro_pagina) != -1) {
+    else if(buscarIndicePaginaTLB(tlb, pid, nro_pagina) != -1) {
         tlb->entradas[indice_victima].ultimo_uso = tlb->contador_uso;
     }
     else {

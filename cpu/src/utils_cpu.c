@@ -136,16 +136,20 @@ cpu_t *prepararCPU(int socket_memoria, int socket_kernel_dispatch, int socket_ke
 
 void cerrarCPU(cpu_t *args_cpu) {
     //////////////////// Libero Cache ////////////////////
-    if(args_cpu->cache != NULL) {
-        for(int i = 0; i < CACHE_SIZE; i++) {
-            free(args_cpu->cache->entradas[i].contenido);
+    if(args_cpu->cache->habilitada) {
+        if(args_cpu->cache->entradas != NULL) {
+            for(int i = 0; i < CACHE_SIZE; i++) {
+                if(args_cpu->cache->entradas[i].contenido != NULL) {
+                    free(args_cpu->cache->entradas[i].contenido);
+                }
+            }
+            free(args_cpu->cache->entradas);
         }
-        free(args_cpu->cache->entradas);
         free(args_cpu->cache);
     }
 
     //////////////////// Libero TLB ////////////////////
-    if(args_cpu->tlb != NULL) {
+    if(args_cpu->tlb->habilitada) {
         free(args_cpu->tlb->entradas);
         free(args_cpu->tlb);
     }

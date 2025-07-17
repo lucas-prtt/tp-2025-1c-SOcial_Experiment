@@ -123,35 +123,7 @@ enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion) {
 
 bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, PCB_cpu *pcb) {
     int socket_kernel = cpu->socket_kernel_dispatch;
-
     char *operacion = (char *)list_get(instruccion_list, 0);
-    //void *contenido_cache = NULL;
-    // int direccion_fisica = -1;
-
-    /* E S T Á S   E N   Z O N A   D E   P E L I G R O //
-    if(instr_info.requiere_traduccion) {
-        int direccion_logica = atoi((char *)list_get(instruccion_list, 1));
-        int nro_pagina = getNumeroPagina(direccion_logica);
-
-        if(cpu->cache->habilitada) {
-            contenido_cache = buscarPaginaCACHE(cpu->cache, pcb->pid, nro_pagina);
-            if(contenido_cache == NULL) {
-                int marco = buscarMarcoAMemoria(socket_memoria, pcb->pid, nro_pagina);
-                void *pagina = pedirPaginaAMemoria(socket_memoria, pcb->pid, marco);
-                actualizarCACHE(cpu->socket_memoria, cpu->cache, pcb->pid, nro_pagina, pagina);
-                contenido_cache = pagina;
-            }
-        }
-        else if(cpu->tlb->habilitada) {
-            direccion_fisica = traducirDireccionTLB(cpu->tlb, pcb->pid, direccion_logica);
-            if(direccion_fisica == -1) {
-                int marco = buscarMarcoAMemoria(socket_memoria, pcb->pid, nro_pagina);
-                actualizarTLB(cpu->tlb, pcb->pid, nro_pagina, marco);
-                direccion_fisica = traducirDireccion(direccion_logica, marco);
-            }
-        }
-    }
-    // E S T Á S   F U E R A   D E   L A   Z O N A   D E   P E L I G R O */
     
     switch(instr_info.tipo_instruccion)
     {
@@ -164,11 +136,13 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
         case INSTR_WRITE:
         {
             int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
-            char *datos = (char *)list_get(instruccion_list, 2);    
-            char * datos2 = malloc(tamanio_pagina+1);       
-            memcpy(datos2, datos, tamanio_pagina);
-            datos2[tamanio_pagina] = '\0';
-            log_debug(logger, "Me pidieron que escriba %s en %d", datos2, *(int*)list_get(instruccion_list, 1));
+            char *datos = (char *)list_get(instruccion_list, 2);
+            int tamanio_datos = strlen(datos);
+
+            char *datos2 = malloc(tamanio_datos + 1);
+            memcpy(datos2, datos, tamanio_datos);
+            datos2[tamanio_datos] = '\0';
+            log_debug(logger, "Me pidieron que escriba %s en %d", datos2, direccion_logica);
             if(cpu->cache->habilitada) {
                 // WRITE en cache //
                 escribirEnCache(cpu, pcb->pid, direccion_logica, datos2);
