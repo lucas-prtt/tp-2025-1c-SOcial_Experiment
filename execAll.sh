@@ -22,6 +22,9 @@ sleep 1
 # Módulo: cpu
 cd cpu
 rm -f cpu1.log
+rm -f cpu2.log
+rm -f cpu3.log
+rm -f cpu4.log
 make
 xterm -T "Cpu" -e bash -c "valgrind ./bin/cpu 1; read -n 1" &
 xterm -T "Cpu" -e bash -c "valgrind ./bin/cpu 2; read -n 1" &
