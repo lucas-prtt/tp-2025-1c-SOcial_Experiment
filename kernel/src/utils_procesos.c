@@ -352,3 +352,16 @@ int getProcesosMolestando(){
     pthread_mutex_unlock(&mutex_procesos_molestando);
     return a;
 }
+
+void enviarSolicitudSuspensionProceso(int PID){
+    int socket = conectarSocketClient(conexiones.ipYPuertoMemoria.IP, conexiones.ipYPuertoMemoria.puerto);
+    int r = handshakeMemoria(socket);
+    if (r==-1){
+        log_error(logger, "Fallo handshake con memoria al pedir suspender el proceso (%d)", PID);
+        return; 
+    }
+    t_paquete * paq = crear_paquete(PROCESO_SUSPENDIDO_ENVIAR_A_SWAP);
+    agregar_a_paquete(paq, &PID, sizeof(int));
+    enviar_paquete(paq, socket);
+    eliminar_paquete(paq);
+}

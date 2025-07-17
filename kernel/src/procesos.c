@@ -442,8 +442,10 @@ void * temporizadorSuspenderThread(void * param){
     peticion->estado = PETICION_SUSPENDIDA;
     if (r!=0)
         log_trace(logger, "Cancelacion de la suspension de (%d), ya no esta mas bloqueado",peticion->PID);
-    else
+    else{
+        enviarSolicitudSuspensionProceso(peticion->PID);
         log_debug(logger, "(%d) suspendido", peticion->PID);
+        }
     }
     sem_post(&(peticion->sem_estado));
     if(peticion->estado == PETICION_FINALIZADA)

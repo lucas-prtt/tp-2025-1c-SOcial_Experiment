@@ -77,6 +77,7 @@ int cambiarEstado_EstadoActualConocido(int idProceso, enum estado estadoActual, 
 void aparecioOtroProceso();
 void eliminamosOtroProceso();
 int getProcesosMolestando();
+void enviarSolicitudSuspensionProceso(int PID);
 
 
 #endif

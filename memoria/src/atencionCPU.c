@@ -19,7 +19,6 @@ void *atenderCPU(void *socketPtr) {
 
     int codigo_operacion = -42;
     t_list *pedido = recibir_paquete_lista(socket_cpu, MSG_WAITALL, &codigo_operacion); // problema //
-    log_debug(logger, "Paquete recibido (socket = %d, pointer = %p, codigo_operacion = %d)", socket_cpu, pedido, codigo_operacion);
     
     if(pedido == NULL) {
         log_debug(logger, "Se desconecto la CPU");
@@ -98,7 +97,6 @@ void *atenderCPU(void *socketPtr) {
                 t_paquete *respuesta_cpu = crear_paquete(RESPUESTA_MEMORIA_A_CPU_PETICION_MARCO);
                 agregar_a_paquete(respuesta_cpu, &marco, sizeof(int));
                 enviar_paquete(respuesta_cpu, socket_cpu);
-                log_info(logger, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX - Marco: %d", marco);
                 eliminar_paquete(respuesta_cpu);
             }
             list_destroy(entradas);
