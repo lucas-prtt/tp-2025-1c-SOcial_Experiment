@@ -30,13 +30,17 @@ bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
     log_trace(logger, "EjecutarCicloInstruccion()");
     instruccionInfo instr_info;
 
+    if(checkInterrupt(cpu, proc_AEjecutar)){
+        return true;
+    }
+
     char *instruccion = fetch(cpu->socket_memoria, proc_AEjecutar);
     t_list *instruccion_list = decode(proc_AEjecutar, instruccion, &instr_info);
     log_trace(logger, "Estoy a punto de hacer execute(), preparense todos!");
     bool fin_proceso = execute(cpu, instruccion_list, instr_info, proc_AEjecutar);
     log_trace(logger, "PUMBA!!! ejecute!. fin_proceso = %d", fin_proceso);
 
-    if(checkInterrupt(cpu, proc_AEjecutar) || fin_proceso) {
+    if(fin_proceso) {
         log_trace(logger, "Hubo un problema, las veré pronto mis instrucciones queridas");
         log_trace(logger, "Le mando un mensaje a kernel");
         free(instruccion);
