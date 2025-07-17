@@ -105,7 +105,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 log_trace(logger, "Ejecuto case EXIT");
                 pid = list_get(paqueteRespuesta, 3);
                 if(*pid != proceso->PID){
-                    log_error(logger, "Se recibio un EXIT de otro proceso");
+                    log_error(logger, "Se recibio un EXIT de otro proceso (%d en vez de %d)", *pid, proceso->PID);
                 }
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
@@ -125,7 +125,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 int size = *(int*)list_get(paqueteRespuesta, 5);
                 pid = list_get(paqueteRespuesta, 7);
                 if(*pid != proceso->PID){
-                    log_error(logger, "Se recibio un INIT_PROC de otro proceso");
+                    log_error(logger, "Se recibio un INIT_PROC de otro proceso (%d en vez de %d)", *pid, proceso->PID);
                 }
                 pthread_mutex_lock(&mutex_last_PID);
                 int pidNuevo = ++last_PID;
@@ -142,7 +142,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 int milisegundos = *(int*)list_get(paqueteRespuesta, 5);
                 pid = list_get(paqueteRespuesta, 7);
                 if(*pid != proceso->PID){
-                    log_error(logger, "Se recibio un IO de otro proceso");
+                    log_error(logger, "Se recibio un IO de otro proceso (%d en vez de %d)", *pid, proceso->PID);
                 }
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
@@ -182,7 +182,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 log_trace(logger, "Case interrupt acknoledge");
                 pid = list_get(paqueteRespuesta, 3);
                 if(*pid != proceso->PID){
-                    log_error(logger, "Se recibio un interrupt acknowledge de otro proceso");
+                    log_error(logger, "Se recibio un interrupt acknowledge de otro proceso (%d en vez de %d)", *pid, proceso->PID);
                 }else{
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, READY, listasProcesos); 
