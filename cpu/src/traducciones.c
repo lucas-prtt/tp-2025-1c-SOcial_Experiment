@@ -138,6 +138,8 @@ void escribirSeccionPaginaEnMemoria(int socket_memoria, int pid, int direccion_f
     if(*codigo_operacion == RESPUESTA_ESCRIBIR_EN_MEMORIA) {
         log_info(logger, "PID: %d - Acción: ESCRIBIR - Dirección Física: %d - Valor: %s", pid, direccion_fisica, datos);
     }
+
+    free(codigo_operacion);
     eliminar_paquete_lista(respuesta);
 }
 
@@ -179,7 +181,7 @@ void leerDeMemoria(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
     }  
 }
 
-void leerPaginaCompletaMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio) {
+void leerPaginaCompletaMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio) { // funcion utilizada al notificar cambios en cache
     t_paquete *paquete_peticion_read = crear_paquete(PETICION_LEER_DE_MEMORIA_LIMITADO);
     agregar_a_paquete(paquete_peticion_read, &pid, sizeof(int));
     agregar_a_paquete(paquete_peticion_read, &direccion_fisica, sizeof(int));
@@ -196,9 +198,10 @@ void leerPaginaCompletaMemoria(int socket_memoria, int pid, int direccion_fisica
     
     char *leido = strndup((char *)list_get(respuesta, 1), tamanio);
 
-    printf("READ: %s\n", leido);
-    log_info(logger, "PID: %d - Acción: READ - Dirección Física: %d - Valor: %s", pid, direccion_fisica, leido);
+    //printf("READ: %s\n", leido);
+    //log_info(logger, "PID: %d - Acción: READ - Dirección Física: %d - Valor: %s", pid, direccion_fisica, leido);
 
+    free(leido);
     free(codigo_operacion);
     eliminar_paquete_lista(respuesta);
 }
@@ -223,6 +226,7 @@ void leerSeccionPaginaMemoria(int socket_memoria, int pid, int direccion_fisica,
     printf("READ: %s\n", leido);
     log_info(logger, "PID: %d - Acción: READ - Dirección Física: %d - Valor: %s", pid, direccion_fisica, leido);
 
+    free(leido);
     free(codigo_operacion);
     eliminar_paquete_lista(respuesta);
 }
@@ -532,10 +536,11 @@ void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
         
         memcpy((char *)contenido_cache + desplazamiento, puntero_datos, bytes_a_escribir);
         marcarModificadoEnCache(cpu->cache, pid, nro_pagina_actual);
+        free(contenido_cache);
 
         puntero_datos += bytes_a_escribir;
         bytes_restantes -= bytes_a_escribir;
-        // direccion_logica += bytes_a_escribir;
+        direccion_logica += bytes_a_escribir;
     }
 }
 
@@ -594,7 +599,7 @@ void inicializarTLB(TLB *tlb) {
         tlb->entradas[i].pagina = -1;
         tlb->entradas[i].marco = -1;
         tlb->entradas[i].ultimo_uso = -1;
-        tlb->entradas[i].validez = 0;
+        //tlb->entradas[i].validez = 0;
     }
 
     tlb->algoritmo = algoritmo_string_to_enum(config_get_string_value(config, "REEMPLAZO_TLB"));
@@ -620,8 +625,9 @@ int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina) {
 
 int buscarIndicePaginaTLB(TLB *tlb, int pid, int nro_pagina) {
     for(int i = 0; i < TLB_SIZE; i++) {
-        if(tlb->entradas[i].validez && tlb->entradas[i].pid == pid && tlb->entradas[i].pagina == nro_pagina)
+        if(/*tlb->entradas[i].validez && */tlb->entradas[i].pid == pid && tlb->entradas[i].pagina == nro_pagina) {
             return i;
+        }
     }
 
     return -1;
@@ -660,7 +666,7 @@ int traducirDireccionTLB(TLB *tlb, int pid, int direccion_logica) {
 
 bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima) {
     for(int i = 0; i < TLB_SIZE; i++) {
-        if(tlb->entradas[i].validez == 0) {
+        if(tlb->entradas[i].pagina == -1) { // tlb->entradas[i].validez == 0
             *indice_victima = i;
             return true;
         }
@@ -677,7 +683,7 @@ void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, in
     tlb->contador_uso++;
     tlb->entradas[indice_victima].ultimo_uso = tlb->contador_uso;
 
-    tlb->entradas[indice_victima].validez = 1;
+    // tlb->entradas[indice_victima].validez = 1;
 
     log_debug(logger, "PID: %d - TLB Add - Pagina: %d", tlb->entradas[indice_victima].pid, tlb->entradas[indice_victima].pagina);
 }
@@ -696,10 +702,10 @@ int seleccionarEntradaVictimaTLB(TLB *tlb) {
         }
         case ALG_LRU:
         {
-            for(int i = 0; i < TLB_SIZE; i++) {
-                int menor_uso;
+            int menor_uso = INT_MAX;
 
-                if(tlb->entradas[i].validez == 1 && tlb->entradas[i].ultimo_uso < menor_uso) {
+            for(int i = 0; i < TLB_SIZE; i++) {
+                if(/*tlb->entradas[i].validez == 1 && */tlb->entradas[i].ultimo_uso < menor_uso) {
                     menor_uso = tlb->entradas[i].ultimo_uso;
                     indice_victima = i;
                 }
@@ -720,13 +726,13 @@ void limpiarEntradaTLB(TLB *tlb, int indice_victima) {
     tlb->entradas[indice_victima].pagina = -1;
     tlb->entradas[indice_victima].marco = -1;
     tlb->entradas[indice_victima].ultimo_uso = -1;
-    tlb->entradas[indice_victima].validez = 0;
+    //tlb->entradas[indice_victima].validez = 0;
 }
 
 void limpiarProcesoTLB(TLB *tlb, int pid) {
     // Sucede por proceso //
     for(int i = 0; i < TLB_SIZE; i++) {
-        if(tlb->entradas[i].validez == 1 && tlb->entradas[i].pid == pid)
+        if(/*tlb->entradas[i].validez == 1 &&*/ tlb->entradas[i].pid == pid)
             limpiarEntradaTLB(tlb, i);
     }
 }

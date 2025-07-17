@@ -15,7 +15,7 @@ sleep 1
 cd kernel
 rm -f kernel.log
 make
-xterm -T "Kernel" -e bash -c "valgrind ./bin/kernel MEMORIA_IO 90; read -n 1" &
+xterm -T "Kernel" -e bash -c "valgrind ./bin/kernel MEMORIA_BASE_TLB 256; read -n 1" &
 cd ..
 sleep 1
 
