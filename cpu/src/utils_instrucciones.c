@@ -27,13 +27,11 @@ bool recibirPIDyPCkernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, in
 }
 
 bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
-    log_trace(logger, "EjecutarCicloInstruccion()");
     instruccionInfo instr_info;
 
-    if(checkInterrupt(cpu, proc_AEjecutar)){
+    if(checkInterrupt(cpu, proc_AEjecutar)) {
         return true;
     }
-
     char *instruccion = fetch(cpu->socket_memoria, proc_AEjecutar);
     t_list *instruccion_list = decode(proc_AEjecutar, instruccion, &instr_info);
     log_trace(logger, "Estoy a punto de hacer execute(), preparense todos!");
@@ -146,7 +144,6 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             char *datos2 = malloc(tamanio_datos + 1);
             memcpy(datos2, datos, tamanio_datos);
             datos2[tamanio_datos] = '\0';
-            log_debug(logger, "Me pidieron que escriba %s en %d", datos2, direccion_logica);
             if(cpu->cache->habilitada) {
                 // WRITE en cache //
                 escribirEnCache(cpu, pcb->pid, direccion_logica, datos2);
@@ -189,6 +186,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
         {
             char *dispositivo = (char *)list_get(instruccion_list, 1);
             int tiempo = atoi((char *)list_get(instruccion_list, 2));
+
             t_paquete *paquete_peticion_io = crear_paquete(SYSCALL_IO);
             setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_peticion_io, &(pcb->pc), sizeof(pcb->pc));

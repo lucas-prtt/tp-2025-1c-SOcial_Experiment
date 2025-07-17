@@ -69,6 +69,7 @@ void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio);
 
 void inicializarVariablesGlobales(int socket_memoria, int cant_niveles_t, int cant_entradas_t, int tam_pag);
 
+int traducirDireccionMMU(cpu_t *cpu, int pid, int direccion_logica);
 int getNumeroPagina(int direccion_logica);
 int getEntradaNivelX(int nro_pagina, int nro_nivel);
 int getDesplazamiento(int direccion_logica);
@@ -91,7 +92,7 @@ void clearBitUso(int *bit_uso);
 void setBitModificado(int *bit_modificado);
 void clearBitModificado(int *bit_modificado);
 void notificarActualizacionPaginaAMemoria(int socket_memoria, CACHE *cache, int pid);
-void *pedirPaginaAMemoria(int socket_memoria, int pid, int marco);
+void *pedirPaginaAMemoria(int socket_memoria, int pid, int direccion_fisica);
 void limpiarEntradaCACHE(CACHE *cache, int indice_victima);
 void limpiarProcesoCACHE(int socket_memoria, CACHE *cache, int pid);
 void marcarModificadoEnCache(CACHE *cache, int pid, int nro_pagina);

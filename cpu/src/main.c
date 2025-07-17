@@ -42,6 +42,7 @@ int main(int argc, char* argv[]) {
     realizarHandshakeKernel(socket_kernel_interrupt, identificadorCPU, "Kernel (Interrupt)");
 
     cpu_t *args_cpu = prepararCPU(socket_memoria, socket_kernel_dispatch, socket_kernel_interrupt);
+
     pthread_t atender_kernel_D, atender_kernel_I;
     pthread_create(&atender_kernel_D, NULL, atenderKernelDispatch, args_cpu);
     pthread_create(&atender_kernel_I, NULL, atenderKernelInterrupt, args_cpu);
