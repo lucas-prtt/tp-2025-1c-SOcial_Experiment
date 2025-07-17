@@ -128,11 +128,6 @@ t_list* obtener_instrucciones_por_pid(uint32_t pid){
     
 }
 
-int obtener_espacio_libre() {
-    return 128; // Simulación de 128 páginas libres
-    // Considerar el uso de la funcion marcosDisponibles() en variablesGlobales.c
-}
-
 bool es_valida_dir_fisica(int* pid, int* direccion_fisica, int* tamanio) {
     int inicio = *direccion_fisica;
     int fin = inicio + *tamanio;
