@@ -19,7 +19,7 @@ typedef struct cpu_t {
     CACHE *cache;
     TLB *tlb;
 
-    bool hay_interrupcion;
+    t_list * interrupciones; // Lista de ints (PID's de procesos que solicitaron interrumpir)
     pthread_mutex_t mutex_interrupcion;
 } cpu_t;
 

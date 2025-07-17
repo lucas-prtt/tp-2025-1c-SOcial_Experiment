@@ -266,40 +266,48 @@ void setProgramCounter(PCB_cpu *pcb, int newProgramCounter) {
 
 /////////////////////////       < INTERRUPCIONES >       /////////////////////////
 
-bool recibirInterrupcion(int socket_kernel_interrupt) {
+int recibirInterrupcion(int socket_kernel_interrupt) {
     int *codigo_operacion = malloc(sizeof(int));
     t_list *lista_interrupcion = recibir_paquete_lista(socket_kernel_interrupt, MSG_WAITALL, codigo_operacion);
     log_debug(logger, "Se recibio paquete en puerto interrupt");
     if(lista_interrupcion == NULL) {
         log_debug(logger, "Modulo Kernel desconectado. Terminando hilo interrupt CPU");
         free(codigo_operacion);
-        return false;
+        return -1;
     }
     if(list_size(lista_interrupcion) < 2 || *codigo_operacion != PETICION_INTERRUPT_A_CPU) {
         log_error(logger, "Me mandaron cualquier cosa en el parquete de Interrupt");
         log_error(logger, "Pointer = %p", lista_interrupcion);
         log_error(logger, "Tamaño = %d, CodOp = %d", list_size(lista_interrupcion), *codigo_operacion);
         free(codigo_operacion);
-        return false;
+        return -1;
     }
+    int pid = *(int*)list_get(lista_interrupcion, 1);
     log_debug(logger, "Paquete de interrupt correcto");
+    log_debug(logger, "El paquete de interrupcion corresponde al proceso %d", pid);
     free(codigo_operacion);
     eliminar_paquete_lista(lista_interrupcion);
-    return true;
+    return pid;
 }
 
 bool checkInterrupt(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
     pthread_mutex_lock(&cpu->mutex_interrupcion);
-    if(cpu->hay_interrupcion) {
-        cpu->hay_interrupcion = false;
+    while(list_size(cpu->interrupciones) > 0){
+        int * pidInterruptor = (int*)list_remove(cpu->interrupciones, 0);
+        if(*pidInterruptor == proc_AEjecutar->pid){
         pthread_mutex_unlock(&cpu->mutex_interrupcion);
-        
+        free(pidInterruptor);
         log_debug(logger, "Interrupción activa: devuelvo el proceso al Kernel");
         devolverProcesoPorInterrupt(cpu->socket_kernel_dispatch, proc_AEjecutar);
         return true;
+        }
+        else{
+            log_warning(logger, "Falsa alarma. Se recibio un interrupt de otro proceso (%d) en lugar del que se esta ejecutando (%d)", *pidInterruptor, proc_AEjecutar->pid);
+            log_debug(logger, "Sigo buscando interrupciones");
+        }
     }
     pthread_mutex_unlock(&cpu->mutex_interrupcion);
-
+    log_debug(logger, "No hay interrupciones para el preoceso %d", proc_AEjecutar->pid);
     return false;
 }
 

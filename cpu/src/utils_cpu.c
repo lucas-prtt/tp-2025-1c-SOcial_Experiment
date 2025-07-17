@@ -117,7 +117,7 @@ void verificarResultadoHandshake(bool result, char* nombreModuloCliente) {
 
 cpu_t *prepararCPU(int socket_memoria, int socket_kernel_dispatch, int socket_kernel_interrupt) {
     cpu_t *cpu = malloc(sizeof(cpu_t));
-    
+    cpu->interrupciones = list_create();
     cpu->socket_memoria = socket_memoria;
     cpu->socket_kernel_dispatch = socket_kernel_dispatch;
     cpu->socket_kernel_interrupt = socket_kernel_interrupt;
@@ -128,7 +128,6 @@ cpu_t *prepararCPU(int socket_memoria, int socket_kernel_dispatch, int socket_ke
     cpu->tlb = malloc(sizeof(TLB));
     inicializarTLB(cpu->tlb);
 
-    cpu->hay_interrupcion = false;
     pthread_mutex_init(&cpu->mutex_interrupcion, NULL);
 
     return cpu;

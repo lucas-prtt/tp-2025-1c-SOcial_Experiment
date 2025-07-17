@@ -43,15 +43,18 @@ void *atenderKernelDispatch(void *cpu_args) {
 
 void *atenderKernelInterrupt(void *cpu_args) {
     cpu_t *cpu = (cpu_t*)cpu_args;
-    
-    while(recibirInterrupcion(cpu->socket_kernel_interrupt)) {
-        pthread_mutex_lock(&cpu->mutex_interrupcion);
-        cpu->hay_interrupcion = true;
-        pthread_mutex_unlock(&cpu->mutex_interrupcion);
 
+    int * pidInterruptor = malloc(sizeof(int));
+    * pidInterruptor = recibirInterrupcion(cpu->socket_kernel_interrupt);
+    while(pidInterruptor != -1) {
+        pthread_mutex_lock(&cpu->mutex_interrupcion);
+        list_add(cpu->interrupciones, pidInterruptor);
+        pthread_mutex_unlock(&cpu->mutex_interrupcion);
         log_info(logger, "## Llega interrupción al puerto Interrupt");
+        pidInterruptor = malloc(sizeof(int));
+        * pidInterruptor = recibirInterrupcion(cpu->socket_kernel_interrupt);
     }
 
-    log_debug(logger, "Modulo Kernel desconectado. Terminando hilo interrupt CPU");
+    log_debug(logger, "Modulo Kernel desconectado o se recibio mensaje incorrecto. Terminando hilo interrupt CPU");
     pthread_exit(NULL);
 }
