@@ -68,7 +68,8 @@ extern char * directorioDump;
 extern int retrasoAcceso;
 //@brief Retraso para realizar un SWAP en ms
 extern int retrasoSWAP;
-
+//@brief El directorio donde se ubica el swapfile. Incluye el nombre del archivo
+extern char * directorioSwap;
 // De Procesos
 
 void agregarProcesoATabla(int nuevoPID, int tamañoMaximo);
@@ -112,7 +113,7 @@ void aumentarMetricaAccesoATablaDePaginas(int PID);
 void aumentarMetricaAccesoATablaDePaginasPorNiveles(int PID);
 // Otras
 
-void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * directorioPseudocodigo, char * directorioDump, int retrasoAcceso, int retrasoSWAP);
+void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * directorioPseudocodigo, char * directorioDump, int retrasoAcceso, int retrasoSWAP, char * PathSwap);
 void liberarVariablesGlobalesEnHeap();
 void agregarInstruccionesAPID(int PID, t_list * instruccionesNuevas);
 t_list * obtenerInstruccionesPorPID(int PID);

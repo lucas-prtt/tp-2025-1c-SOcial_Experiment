@@ -11,6 +11,7 @@ int numeroDeMarcos;
 void * memoriaDeUsuario;
 char * directorioPseudocodigo;
 char * directorioDump;
+char * directorioSwap;
 int retrasoAcceso;
 int retrasoSWAP; // Falta implementarlo
 t_list* tablaSwap = NULL;
@@ -22,7 +23,7 @@ pthread_mutex_t MUTEX_PIDPorMarco = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_MemoriaDeUsuario = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUTEX_SiguienteMarcoLibre = PTHREAD_MUTEX_INITIALIZER; // Mutex para que el valor de siguienteMarcoLibre() no quede desactualizado
 // @brief Se debe ejecutar antes de utilizar cualquier funcion o variable del archivo variablesGlobales.h
-void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * PathPseudocodigo, char * PathDUMP, int retAcc, int retSWAP){
+void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, int SizeMarcos, char * PathPseudocodigo, char * PathDUMP, int retAcc, int retSWAP, char * PathSwap){
     log_debug(logger, "Inicializando variables");
     tablaDeProcesos = list_create();
     maximoEntradasTabla = sizeTabla;
@@ -30,6 +31,7 @@ void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, 
     directorioDump = PathDUMP;
     nivelesTablas = qNiveles;
     tamañoMarcos = SizeMarcos;
+    directorioSwap = PathSwap;
     tamañoMemoriaDeUsuario = sizeMemoria;
     log_debug(logger, "Inicializacion antes de memoria de usuario");
     memoriaDeUsuario = malloc(sizeMemoria);

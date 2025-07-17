@@ -187,7 +187,7 @@ bool asignarPaginaAlProceso (int pid, int numPagina) {
 }
 
 void suspenderProceso(int pid){
-    FILE* swap = fopen("swapfile.bin", "rb+");
+    FILE* swap = abrirSwapFile();
     if (!swap) {
         log_error(logger, "No se pudo abrir swapfile.bin");
         return;
@@ -285,7 +285,7 @@ int* int_de(int n) {
 }
 
 void compactarSwap() {
-    FILE* swap = fopen("swapfile.bin", "rb+");
+    FILE* swap = abrirSwapFile();
     if (!swap) {
         log_error(logger, "Error al abrir el archivo swapfile.bin para compactación");
         return;
@@ -343,7 +343,7 @@ int obtenerFinDeSwap() {
 }
 
 void dessuspenderProceso(int pid) {
-    FILE* swap = fopen("swapfile.bin", "rb");
+    FILE* swap = abrirSwapFile();
     if (!swap) {
         log_error(logger, "No se pudo abrir swapfile.bin");
         return;
@@ -473,4 +473,17 @@ void mergearEspaciosLibres() {
 
 int compararEspaciosPorInicio(EspacioLibre* a, EspacioLibre* b) {
     return a->punto_incio - b->punto_incio;
+}
+
+FILE * abrirSwapFile(){
+    FILE * swap;
+    swap = fopen(directorioSwap, "r+");
+    if(!swap){
+        log_debug(logger, "No se pudo abrir el swapfile. Se va a crear uno nuevo");
+        swap = fopen(directorioSwap, "w+");
+        if(!swap){
+            log_error(logger, "No se pudo abrir ni crear el swapfile. Compruebe que el directorio introducido en el archivo de config existe");
+        }
+    }
+    return swap;
 }

@@ -11,7 +11,8 @@ int main(int argc, char* argv[]) {
     config_get_string_value(config, "PATH_INSTRUCCIONES"),
     config_get_string_value(config, "DUMP_PATH"),
     config_get_int_value(config, "RETARDO_MEMORIA"),
-    config_get_int_value(config, "RETARDO_SWAP")
+    config_get_int_value(config, "RETARDO_SWAP"),
+    config_get_string_value(config, "PATH_SWAPFILE")
     );
     log_debug(logger, "Variables de config obtenidas");
     int socketServidor = crearSocketConfig(config, "PUERTO_ESCUCHA");
