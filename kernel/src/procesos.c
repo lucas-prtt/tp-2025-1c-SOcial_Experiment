@@ -167,12 +167,17 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 break;
             case INTERRUPT_ACKNOWLEDGE:
                 log_trace(logger, "Case interrupt acknoledge");
+                int * pid = list_get(paqueteRespuesta, 3);
+                if(*pid != proceso->PID){
+                    log_error(logger, "Se recibio un interrupt acknowledge de otro proceso");
+                }else{
                 pthread_mutex_lock(&mutex_listasProcesos);
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, READY, listasProcesos); 
                 proceso->ProcesadorQueLoEjecutaDispatch = NULL;
                 proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
                 // CambiarEstado Ya actualiza a EXEC_ACT
                 pthread_mutex_unlock(&mutex_listasProcesos);
+                }
                 break;
             }
             log_trace(logger, "Termino el switch");
