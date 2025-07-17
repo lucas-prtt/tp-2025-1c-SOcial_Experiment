@@ -102,7 +102,8 @@ void * atenderKernel(void * socketPtr){
         if (!hayEspacio(tamañoProceso(*PID))) {
            error = 1;
         } else {
-           dessuspenderProceso(*PID);
+            simularRetrasoSWAP();
+            dessuspenderProceso(*PID);
         }
 
         if (!error) 
@@ -150,6 +151,7 @@ void * atenderKernel(void * socketPtr){
 
         PID = list_get(pedido, 1);
         aumentarMetricaBajadasASwap(*PID);
+        simularRetrasoSWAP();
         suspenderProceso(*PID);
         // No deberia poder tirar error, solo si se acaba el espacio de disco(yo hice como que esto no es posible)
         
