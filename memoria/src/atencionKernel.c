@@ -45,6 +45,7 @@ int realizarDump(int PID){
     list_destroy_and_destroy_elements(marcos, free);
     fclose(fpArchivoDump);
     free(pidAsString);
+    free(buffer);
     free(timestamp);
     free(archivoDump);
     return 0;
