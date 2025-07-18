@@ -31,7 +31,7 @@ void *atenderKernelDispatch(void *cpu_args) {
             if(fin_proceso) {
                 log_trace(logger, "No vamos nada, me voy a tomar mate");
                 limpiarProcesoTLB(cpu->tlb, proc_AEjecutar.pid);
-                limpiarProcesoCACHE(cpu->socket_memoria, cpu->cache, proc_AEjecutar.pid);
+                limpiarProcesoCACHE(cpu, proc_AEjecutar.pid);
                 break;
             }
             log_trace(logger, "Sigamos trabajando! El que no hace overclock es porque no quiere");

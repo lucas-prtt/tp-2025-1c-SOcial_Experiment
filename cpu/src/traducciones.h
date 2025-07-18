@@ -83,7 +83,7 @@ void leerSeccionPaginaMemoria(int socket_memoria, int pid, int direccion_fisica,
 void inicializarCACHE(CACHE *cache);
 void *buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina);
 int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina);
-void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, void *contenido);
+void actualizarCACHE(cpu_t *cpu, int pid, int nro_pagina, void *contenido);
 int hayEntradaVaciaCACHE(CACHE *cache);
 void insertarPaginaCACHE(CACHE *cache, int pid, int indice_victima, int nro_pagina, void *contenido);
 int seleccionarEntradaVictimaCACHE(CACHE *cache);
@@ -91,12 +91,12 @@ void setBitUso(int *bit_uso);
 void clearBitUso(int *bit_uso);
 void setBitModificado(int *bit_modificado);
 void clearBitModificado(int *bit_modificado);
-void notificarActualizacionPaginaAMemoria(int socket_memoria, CACHE *cache, int pid);
+void notificarActualizacionPaginaAMemoria(cpu_t *cpu, int pid);
 void *pedirPaginaAMemoria(int socket_memoria, int pid, int direccion_fisica);
 void limpiarEntradaCACHE(CACHE *cache, int indice_victima);
-void limpiarProcesoCACHE(int socket_memoria, CACHE *cache, int pid);
+void limpiarProcesoCACHE(cpu_t *cpu, int pid);
 void marcarModificadoEnCache(CACHE *cache, int pid, int nro_pagina);
-void limpiarProcesoCACHETrucho(int socket_memoria, CACHE *cache, int pid);
+void limpiarProcesoCACHETrucho(cpu_t *cpu, int pid);
 
 void inicializarTLB(TLB *tlb);
 int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina);

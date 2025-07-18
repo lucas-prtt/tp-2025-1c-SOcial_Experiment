@@ -282,30 +282,30 @@ int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
     return -1;
 }
 
-void actualizarCACHE(int socket_memoria, CACHE *cache, int pid, int nro_pagina, void *contenido) {
+void actualizarCACHE(cpu_t *cpu, int pid, int nro_pagina, void *contenido) {
     // Busca la página en la caché //
-    int indice_victima = buscarIndicePaginaCACHE(cache, pid, nro_pagina);
+    int indice_victima = buscarIndicePaginaCACHE(cpu->cache, pid, nro_pagina);
 
     usleep(CACHE_RETARDO * 1000);
 
     // CASO 1: Está //
     if(indice_victima != -1) {
-        setBitUso(&cache->entradas[indice_victima].bit_uso);
+        setBitUso(&cpu->cache->entradas[indice_victima].bit_uso);
     }
     // CASO 2: No está, pero hay registros vacios //
-    indice_victima = hayEntradaVaciaCACHE(cache);
+    indice_victima = hayEntradaVaciaCACHE(cpu->cache);
     if(indice_victima != -1) {
-        insertarPaginaCACHE(cache, pid, indice_victima, nro_pagina, contenido);
-        cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
+        insertarPaginaCACHE(cpu->cache, pid, indice_victima, nro_pagina, contenido);
+        cpu->cache->puntero_clock = (cpu->cache->puntero_clock + 1) % CACHE_SIZE;
     }
     // CASO 3: No está y no hay registros vacios //
     else {
-        indice_victima = seleccionarEntradaVictimaCACHE(cache);
-        if(cache->entradas[indice_victima].bit_modificado) {
-            notificarActualizacionPaginaAMemoria(socket_memoria, cache, pid);
+        indice_victima = seleccionarEntradaVictimaCACHE(cpu->cache);
+        if(cpu->cache->entradas[indice_victima].bit_modificado) {
+            notificarActualizacionPaginaAMemoria(cpu, pid);
         }
-        limpiarEntradaCACHE(cache, indice_victima);
-        insertarPaginaCACHE(cache, pid, indice_victima, nro_pagina, contenido);
+        limpiarEntradaCACHE(cpu->cache, indice_victima);
+        insertarPaginaCACHE(cpu->cache, pid, indice_victima, nro_pagina, contenido);
     }
 }
 
@@ -416,17 +416,17 @@ void clearBitModificado(int *bit_modificado) {
     *bit_modificado = 0;
 }
 
-void notificarActualizacionPaginaAMemoria(int socket_memoria, CACHE *cache, int pid) {
+void notificarActualizacionPaginaAMemoria(cpu_t *cpu, int pid) {
     for(int i = 0; i < CACHE_SIZE; i++) {
-        r_CACHE *entrada = &cache->entradas[i];
+        r_CACHE *entrada = &cpu->cache->entradas[i];
 
         if(entrada->pid == pid && entrada->bit_modificado == 1) {
             // Contemplar uso TLB
-            int marco = buscarMarcoAMemoria(socket_memoria, pid, entrada->pagina);
+            int marco = buscarMarcoAMemoria(cpu->socket_memoria, pid, entrada->pagina);
             int direccion_fisica = marco * tamanio_pagina;
             log_info(logger, "Lo que se escribió en memeria: %s", (char *)entrada->contenido);
-            escribirPaginaCompletaEnMemoria(socket_memoria, pid, direccion_fisica, entrada->contenido);
-            log_info(logger, "Página Actualizada de Caché a Memoria: PID: %d - Memory Update - Página: %d - Frame: %d", pid, entrada->pagina, marco);
+            escribirPaginaCompletaEnMemoria(cpu->socket_memoria, pid, direccion_fisica, entrada->contenido);
+            log_info(logger, "PID: %d - Memory Update - Página: %d - Frame: %d", pid, entrada->pagina, marco);
         }
     }
 }
@@ -466,24 +466,22 @@ void limpiarEntradaCACHE(CACHE *cache, int indice_victima) {
     cache->entradas[indice_victima].bit_modificado = 0;
 }
 
-void limpiarProcesoCACHE(int socket_memoria, CACHE *cache, int pid) {
+void limpiarProcesoCACHE(cpu_t *cpu, int pid) {
     for(int i = 0; i < CACHE_SIZE; i++) {
-        if(cache->entradas[i].pid == pid) {
-            if(cache->entradas[i].bit_modificado) {
-                log_debug(logger, "limpiarProcesosCACHE: VAalor: %s", (char*)cache->entradas[i].contenido);
-                notificarActualizacionPaginaAMemoria(socket_memoria, cache, pid);
+        if(cpu->cache->entradas[i].pid == pid) {
+            if(cpu->cache->entradas[i].bit_modificado) {
+                notificarActualizacionPaginaAMemoria(cpu, pid);
             }
-            limpiarEntradaCACHE(cache, i);
+            limpiarEntradaCACHE(cpu->cache, i);
         }
     }
 }
 
-void limpiarProcesoCACHETrucho(int socket_memoria, CACHE *cache, int pid) {
+void limpiarProcesoCACHETrucho(cpu_t *cpu, int pid) {
     for(int i = 0; i < CACHE_SIZE; i++) {
-        if(cache->entradas[i].pid == pid) {
-            if(cache->entradas[i].bit_modificado) {
-                log_debug(logger, "limpiarProcesosCACHE: VAalor: %s", (char*)cache->entradas[i].contenido);
-                notificarActualizacionPaginaAMemoria(socket_memoria, cache, pid);
+        if(cpu->cache->entradas[i].pid == pid) {
+            if(cpu->cache->entradas[i].bit_modificado) {
+                notificarActualizacionPaginaAMemoria(cpu, pid);
             }
         }
     }
@@ -514,7 +512,7 @@ void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
             void *paginaComoCorresponde = malloc(tamanio_pagina);
             memcpy(paginaComoCorresponde, pagina, tamanio_pagina);
             memcpy(paginaComoCorresponde + desplazamiento, datos, bytes_a_escribir);
-            actualizarCACHE(cpu->socket_memoria, cpu->cache, pid, nro_pagina_actual, paginaComoCorresponde);
+            actualizarCACHE(cpu, pid, nro_pagina_actual, paginaComoCorresponde);
             contenido_cache = buscarPaginaCACHE(cpu->cache, pid, nro_pagina_actual);
             
             free(pagina);
@@ -551,7 +549,7 @@ void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
         if(contenido_cache == NULL) {
             int direccion_fisica = traducirDireccionMMU(cpu, pid, direccion_logica);
             void *pagina = pedirPaginaAMemoria(cpu->socket_memoria, pid, direccion_fisica);
-            actualizarCACHE(cpu->socket_memoria, cpu->cache, pid, nro_pagina_actual, pagina);
+            actualizarCACHE(cpu, pid, nro_pagina_actual, pagina);
             contenido_cache = buscarPaginaCACHE(cpu->cache, pid, nro_pagina_actual);
             free(pagina);
         }

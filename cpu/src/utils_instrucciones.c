@@ -218,7 +218,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
         }
         case INSTR_DUMP_MEMORY:
         {
-            limpiarProcesoCACHETrucho(cpu->socket_memoria, cpu->cache, pcb->pid);
+            limpiarProcesoCACHETrucho(cpu, pcb->pid);
             t_paquete *paquete_peticion_dump_memory = crear_paquete(SYSCALL_DUMP_MEMORY);
             setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_peticion_dump_memory, &(pcb->pc), sizeof(pcb->pc));
