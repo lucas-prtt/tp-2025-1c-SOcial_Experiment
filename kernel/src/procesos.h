@@ -11,6 +11,7 @@
 #include "utils_kernel.h"
 #include <unistd.h>
 #include "peticion.h"
+#include <errno.h>
 
 typedef struct{
     char * nombre;

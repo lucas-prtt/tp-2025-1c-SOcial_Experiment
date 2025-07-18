@@ -36,16 +36,16 @@ int main(int argc, char* argv[]) {
     pthread_create(&cpuInterruptConnect, NULL, esperarCPUInterrupt, &socketCPUInterrupt);
     pthread_create(&ioConnect, NULL, esperarIOEscucha, &socketEscuchaIO);
     log_debug(logger, "Threads de conexion creados");
-
+    hilos = list_create();
+    procesos_c_inicializarVariables();
+    
     getchar();
     
     // RE util: hace que se finalice un accept con return -1
     shutdown(socketCPUDispatch, SHUT_RD); 
     shutdown(socketCPUInterrupt, SHUT_RD);
-    shutdown(socketEscuchaIO, SHUT_RD);
     pthread_join(cpuDispatchConnect, NULL);
     pthread_join(cpuInterruptConnect, NULL);
-    pthread_join(ioConnect, NULL);
     log_debug(logger, "Threads de conexion eliminados");
 
     // TODO: Filtrar lista de CPUs con CPUs que no tengan ID (No hicieron handshake, ID = -1)
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
 
     bool isConexionIOyCPUDisponible = !list_is_empty(conexiones.CPUsDispatch) && list_size(conexiones.CPUsDispatch) == list_size(conexiones.CPUsInterrupt) && !list_is_empty(conexiones.IOEscucha);
     bool isMemoriaDisponible = verificarModuloMemoriaDisponible();
-    bool listoParaIniciar = isConexionIOyCPUDisponible && isMemoriaDisponible;
+    bool listoParaIniciar = isMemoriaDisponible /*&& isConexionIOyCPUDisponible*/;
     log_debug(logger, "Verificacion de conexiones realizada");
     
     if(/*!*/listoParaIniciar) {
@@ -74,16 +74,14 @@ int main(int argc, char* argv[]) {
             // A partir de este punto la variable global "conexiones" no la modifica ningun thread 
             // por lo que hay via libre para usarla
     
-    procesos_c_inicializarVariables();
 
-    t_list * hilos = list_create();
+    hilos = list_create();
     pthread_t var_orderThread, var_ingresoAReadyThread;
     pthread_create(&var_orderThread, NULL, orderThread, NULL);
     pthread_create(&var_ingresoAReadyThread, NULL, ingresoAReadyThread, NULL);
     int cantidadDeIos = list_size(conexiones.IOEscucha);
     int cantidadDeCpus = list_size(conexiones.CPUsDispatch); // = conexiones a interrupt
     log_debug(logger, "Cantidad de IOs: %d, Cantidad de CPUs: %d", cantidadDeIos, cantidadDeCpus);
-    generarHilos(hilos, cantidadDeIos, IOThread, conexiones.IOEscucha);
     generarHilos(hilos, cantidadDeCpus, dispatcherThread, conexiones.CPUsDispatch);
     nuevoProceso(0, argv[1], atoi(argv[2]), listasProcesos); // Agrega el proceso indicado por consola a la lista NEW
     post_sem_introducirAReady();

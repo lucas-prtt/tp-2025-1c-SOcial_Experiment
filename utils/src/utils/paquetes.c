@@ -69,6 +69,7 @@ t_list *recibir_paquete_lista(int socket, int flags, int* codOp) { //CodOp se se
     paq = malloc(sizeof(t_paquete));
     if(!recibir_paquete(socket, paq, flags)) {
         free(paq);
+        if(codOp != NULL)
         *codOp = -42;
         return NULL;
     }

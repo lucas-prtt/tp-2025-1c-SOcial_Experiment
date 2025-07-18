@@ -32,7 +32,7 @@ typedef struct {
     t_list * IOEscucha;
     IPyPuerto ipYPuertoMemoria;
 } conexionesAModulos;
-
+extern t_list * hilos;
 extern sem_t evaluarFinKernel;
 extern conexionesAModulos conexiones; //Muy usada por hilos: Conviene que sea global
 void * esperarCPUDispatch(void * socket);
@@ -44,6 +44,7 @@ int crearSocketDesdeConfig(t_config * config, char opcion[]);
 void generarHilos(t_list * hilos, int cantidad, void * func(void *), t_list * parametros);
 void eliminarHilos(t_list * hilos);
 IDySocket_CPU * buscarCPUInterruptPorID(int id);
+void * IOThread(void * NOMBREYSOCKETIO);
 
 void *handshakeCPUInterrupt(void * socket);
 void *handshakeCPUDispatch(void * socket);

@@ -3,6 +3,7 @@
 
 conexionesAModulos conexiones;
 sem_t evaluarFinKernel;
+t_list * hilos;
 void * esperarCPUDispatch(void * socket) {
     conexiones.CPUsDispatch = list_create();
     t_list * createdThreads = list_create();
@@ -177,6 +178,13 @@ void *handshakeIO(void *ioSocketYNombre) {
     log_debug(logger, "IO Handshake - NOMBRE: %s, Socket: %d", ((NombreySocket_IO*)ioSocketYNombre)->NOMBRE, ((NombreySocket_IO*)ioSocketYNombre)->SOCKET);
     eliminar_paquete(paquete_resp_io);
     eliminar_paquete_lista(lista_contenido);
+
+    pthread_t * nuevoHilo;
+    nuevoHilo = malloc(sizeof(pthread_t));
+    pthread_create(nuevoHilo, NULL, IOThread, ioSocketYNombre);
+    list_add(hilos, nuevoHilo);
+    log_debug(logger, "   -Se inicio el hilo de IO: %ld", * nuevoHilo);
+    
     pthread_exit(NULL);
 }
 

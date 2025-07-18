@@ -9,6 +9,3 @@
 #include "utils_procesos.h"
 #include <semaphore.h>
 
-
-
-
