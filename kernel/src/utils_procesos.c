@@ -49,7 +49,7 @@ t_PCB * crearPCB(int id, char * path, int size){
     pcb->PATH = strdup(path); // path
     pcb->EJC_ANT = 0;
     pcb->EJC_ACT = 0;
-    pcb->EST = 0;
+    pcb->EST = config_get_int_value(config, "ESTIMACION_INICIAL");
     pcb->PC = 0;
     for (int i = 0; i<7; i++){
     pcb->ME[i] = 0;
