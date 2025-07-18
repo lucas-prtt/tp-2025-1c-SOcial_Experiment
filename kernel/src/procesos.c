@@ -470,6 +470,7 @@ void * temporizadorSuspenderThread(void * param){
     }
     if(peticion->estado == PETICION_FINALIZADA)
     eliminarPeticion(peticion);
+    else
     sem_post(&(peticion->sem_estado));
     pthread_exit(NULL);
 }
