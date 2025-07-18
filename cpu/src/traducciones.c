@@ -30,14 +30,12 @@ int traducirDireccionMMU(cpu_t *cpu, int pid, int direccion_logica) {
     int marco = -1;
     int direccion_fisica = -1;
     int nro_pagina = getNumeroPagina(direccion_logica);
-
     if(cpu->tlb->habilitada) {
         direccion_fisica = traducirDireccionTLB(cpu->tlb, pid, direccion_logica);
-
         if(direccion_fisica == -1) {
             marco = buscarMarcoAMemoria(cpu->socket_memoria, pid, nro_pagina);
             actualizarTLB(cpu->tlb, pid, nro_pagina, marco);
-            direccion_fisica = traducirDireccion(direccion_logica, marco);
+            direccion_fisica = traducirDireccionTLB(cpu->tlb, pid, direccion_logica);
         }
     }
     else {
@@ -45,6 +43,7 @@ int traducirDireccionMMU(cpu_t *cpu, int pid, int direccion_logica) {
         direccion_fisica = traducirDireccion(direccion_logica, marco);
     }
 
+    //log_warning(logger, "Traduzco DL %d a DF %d", direccion_logica, direccion_fisica);
     return direccion_fisica;
 }
 
@@ -431,7 +430,7 @@ void notificarActualizacionPaginaAMemoria(cpu_t *cpu, int pid, int nro_pagina) {
         r_CACHE *entrada = &cpu->cache->entradas[i];
 
         if(entrada->pid == pid && entrada->pagina == nro_pagina && entrada->bit_modificado == 1) {
-            int direccion_fisica = traducirDireccionMMU(cpu, pid, entrada->pagina);
+            int direccion_fisica = traducirDireccionMMU(cpu, pid, entrada->pagina * tamanio_pagina);
             escribirPaginaCompletaEnMemoria(cpu->socket_memoria, pid, direccion_fisica, entrada->contenido);
             log_info(logger, "PID: %d - Memory Update - Página: %d - Frame: %d", pid, entrada->pagina, (direccion_fisica / tamanio_pagina));
             break;

@@ -126,7 +126,7 @@ enum TIPO_INSTRUCCION instrucciones_string_to_enum(char *nombreInstruccion) {
 bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, PCB_cpu *pcb) {
     int socket_kernel = cpu->socket_kernel_dispatch;
     char *operacion = (char *)list_get(instruccion_list, 0);
-    
+    //MostrameTodaLaCache(cpu);
     switch(instr_info.tipo_instruccion)
     {
         case INSTR_NOOP:
@@ -327,4 +327,15 @@ void devolverProcesoPorInterrupt(int socket_kernel, PCB_cpu *proc_AEjecutar) {
     enviar_paquete(paquete_devolucion_proceso, socket_kernel);
 
     eliminar_paquete(paquete_devolucion_proceso);
+}
+
+void MostrameTodaLaCache(cpu_t * cpu){
+    char * buffer = NULL;
+    buffer = malloc(tamanio_pagina+1);   
+    buffer[tamanio_pagina] = '\0';
+    for(int i=0; i<CACHE_SIZE; i++){
+        if(cpu->cache->entradas[i].contenido != NULL){
+        memcpy(buffer, cpu->cache->entradas[i].contenido, tamanio_pagina);
+        log_warning(logger, "%s", buffer);}
+    }
 }

@@ -46,6 +46,7 @@ void setProgramCounter(PCB_cpu *pcb, int newProgramCounter);
 bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar);
 int recibirInterrupcion(int socket_kernel_interrupt);
 void devolverProcesoPorInterrupt(int socket_kernel, PCB_cpu *proc_AEjecutar);
+void MostrameTodaLaCache(cpu_t * cpu);
 
 char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar);
 t_list *decode(PCB_cpu *proc_AEjecutar, char *instruccion, instruccionInfo *instr_info);
