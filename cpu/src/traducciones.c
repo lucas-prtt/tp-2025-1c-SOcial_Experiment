@@ -302,7 +302,7 @@ void actualizarCACHE(cpu_t *cpu, int pid, int nro_pagina, void *contenido) {
     else {
         indice_victima = seleccionarEntradaVictimaCACHE(cpu->cache);
         if(cpu->cache->entradas[indice_victima].bit_modificado) {
-            notificarActualizacionPaginaAMemoria(cpu, pid);
+            notificarActualizacionPaginaAMemoria(cpu, cpu->cache->entradas[indice_victima].pid, cpu->cache->entradas[indice_victima].pagina);
         }
         limpiarEntradaCACHE(cpu->cache, indice_victima);
         insertarPaginaCACHE(cpu->cache, pid, indice_victima, nro_pagina, contenido);
@@ -336,12 +336,12 @@ void insertarPaginaCACHE(CACHE *cache, int pid, int indice_victima, int nro_pagi
 }
 
 int seleccionarEntradaVictimaCACHE(CACHE *cache) {
-    int indice_victima = -1;
-
     switch(cache->algoritmo)
     {
         case ALG_CLOCK:
         {
+            int indice_victima = -1;
+            
             while(true) {
                 r_CACHE *registro_actual = &cache->entradas[cache->puntero_clock];
 
@@ -360,35 +360,45 @@ int seleccionarEntradaVictimaCACHE(CACHE *cache) {
         }
         case ALG_CLOCK_M:
         {
-            int puntero_inicial;
+            int vueltas = 0;
 
-            for(int ronda = 1; ronda <= 4; ronda++) {
-                puntero_inicial = cache->puntero_clock;
+            while(vueltas < 2) {
+                // Busca: (0, 0) //
+                for(int i = 0; i < CACHE_SIZE; i++) {
+                    int indice = (cache->puntero_clock + i) % CACHE_SIZE;
+                    r_CACHE *entrada = &cache->entradas[indice];
 
-                do {
-                    r_CACHE *entrada = &cache->entradas[cache->puntero_clock];
-                    int u = entrada->bit_uso;
-                    int m = entrada->bit_modificado;
+                    log_info(logger, "CLOCK-M - Evaluando entrada %d: (Uso: %d, Modificado: %d)", indice, entrada->bit_uso, entrada->bit_modificado);
 
-                    // (0, 0) //
-                    if((ronda == 1 || ronda == 3) && u == 0 && m == 0) {
-                        indice_victima = cache->puntero_clock;
-                        cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
-                        return indice_victima;
+                    if(entrada->bit_uso == 0 && entrada->bit_modificado == 0) {
+                        cache->puntero_clock = (indice + 1) % CACHE_SIZE;
+                        return indice;
                     }
-                    // (0, 1) //
-                    if((ronda == 2 || ronda == 4) && u == 0 && m == 1) {
-                        indice_victima = cache->puntero_clock;
-                        cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
-                        return indice_victima;
-                    }
-                    if((ronda % 2) == 0 && u == 1)
-                        clearBitUso(&entrada->bit_uso);
+                }
 
-                    cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
-                } while(cache->puntero_clock != puntero_inicial);
+                // Busca: (0, 1) //
+                for(int i = 0; i < CACHE_SIZE; i++) {
+                    int indice = (cache->puntero_clock + i) % CACHE_SIZE;
+                    r_CACHE *entrada = &cache->entradas[indice];
+
+                    log_info(logger, "CLOCK-M - Evaluando entrada %d: (Uso: %d, Modificado: %d)", indice, entrada->bit_uso, entrada->bit_modificado);
+
+                    if(entrada->bit_uso == 0 && entrada->bit_modificado == 1) {
+                        cache->puntero_clock = (indice + 1) % CACHE_SIZE;
+                        return indice;
+                    }
+                }
+
+                // Si no se encontró víctima, limpiar bits de uso y repetir //
+                for(int i = 0; i < CACHE_SIZE; i++) {
+                    cache->entradas[i].bit_uso = 0;
+                }
+
+                vueltas++;
             }
-            break;
+
+            log_error(logger, "CLOCK-M: No se encontró víctima luego de 2 vueltas");
+            return -1;
         }
         default:
         {
@@ -416,17 +426,15 @@ void clearBitModificado(int *bit_modificado) {
     *bit_modificado = 0;
 }
 
-void notificarActualizacionPaginaAMemoria(cpu_t *cpu, int pid) {
+void notificarActualizacionPaginaAMemoria(cpu_t *cpu, int pid, int nro_pagina) {
     for(int i = 0; i < CACHE_SIZE; i++) {
         r_CACHE *entrada = &cpu->cache->entradas[i];
 
-        if(entrada->pid == pid && entrada->bit_modificado == 1) {
-            // Contemplar uso TLB
-            int marco = buscarMarcoAMemoria(cpu->socket_memoria, pid, entrada->pagina);
-            int direccion_fisica = marco * tamanio_pagina;
-            log_info(logger, "Lo que se escribió en memeria: %s", (char *)entrada->contenido);
+        if(entrada->pid == pid && entrada->pagina == nro_pagina && entrada->bit_modificado == 1) {
+            int direccion_fisica = traducirDireccionMMU(cpu, pid, entrada->pagina);
             escribirPaginaCompletaEnMemoria(cpu->socket_memoria, pid, direccion_fisica, entrada->contenido);
-            log_info(logger, "PID: %d - Memory Update - Página: %d - Frame: %d", pid, entrada->pagina, marco);
+            log_info(logger, "PID: %d - Memory Update - Página: %d - Frame: %d", pid, entrada->pagina, (direccion_fisica / tamanio_pagina));
+            break;
         }
     }
 }
@@ -470,7 +478,7 @@ void limpiarProcesoCACHE(cpu_t *cpu, int pid) {
     for(int i = 0; i < CACHE_SIZE; i++) {
         if(cpu->cache->entradas[i].pid == pid) {
             if(cpu->cache->entradas[i].bit_modificado) {
-                notificarActualizacionPaginaAMemoria(cpu, pid);
+                notificarActualizacionPaginaAMemoria(cpu, pid, cpu->cache->entradas[i].pagina);
             }
             limpiarEntradaCACHE(cpu->cache, i);
         }
@@ -481,7 +489,7 @@ void limpiarProcesoCACHETrucho(cpu_t *cpu, int pid) {
     for(int i = 0; i < CACHE_SIZE; i++) {
         if(cpu->cache->entradas[i].pid == pid) {
             if(cpu->cache->entradas[i].bit_modificado) {
-                notificarActualizacionPaginaAMemoria(cpu, pid);
+                notificarActualizacionPaginaAMemoria(cpu, pid, cpu->cache->entradas[i].pagina);
             }
         }
     }

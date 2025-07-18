@@ -253,9 +253,14 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
 void marcarModificadoEnCache(CACHE *cache, int pid, int nro_pagina) {
     for(int i = 0; i < CACHE_SIZE; i++) {
         r_CACHE entrada = cache->entradas[i];
+
         if(entrada.pid == pid && entrada.pagina == nro_pagina) {
-            cache->entradas[i].bit_modificado = 1;
-            return;
+            if(!cache->entradas[i].bit_modificado) {
+                cache->entradas[i].bit_modificado = 1;
+                
+                log_info(logger, "PID: %d - Dirty Page - Página: %d", pid, nro_pagina);
+            }
+            break;
         }
     }
 }
