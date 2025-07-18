@@ -24,6 +24,7 @@ typedef struct PIDyTablaDePaginas{
     Metricas stats; // Tambien le adjunto las metricas
     int TamMaxProceso;
     t_list * instrucciones;
+    int enSwap;
 } PIDInfo;
 // Todo lo relacionado con SWAP
 typedef struct {
@@ -87,7 +88,6 @@ int esPaginaValida(int PID, t_list * entradas);
 int cantidadDePaginasDelProceso(int PID);
 
 
-
 // De Marcos
 
 void * punteroAMarcoPorNumeroDeMarco(int numeroDeMarco);
@@ -99,6 +99,10 @@ int PIDdelMarco(int Marco);
 t_list * marcosDelPid(int PID);
 int siguienteMarcoLibre();
 
+void setEnSwap(int PID);
+void setEnMemoria(int PID);
+int estaCargado(PIDInfo * Proceso);
+int estaCargadoPid(int Proceso);
 
 
 // De Metricas

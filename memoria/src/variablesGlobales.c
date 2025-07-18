@@ -149,9 +149,11 @@ void agregarProcesoATabla(int nuevoPID, int tamañoProceso)
     nuevoElemento->stats.escriturasDeMemoria = 0;
     nuevoElemento->TamMaxProceso = tamañoProceso;
     nuevoElemento->instrucciones = NULL;
+    nuevoElemento->enSwap = 0;
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
     list_add(tablaDeProcesos, nuevoElemento);
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+    
 }
 // @brief Obtiene el infoProceso de un proceso dado el PID. No es thread safe: Usar mutex
 PIDInfo * obtenerInfoProcesoConPID(int PIDBuscado){
@@ -262,16 +264,41 @@ int cantidadDeMarcosParaAlmacenar(int tamaño){
     return (tamaño+tamañoMarcos-1)/tamañoMarcos;
 }
 //@brief Devuelve la cantidad de marcos ocupados en memoria, usando el maximo de marcos ocupables por proceso
+
+int estaCargado(PIDInfo * Proceso){
+    return !Proceso->enSwap;
+}
+int estaCargadoPid(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDInfo * Proceso = obtenerInfoProcesoConPID(PID);
+    return !Proceso->enSwap;
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+}
+void setEnSwap(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDInfo * Proceso = obtenerInfoProcesoConPID(PID);
+    Proceso->enSwap = 1;    
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+
+}
+void setEnMemoria(int PID){
+    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+    PIDInfo * Proceso = obtenerInfoProcesoConPID(PID);
+    Proceso->enSwap = 0;    
+    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+}
 int marcosOcupados(){
     int acum = 0;
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
     int tam_lista_procesos = list_size(tablaDeProcesos); 
     for (int i=0; i<tam_lista_procesos; i++){
+        if(estaCargado((PIDInfo*)list_get(tablaDeProcesos, i)))
         acum +=  cantidadDeMarcosParaAlmacenar(*((int*)list_get(tablaDeProcesos, i)));
     }
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return acum;
 }
+
 //@brief Determina la cantidad de marcos disponibles, teniendo en cuenta el maxmo de marcos ocupables por los procesos
 int marcosDisponibles(){
     return numeroDeMarcos - marcosOcupados();

@@ -103,6 +103,7 @@ void * atenderKernel(void * socketPtr){
            error = 1;
         } else {
             dessuspenderProceso(*PID);
+            setEnMemoria(*PID);
             simularRetrasoSWAP();
         }
 
@@ -118,7 +119,6 @@ void * atenderKernel(void * socketPtr){
         PID = list_get(pedido, 1);
         PATH = list_get(pedido, 3);
         TAMAÑO = list_get(pedido, 5);
-        
         if(hayEspacio(*TAMAÑO)){
         agregarProcesoATabla(*PID, *TAMAÑO);
         log_info(logger, "## PID: %d - Proceso Creado - Tamaño: %d", *PID, *TAMAÑO);
@@ -154,6 +154,7 @@ void * atenderKernel(void * socketPtr){
         log_debug(logger, "## Se envia %d a SWAP", *PID);
         aumentarMetricaBajadasASwap(*PID);
         suspenderProceso(*PID);
+        setEnSwap(*PID);
         simularRetrasoSWAP();
         // No deberia poder tirar error, solo si se acaba el espacio de disco(yo hice como que esto no es posible)
         
