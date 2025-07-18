@@ -468,9 +468,9 @@ void * temporizadorSuspenderThread(void * param){
         log_debug(logger, "(%d) suspendido", peticion->PID);
         }
     }
-    sem_post(&(peticion->sem_estado));
     if(peticion->estado == PETICION_FINALIZADA)
     eliminarPeticion(peticion);
+    sem_post(&(peticion->sem_estado));
     pthread_exit(NULL);
 }
 
