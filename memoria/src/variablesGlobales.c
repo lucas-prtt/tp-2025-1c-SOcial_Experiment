@@ -59,7 +59,7 @@ void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, 
     tablaSwap = list_create();
     //Tabla de los espacios libres del Swap
     espaciosLibresSwapentrePaginas = list_create();
-    
+    memset(memoriaDeUsuario, 0, sizeMemoria);
 }
 
 
