@@ -197,6 +197,41 @@ void suspenderProceso(int pid){
 
     int cantidadPaginas = cantidadDePaginasDelProceso(pid);
 
+    //tengo que ver si en realidad no hay ningun marco en memoria a pesar de que cantidad de paginas diga que hay 1 pero que no existe
+    for (int nroPagina = 0; nroPagina <= cantidadPaginas; nroPagina++) {
+        // Obtener entradas del árbol a partir del número de página es decir el camino a seguir en el arbol en forma de lista
+        t_list* entradas = entradasDesdeNumeroDePagina(nroPagina);
+
+        // Buscar marco actual (si tiene asignado)
+        int marco = obtenerMarcoDePaginaConPIDYEntradas(pid, entradas);
+
+        if (marco == -1) {
+            list_destroy(entradas);
+            if (nroPagina == cantidadPaginas){//me fijo si es la ultima pagina del for
+                //si es la ultima pagina y no esta el marco en memoria tampoco(osea ninguno lo esta) entonces solo se anota en la tabla de swap en el final de todo(para evitar compactacion) y se actualiza las metricas
+                // Guardar entrada en la tabla de swap
+                int offset = obtenerFinDeSwap() - tamañoMarcos;//le saco el tamañoMarcos porque al no haber espacio realmente no existe nada(fijarse calculo obtnerFinDeSWAP)
+                if(offset < 0)
+                {
+                    offset = 0;}
+                EntradaSwap* entradaSwap = malloc(sizeof(EntradaSwap));
+                entradaSwap->pid = pid;
+                entradaSwap->nro_pagina = (-1);//le pongo que sea la pagina -1 para cuando desuspendo saber que no tiene que copiar nada a memoria
+                entradaSwap->offset = offset;
+                list_add(tablaSwap, entradaSwap);
+
+                fclose(swap);
+
+                // Liberar marcos y tabla de páginas(no deberia ser necesario pero me da miedo que se rompa algo)
+                eliminarProcesoDePIDPorMarco(pid);
+                vaciarTablaDePaginasDePID(pid);
+
+                aumentarMetricaBajadasASwap(pid);
+                return;//termino suspenderProceso
+                }//si no tiene, prueba la siguiente pagina
+        }else break;//si encuenta que hay un marco ocupado sale del for
+    }
+
 // 1. Buscar primer espacio libre contiguo que alcance
     int offsetInicial = -1;
     EspacioLibre* hueco;
@@ -213,7 +248,7 @@ void suspenderProceso(int pid){
     }
 
     // 2. Si no hay hueco contiguo, compactar si hay espacio disperso
-    if (offsetInicial == -1) {
+    if ((offsetInicial == -1) || (paginasLibresTotalesSwapEntreProcesos != 0)) {
         if (paginasLibresTotalesSwapEntreProcesos >= cantidadPaginas) {
             log_debug(logger, "Compactando SWAP para PID %d", pid);
             compactarSwap();
@@ -233,9 +268,8 @@ void suspenderProceso(int pid){
 
         if (marco == -1) {
             list_destroy(entradas);
-            continue; // página no está en memoria, nada que guardar
+            continue;
         }
-
         // Leer contenido de la página
         void* contenido = malloc(tamañoMarcos);
         memcpy(contenido, punteroAMarcoPorNumeroDeMarco(marco), tamañoMarcos);//guardo el contenido de la pagina
@@ -336,7 +370,10 @@ int obtenerFinDeSwap() {
     int maxOffset = 0;
     for (int i = 0; i < list_size(tablaSwap); i++) {
         EntradaSwap* entrada = list_get(tablaSwap, i);
-        int finPagina = entrada->offset + tamañoMarcos;
+        int finPagina = 0;
+        if(entrada->nro_pagina != -1){
+        finPagina= entrada->offset + tamañoMarcos;}
+
         if (finPagina > maxOffset) {
             maxOffset = finPagina;
         }
@@ -374,6 +411,22 @@ void dessuspenderProceso(int pid) {
 
     for (int i = 0; i < list_size(paginasDelProceso); i++) {
         EntradaSwap* entrada = list_get(paginasDelProceso, i);
+
+        if(entrada->nro_pagina == (-1)){
+            //solo lo saca de la taba swap y actualiza metricas
+            aumentarMetricaSubidasAMemoriaPrincipal(pid);
+            // Eliminar entradas de tablaSwap
+            for (int i = 0; i < list_size(tablaSwap);i++) {
+                EntradaSwap* entrada = list_get(tablaSwap, i);
+                if (entrada->pid == pid) {
+                    list_remove_and_destroy_element(tablaSwap, i, free);
+                    break;
+                    }
+            }
+            list_destroy(paginasDelProceso);
+            fclose(swap);
+            return;
+        }
 
         // Leer la página desde el archivo swap
         void* buffer = malloc(tamañoMarcos);
