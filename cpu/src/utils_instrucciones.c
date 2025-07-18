@@ -1,5 +1,6 @@
 #include "utils_instrucciones.h"
 
+bool ultimaInstruccionInitProc;
 
 bool recibirPIDyPCkernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, int *estado_conexion) {
     int *codigo_operacion = malloc(sizeof(int));
@@ -29,27 +30,51 @@ bool recibirPIDyPCkernel(int socket_kernel_dispatch, PCB_cpu *proc_AEjecutar, in
 bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
     instruccionInfo instr_info;
 
-    if(checkInterrupt(cpu, proc_AEjecutar)) {
-        return true;
-    }
     char *instruccion = fetch(cpu->socket_memoria, proc_AEjecutar);
     t_list *instruccion_list = decode(proc_AEjecutar, instruccion, &instr_info);
-    log_trace(logger, "Estoy a punto de hacer execute(), preparense todos!");
+    log_trace(logger, "Estoy a punto de hacer execute()");
     bool fin_proceso = execute(cpu, instruccion_list, instr_info, proc_AEjecutar);
-    log_trace(logger, "PUMBA!!! ejecute!. fin_proceso = %d", fin_proceso);
+    bool interrupcion = checkInterrupt(cpu, proc_AEjecutar);
+    log_trace(logger, "Ejecute! Fin proceso: %d, interrupt: %d, initProc: %d", fin_proceso, interrupcion, ultimaInstruccionInitProc);
 
+
+    free(instruccion);
+    list_destroy_and_destroy_elements(instruccion_list, free);
+    
     if(fin_proceso) {
-        log_trace(logger, "Hubo un problema, las veré pronto mis instrucciones queridas");
-        log_trace(logger, "Le mando un mensaje a kernel");
+        log_trace(logger, "Interrumpo ejecucion, le mando un mensaje a kernel");
         free(instruccion);
         list_destroy_and_destroy_elements(instruccion_list, free);
         log_trace(logger, "Aquí me voy!");
+        if(interrupcion && ultimaInstruccionInitProc) { // Si a kernel le hice syscall de INIT_PROC, automaticamente me manda el mismo proceso.
+            t_list * ConfirmacionSyscallRecibido = recibir_paquete_lista(cpu->socket_kernel_dispatch, MSG_WAITALL, NULL);
+                    // No tengo que aceptar el mismo proceso que me mande. Le debo dar interrupt acknoledge.
+            eliminar_paquete_lista(ConfirmacionSyscallRecibido);
+            log_debug(logger, "Le digo a kernel que me llego interrupcion del proceso, por lo que no lo tiene que seguir ejecutando");
+            devolverProcesoPorInterrupt(cpu->socket_kernel_dispatch, proc_AEjecutar);
+            ultimaInstruccionInitProc = false;
+        }else{
+            if(interrupcion){
+                log_debug(logger, "hubo interrupcion y syscall, pero no era init_proc, por lo que al volver, la cola se ordena y no hace falta interrupt acknowledge");
+            }
+            else if(ultimaInstruccionInitProc){
+                log_debug(logger, "Hubo initProc pero sin interrupcion, kernel me va a mandar que siga con este proceso");
+            }
+            else{
+                log_debug(logger, "Se produjo un syscall normal, sin interrupciones presentes");
+            }
+        }
+        return true;
+    }else if(interrupcion){
+        log_debug(logger, "Solo hubo una interrupcion, no hubo syscall. Devuelvo interrupt acknoledge");
+        // Si solo hubo interrupcion, solo devuelvo interrupt acknowledge
+        devolverProcesoPorInterrupt(cpu->socket_kernel_dispatch, proc_AEjecutar);
+        ultimaInstruccionInitProc = false;  // Ya deberia ser, pero por las dudas
         return true;
     }
+    ultimaInstruccionInitProc = false;
 
-    log_trace(logger, "El mundo es hermoso. Sigo ejecutando");
-    free(instruccion);
-    list_destroy_and_destroy_elements(instruccion_list, free);
+    log_trace(logger, "Sigo ejecutando");
     return false;
 }
 
@@ -59,7 +84,6 @@ char *fetch(int socket_memoria, PCB_cpu *proc_AEjecutar) {
     agregar_a_paquete(paquete_peticion_instr, &(proc_AEjecutar->pc), sizeof(proc_AEjecutar->pc));
     enviar_paquete(paquete_peticion_instr, socket_memoria);
     eliminar_paquete(paquete_peticion_instr);
-    
     int *codigo_operacion;
     codigo_operacion = malloc(sizeof(int));
     t_list *lista_respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
@@ -127,6 +151,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
     int socket_kernel = cpu->socket_kernel_dispatch;
     char *operacion = (char *)list_get(instruccion_list, 0);
     //MostrameTodaLaCache(cpu);
+    ultimaInstruccionInitProc = false;
     switch(instr_info.tipo_instruccion)
     {
         case INSTR_NOOP:
@@ -201,6 +226,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
         }
         case INSTR_INIT_PROC:
         {
+            ultimaInstruccionInitProc = true;
             char *path = (char *)list_get(instruccion_list, 1);
             int tamanio = atoi((char *)list_get(instruccion_list, 2));
 
@@ -304,8 +330,7 @@ bool checkInterrupt(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
         if(*pidInterruptor == proc_AEjecutar->pid){
         pthread_mutex_unlock(&cpu->mutex_interrupcion);
         free(pidInterruptor);
-        log_debug(logger, "Interrupción activa: devuelvo el proceso al Kernel");
-        devolverProcesoPorInterrupt(cpu->socket_kernel_dispatch, proc_AEjecutar);
+        log_debug(logger, "Interrupción activa");
         return true;
         }
         else{
