@@ -75,7 +75,6 @@ int main(int argc, char* argv[]) {
             // por lo que hay via libre para usarla
     
 
-    hilos = list_create();
     pthread_t var_orderThread, var_ingresoAReadyThread;
     pthread_create(&var_orderThread, NULL, orderThread, NULL);
     pthread_create(&var_ingresoAReadyThread, NULL, ingresoAReadyThread, NULL);
