@@ -171,5 +171,6 @@ void * atenderKernel(void * socketPtr){
         break;
     }
     eliminar_paquete_lista(pedido);
+    close(socket);
     pthread_exit(NULL);
 }
