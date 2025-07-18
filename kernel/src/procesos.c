@@ -188,6 +188,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, READY, listasProcesos); 
                 proceso->ProcesadorQueLoEjecutaDispatch = NULL;
                 proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
+		sem_post(&sem_procesos_en_ready);
                 // CambiarEstado Ya actualiza a EXEC_ACT
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 }
@@ -223,7 +224,6 @@ void * orderThread(void * _){
             enviar_paquete(peticionInterrupt, procesoInterrumpido->ProcesadorQueLoEjecutaInterrupt->SOCKET);
             log_debug(logger, "Peticion de desalojo enviada: Se debe interrumpir (%d)", procesoInterrumpido->PID);
             log_trace(logger, "Ordenando cola de ready de nuevo...");
-            sem_post(&sem_procesos_en_ready);
             ordenar_cola_ready(listasProcesos, algoritmo_enum);
             // Hay que reordenar para que el que se desalojo quede donde corresponde
         }
