@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# Permisos: chmod +x pruebaN.M.s
+
+# Uso: ./prueba1.2.sh <IP KERNEL> <IP MEMORIA> <nombre_prueba>
+
+IP_KERNEL=$1
+IP_MEMORIA=$2
+PRUEBA=$3
+
+# Detectar ruta base automáticamente (la carpeta donde está el script, ir hacia arriba)
+BASE_DIR="$(dirname "$(pwd)")"
+
+INSTRUCCIONES_PATH="/home/utnso/Desktop/revenge-of-the-cth-pruebas/"
+PUERTO_MEMORIA=8002
+PUERTO_DISPATCH=8001
+PUERTO_INTERRUPT=8004
+PUERTO_IO=8003
+
+# ==== MEMORY ====
+MEM_CONFIG="$BASE_DIR/memoria/memory.config"
+if [ -f "$MEM_CONFIG" ]; then
+  sed -i "s/^PUERTO_ESCUCHA=.*/PUERTO_ESCUCHA=$PUERTO_MEMORIA/" "$MEM_CONFIG"
+  sed -i "s/^TAM_MEMORIA=.*/TAM_MEMORIA=4096/" "$MEM_CONFIG"
+  sed -i "s/^TAM_PAGINA=.*/TAM_PAGINA=64/" "$MEM_CONFIG"
+  sed -i "s/^ENTRADAS_POR_TABLA=.*/ENTRADAS_POR_TABLA=4/" "$MEM_CONFIG"
+  sed -i "s/^CANTIDAD_NIVELES=.*/CANTIDAD_NIVELES=2/" "$MEM_CONFIG"
+  sed -i "s/^RETARDO_MEMORIA=.*/RETARDO_MEMORIA=500/" "$MEM_CONFIG"
+  sed -i "s#^PATH_SWAPFILE=.*#PATH_SWAPFILE=/home/utnso/swapfile.bin#" "$MEM_CONFIG"
+  sed -i "s/^RETARDO_SWAP=.*/RETARDO_SWAP=15000/" "$MEM_CONFIG"
+  sed -i "s/^LOG_LEVEL=.*/LOG_LEVEL=DEBUG/" "$MEM_CONFIG"
+  sed -i "s#^DUMP_PATH=.*#DUMP_PATH=/home/utnso/dump_files/#" "$MEM_CONFIG"
+  sed -i "s#^PATH_INSTRUCCIONES=.*#PATH_INSTRUCCIONES=${INSTRUCCIONES_PATH}#" "$MEM_CONFIG"
+else
+  echo "❌ No se encontró $MEM_CONFIG"
+fi
+
+# ==== KERNEL ====
+KERNEL_CONFIG="$BASE_DIR/kernel/kernel.config"
+if [ -f "$KERNEL_CONFIG" ]; then
+  sed -i "s/^IP_MEMORIA=.*/IP_MEMORIA=$IP_MEMORIA/" "$KERNEL_CONFIG"
+  sed -i "s/^PUERTO_MEMORIA=.*/PUERTO_MEMORIA=$PUERTO_MEMORIA/" "$KERNEL_CONFIG"
+  sed -i "s/^PUERTO_ESCUCHA_DISPATCH=.*/PUERTO_ESCUCHA_DISPATCH=$PUERTO_DISPATCH/" "$KERNEL_CONFIG"
+  sed -i "s/^PUERTO_ESCUCHA_INTERRUPT=.*/PUERTO_ESCUCHA_INTERRUPT=$PUERTO_INTERRUPT/" "$KERNEL_CONFIG"
+  sed -i "s/^PUERTO_ESCUCHA_IO=.*/PUERTO_ESCUCHA_IO=$PUERTO_IO/" "$KERNEL_CONFIG"
+  sed -i "s/^ALGORITMO_CORTO_PLAZO=.*/ALGORITMO_CORTO_PLAZO=FIFO/" "$KERNEL_CONFIG"
+  sed -i "s/^ALGORITMO_INGRESO_A_READY=.*/ALGORITMO_INGRESO_A_READY=FIFO/" "$KERNEL_CONFIG"
+  sed -i "s/^ALFA=.*/ALFA=1/" "$KERNEL_CONFIG"
+  sed -i "s/^ESTIMACION_INICIAL=.*/ESTIMACION_INICIAL=1000/" "$KERNEL_CONFIG"
+  sed -i "s/^TIEMPO_SUSPENSION=.*/TIEMPO_SUSPENSION=120000/" "$KERNEL_CONFIG"
+  sed -i "s/^LOG_LEVEL=.*/LOG_LEVEL=INFO/" "$KERNEL_CONFIG"
+else
+  echo "❌ No se encontró $KERNEL_CONFIG"
+fi
+
+# ==== IO ====
+IO_CONFIG="$BASE_DIR/io/io.config"
+if [ -f "$IO_CONFIG" ]; then
+  sed -i "s/^IP_KERNEL=.*/IP_KERNEL=$IP_KERNEL/" "$IO_CONFIG"
+  sed -i "s/^PUERTO_KERNEL=.*/PUERTO_KERNEL=$PUERTO_IO/" "$IO_CONFIG"
+  sed -i "s/^LOG_LEVEL=.*/LOG_LEVEL=TRACE/" "$IO_CONFIG"
+else
+  echo "❌ No se encontró $IO_CONFIG"
+fi
+
+# ==== CPU(1) ====
+CPU_CONFIG="$BASE_DIR/cpu/cpu1.config"
+if [ -f "$CPU_CONFIG" ]; then
+  sed -i "s/^IP_MEMORIA=.*/IP_MEMORIA=$IP_MEMORIA/" "$CPU_CONFIG"
+  sed -i "s/^PUERTO_MEMORIA=.*/PUERTO_MEMORIA=$PUERTO_MEMORIA/" "$CPU_CONFIG"
+  sed -i "s/^IP_KERNEL=.*/IP_KERNEL=$IP_KERNEL/" "$CPU_CONFIG"
+  sed -i "s/^PUERTO_KERNEL_DISPATCH=.*/PUERTO_KERNEL_DISPATCH=$PUERTO_DISPATCH/" "$CPU_CONFIG"
+  sed -i "s/^PUERTO_KERNEL_INTERRUPT=.*/PUERTO_KERNEL_INTERRUPT=$PUERTO_INTERRUPT/" "$CPU_CONFIG"
+  sed -i "s/^ENTRADAS_TLB=.*/ENTRADAS_TLB=4/" "$CPU_CONFIG"
+  sed -i "s/^REEMPLAZO_TLB=.*/REEMPLAZO_TLB=LRU/" "$CPU_CONFIG"
+  sed -i "s/^ENTRADAS_CACHE=.*/ENTRADAS_CACHE=2/" "$CPU_CONFIG"
+  sed -i "s/^REEMPLAZO_CACHE=.*/REEMPLAZO_CACHE=CLOCK/" "$CPU_CONFIG"
+  sed -i "s/^RETARDO_CACHE=.*/RETARDO_CACHE=250/" "$CPU_CONFIG"
+  sed -i "s/^LOG_LEVEL=.*/LOG_LEVEL=INFO/" "$CPU_CONFIG"
+else
+  echo "❌ No se encontró $CPU_CONFIG"
+fi
+
+# ==== CPU(2) ====
+CPU_CONFIG="$BASE_DIR/cpu/cpu1.config"
+if [ -f "$CPU_CONFIG" ]; then
+  sed -i "s/^IP_MEMORIA=.*/IP_MEMORIA=$IP_MEMORIA/" "$CPU_CONFIG"
+  sed -i "s/^PUERTO_MEMORIA=.*/PUERTO_MEMORIA=$PUERTO_MEMORIA/" "$CPU_CONFIG"
+  sed -i "s/^IP_KERNEL=.*/IP_KERNEL=$IP_KERNEL/" "$CPU_CONFIG"
+  sed -i "s/^PUERTO_KERNEL_DISPATCH=.*/PUERTO_KERNEL_DISPATCH=$PUERTO_DISPATCH/" "$CPU_CONFIG"
+  sed -i "s/^PUERTO_KERNEL_INTERRUPT=.*/PUERTO_KERNEL_INTERRUPT=$PUERTO_INTERRUPT/" "$CPU_CONFIG"
+  sed -i "s/^ENTRADAS_TLB=.*/ENTRADAS_TLB=4/" "$CPU_CONFIG"
+  sed -i "s/^REEMPLAZO_TLB=.*/REEMPLAZO_TLB=LRU/" "$CPU_CONFIG"
+  sed -i "s/^ENTRADAS_CACHE=.*/ENTRADAS_CACHE=2/" "$CPU_CONFIG"
+  sed -i "s/^REEMPLAZO_CACHE=.*/REEMPLAZO_CACHE=CLOCK/" "$CPU_CONFIG"
+  sed -i "s/^RETARDO_CACHE=.*/RETARDO_CACHE=250/" "$CPU_CONFIG"
+  sed -i "s/^LOG_LEVEL=.*/LOG_LEVEL=INFO/" "$CPU_CONFIG"
+else
+  echo "❌ No se encontró $CPU_CONFIG"
+fi
+
+echo "✔ Configuración actualizada para $PRUEBA con IP $IP"
