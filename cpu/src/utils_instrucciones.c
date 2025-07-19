@@ -327,6 +327,7 @@ bool checkInterrupt(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
         int * pidInterruptor = (int*)list_remove(cpu->interrupciones, 0);
         if(*pidInterruptor == proc_AEjecutar->pid){
         pthread_mutex_unlock(&cpu->mutex_interrupcion);
+        list_clean_and_destroy_elements(cpu->interrupciones, free);
         free(pidInterruptor);
         log_debug(logger, "Interrupción activa");
         return true;
