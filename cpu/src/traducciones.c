@@ -221,7 +221,7 @@ void leerSeccionPaginaMemoria(int socket_memoria, int pid, int direccion_fisica,
     char *leido = strndup((char *)list_get(respuesta, 1), tamanio);
 
     printf("READ: %s\n", leido);
-    log_info(logger, "PID: %d - Acción: READ - Dirección Física: %d - Valor: %s", pid, direccion_fisica, leido);
+    log_info(logger, "PID: %d - Acción: LEER - Dirección Física: %d - Valor: %s", pid, direccion_fisica, leido);
 
     free(leido);
     free(codigo_operacion);
@@ -348,7 +348,6 @@ int seleccionarEntradaVictimaCACHE(CACHE *cache) {
                     // Encontramos a la victima //
                     indice_victima = cache->puntero_clock;
                     cache->puntero_clock = (cache->puntero_clock + 1) % CACHE_SIZE;
-                    log_info(logger, "---------- Victima: pagina %d, Registro a vaciar: %d", cache->entradas[indice_victima].pagina, indice_victima);
                     return indice_victima;
                 }
                 else {
@@ -367,8 +366,6 @@ int seleccionarEntradaVictimaCACHE(CACHE *cache) {
                     int indice = (cache->puntero_clock + i) % CACHE_SIZE;
                     r_CACHE *entrada = &cache->entradas[indice];
 
-                    log_info(logger, "CLOCK-M - Evaluando entrada %d: (Uso: %d, Modificado: %d)", indice, entrada->bit_uso, entrada->bit_modificado);
-
                     if(entrada->bit_uso == 0 && entrada->bit_modificado == 0) {
                         cache->puntero_clock = (indice + 1) % CACHE_SIZE;
                         return indice;
@@ -379,8 +376,6 @@ int seleccionarEntradaVictimaCACHE(CACHE *cache) {
                 for(int i = 0; i < CACHE_SIZE; i++) {
                     int indice = (cache->puntero_clock + i) % CACHE_SIZE;
                     r_CACHE *entrada = &cache->entradas[indice];
-
-                    log_info(logger, "CLOCK-M - Evaluando entrada %d: (Uso: %d, Modificado: %d)", indice, entrada->bit_uso, entrada->bit_modificado);
 
                     if(entrada->bit_uso == 0 && entrada->bit_modificado == 1) {
                         cache->puntero_clock = (indice + 1) % CACHE_SIZE;
@@ -552,9 +547,10 @@ void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
             bytes_a_leer = espacio_pagina_actual;
         }
 
+        int direccion_fisica = traducirDireccionMMU(cpu, pid, direccion_logica);
+            
         void *contenido_cache = buscarPaginaCACHE(cpu->cache, pid, nro_pagina_actual);
         if(contenido_cache == NULL) {
-            int direccion_fisica = traducirDireccionMMU(cpu, pid, direccion_logica);
             void *pagina = pedirPaginaAMemoria(cpu->socket_memoria, pid, direccion_fisica);
             actualizarCACHE(cpu, pid, nro_pagina_actual, pagina);
             contenido_cache = buscarPaginaCACHE(cpu->cache, pid, nro_pagina_actual);
@@ -563,6 +559,7 @@ void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
 
         char *leido = strndup((char *)contenido_cache + desplazamiento, tamanio);
         printf("READ: %s\n", leido);
+        log_info(logger, "PID: %d - Acción: LEER - Dirección Física: %d - Valor: %s", pid, direccion_fisica, leido);
         free(leido);
         
         datos_leidos += bytes_a_leer;
