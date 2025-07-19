@@ -1,7 +1,7 @@
 #include <main.h>
 
 int main(int argc, char* argv[]) {
-    abrirConfigYLog("memory.config", "memory.log", "memory", false);
+    abrirConfigYLog("memoria.config", "memoria.log", "memoria", false);
     log_debug(logger, "Memoria iniciada");
     inicializarVariablesGlobales(
     config_get_int_value(config, "ENTRADAS_POR_TABLA"),
