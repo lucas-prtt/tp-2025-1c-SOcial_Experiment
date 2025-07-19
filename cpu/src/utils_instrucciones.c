@@ -281,8 +281,6 @@ void marcarModificadoEnCache(CACHE *cache, int pid, int nro_pagina) {
         if(entrada.pid == pid && entrada.pagina == nro_pagina) {
             if(!cache->entradas[i].bit_modificado) {
                 cache->entradas[i].bit_modificado = 1;
-                
-                log_info(logger, "PID: %d - Dirty Page - Página: %d", pid, nro_pagina);
             }
             break;
         }
