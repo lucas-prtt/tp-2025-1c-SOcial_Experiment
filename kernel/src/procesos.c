@@ -488,7 +488,6 @@ void * temporizadorSuspenderThread(void * param){
     eliminarPeticion(peticion);
     else
     sem_post(&(peticion->sem_estado));
-    usleep(100000);
     sem_post(&sem_introducir_proceso_a_ready);
     pthread_exit(NULL);
 }

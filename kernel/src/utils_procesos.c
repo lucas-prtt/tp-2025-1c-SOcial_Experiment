@@ -370,5 +370,7 @@ void enviarSolicitudSuspensionProceso(int PID){
     t_paquete * paq = crear_paquete(PROCESO_SUSPENDIDO_ENVIAR_A_SWAP);
     agregar_a_paquete(paq, &PID, sizeof(int));
     enviar_paquete(paq, socket);
+    t_list * confirm = recibir_paquete_lista(socket, MSG_WAITALL, NULL);
+    eliminar_paquete_lista(confirm);
     eliminar_paquete(paq);
 }
