@@ -1,7 +1,7 @@
 #!/bin/bash
 
 GREEN='\033[0;32m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 DEFAULT_IP="192.168.1.105"
 DEFAULT_PATH_INSTRUCCIONES="/home/utnso/Desktop/revenge-of-the-cth-pruebas/"
@@ -26,6 +26,7 @@ PATH_DUMP=${PATH_DUMP:-$DEFAULT_PATH_DUMP}
 CPU_DIR="./cpu"
 KERNEL_CONFIG="./kernel/kernel.config"
 MEMORIA_CONFIG="./memoria/memoria.config"
+IO_CONFIG="./io/io.config"
 
 CONFIG1="IP_MEMORIA=$IP_MEMORIA
 PUERTO_MEMORIA=8002
@@ -95,9 +96,13 @@ CANTIDAD_NIVELES=3
 RETARDO_MEMORIA=100
 PATH_SWAPFILE=$PATH_SWAP
 RETARDO_SWAP=2500
-LOG_LEVEL=DEBUG
+LOG_LEVEL=INFO
 DUMP_PATH=$PATH_DUMP
 PATH_INSTRUCCIONES=$PATH_INSTRUCCIONES"
+
+IO_CFG="IP_KERNEL=$IP_KERNEL
+PUERTO_KERNEL=8003
+LOG_LEVEL=INFO"
 
 echo "$CONFIG1" > "$CPU_DIR/cpu1.config"
 echo "$CONFIG2" > "$CPU_DIR/cpu2.config"
@@ -105,8 +110,8 @@ echo "$CONFIG3" > "$CPU_DIR/cpu3.config"
 echo "$CONFIG4" > "$CPU_DIR/cpu4.config"
 echo "$KERNEL_CFG" > "$KERNEL_CONFIG"
 echo "$MEMORIA_CFG" > "$MEMORIA_CONFIG"
+echo "$IO_CFG" > "$IO_CONFIG"
 
 echo -e "${GREEN}Archivos de configuración generados correctamente:${NC}"
-
 echo "Ejecute kernel con ESTABILIDAD_GENERAL 0 para realizar la prueba"
 echo "Recordar que se debe ejecutar primero memoria y luego 4 instancias de DISCO y CPU"
