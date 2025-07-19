@@ -97,11 +97,13 @@ void * atenderKernel(void * socketPtr){
         break;
     case SOLICITUD_MEMORIA_CARGA_SWAP: // Des suspensión del proceso en SWAP
         PID = list_get(pedido, 1);
-        log_debug(logger, "## Se saca %d de SWAP", *PID);
         aumentarMetricaSubidasAMemoriaPrincipal(*PID);
+        log_debug(logger, "Tamaño de proceso que se quiere dessuspender = %d, %d marcos", tamañoProceso(*PID), cantidadDePaginasDelProceso(*PID));
+        log_debug(logger, "Espacio disponible: %d marcos", marcosDisponibles());
         if (!hayEspacio(tamañoProceso(*PID))) {
            error = 1;
         } else {
+            log_debug(logger, "## Se saca %d de SWAP", *PID);
             dessuspenderProceso(*PID);
             setEnMemoria(*PID);
             simularRetrasoSWAP();
@@ -119,6 +121,8 @@ void * atenderKernel(void * socketPtr){
         PID = list_get(pedido, 1);
         PATH = list_get(pedido, 3);
         TAMAÑO = list_get(pedido, 5);
+        log_debug(logger, "Tamaño de proceso que se quiere dessuspender = %d, %d marcos", TAMAÑO, cantidadDeMarcosParaAlmacenar(TAMAÑO));
+        log_debug(logger, "Espacio disponible: %d marcos", marcosDisponibles());
         if(hayEspacio(*TAMAÑO)){
         agregarProcesoATabla(*PID, *TAMAÑO);
         log_info(logger, "## PID: %d - Proceso Creado - Tamaño: %d", *PID, *TAMAÑO);
@@ -128,6 +132,7 @@ void * atenderKernel(void * socketPtr){
         }else{
             error = 1;
         }
+        log_debug(logger, "Tras operacion: %d marcos disponibles. Se añadio? = %d", marcosDisponibles(), !error);
         if (!error)
         respuesta = crear_paquete(RESPUESTA_MEMORIA_PROCESO_CARGADO);
         else 

@@ -86,7 +86,7 @@ void eliminarProcesoDePIDPorMarco(int PID);
 int asignarSiguienteMarcoLibreDadasLasEntradas(int PID, t_list * entradas);
 int esPaginaValida(int PID, t_list * entradas);
 int cantidadDePaginasDelProceso(int PID);
-
+int cantidadDeMarcosParaAlmacenar(int tamaño);
 
 // De Marcos
 

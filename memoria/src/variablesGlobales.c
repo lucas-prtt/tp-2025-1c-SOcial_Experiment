@@ -380,7 +380,7 @@ void agregarInstruccionesAPID(int PID, t_list * instruccionesNuevas){ // No libe
 //@brief obtiene lista de instrucciones del proceso: No es una copia: No liberar ni modificar innecesariamente
 t_list * obtenerInstruccionesPorPID(int PID){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
-    log_debug(logger, "Se van a obtener las instrucciones de %d", PID);
+    log_trace(logger, "Se van a obtener las instrucciones de %d", PID);
     t_list * inst = obtenerInfoProcesoConPID(PID)->instrucciones;
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return inst;
