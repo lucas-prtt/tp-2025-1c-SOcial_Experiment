@@ -21,7 +21,7 @@ void * esperarCPUDispatch(void * socket) {
         pthread_t *hilo = malloc(sizeof(pthread_t)); //
         pthread_create(hilo, NULL, handshakeCPUDispatch, CPUIDySocket);
         list_add(createdThreads, hilo);
-        printf("- CPU conectada para dispatch\n"); //Por ahi conviene poner esto en el handshake
+        //printf("- CPU conectada para dispatch\n"); //Por ahi conviene poner esto en el handshake
         fflush(stdout);
     }
     pthread_cleanup_pop(1);
@@ -55,7 +55,7 @@ void * esperarCPUInterrupt(void * socket) {
         pthread_t * hilo = malloc(sizeof(pthread_t));
         pthread_create(hilo, NULL, handshakeCPUInterrupt, CPUIDySocket);
         list_add(createdThreads, hilo);
-        printf("- CPU conectada para Interrupt\n");
+        //printf("- CPU conectada para Interrupt\n");
         fflush(stdout);
     }
     pthread_cleanup_pop(1);
@@ -77,7 +77,7 @@ void * esperarIOEscucha(void * socket) {
         pthread_t * hilo = malloc(sizeof(pthread_t));
         pthread_create(hilo, NULL, handshakeIO, IONombreYSocket);
         list_add(createdThreads, hilo);
-        printf("- IO conectado\n");
+        //printf("- IO conectado\n");
         fflush(stdout);
     }
     pthread_cleanup_pop(1);
