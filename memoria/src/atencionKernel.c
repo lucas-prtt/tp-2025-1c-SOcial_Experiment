@@ -121,7 +121,7 @@ void * atenderKernel(void * socketPtr){
         PID = list_get(pedido, 1);
         PATH = list_get(pedido, 3);
         TAMAÑO = list_get(pedido, 5);
-        log_debug(logger, "Tamaño de proceso que se quiere dessuspender = %d, %d marcos", TAMAÑO, cantidadDeMarcosParaAlmacenar(TAMAÑO));
+        log_debug(logger, "Tamaño de proceso que se quiere dessuspender = %d, %d marcos", *TAMAÑO, cantidadDeMarcosParaAlmacenar(*TAMAÑO));
         log_debug(logger, "Espacio disponible: %d marcos", marcosDisponibles());
         if(hayEspacio(*TAMAÑO)){
         agregarProcesoATabla(*PID, *TAMAÑO);
