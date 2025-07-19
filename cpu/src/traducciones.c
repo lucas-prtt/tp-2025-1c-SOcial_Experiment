@@ -493,6 +493,8 @@ void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
     int bytes_restantes = strlen(datos);
     char *puntero_datos = datos;
     
+    usleep(CACHE_RETARDO * 1000);
+
     while(bytes_restantes > 0) {
         int nro_pagina_actual = getNumeroPagina(direccion_logica);
         int desplazamiento = getDesplazamiento(direccion_logica);
@@ -534,6 +536,8 @@ void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
     int bytes_restantes = tamanio;
     int datos_leidos = 0;
 
+    usleep(CACHE_RETARDO * 1000);
+    
     while(bytes_restantes > 0) {
         int nro_pagina_actual = getNumeroPagina(direccion_logica);
         int desplazamiento = getDesplazamiento(direccion_logica);
