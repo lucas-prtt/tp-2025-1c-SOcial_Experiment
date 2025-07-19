@@ -160,19 +160,26 @@ enum algoritmo algoritmoStringToEnum(char * algoritmo){
     return ERROR_NO_ALGORITMO;
 }
 
+
+bool menorEstimacion(void * elem1, void *  elem2){
+    return (((t_PCB * )elem1)->EST <= ((t_PCB * )elem2)->EST);
+}
+bool menorEstimacionSinEjecutar(void * elem1, void *  elem2){
+    return (((t_PCB * )elem1)->EST - ((t_PCB * )elem1)->EJC_ACT <= ((t_PCB * )elem2)->EST - ((t_PCB * )elem2)->EJC_ACT );
+}
 void ordenar_cola_ready(t_list * listaProcesos[], enum algoritmo algoritmo){
     switch (algoritmo)
     {
     case FIFO: // Dejar como esta
         break;
     case SJF: // Ordenar por SJF
-        //TODO: Checkpoint 3
+        list_sort(listaProcesos[READY], menorEstimacion);
         break;
     case SRT: // Ordenar por SRT
-        //TODO: Checkpoint 3
+        list_sort(listaProcesos[READY], menorEstimacionSinEjecutar);
         break;
     default:
-        // ERROR
+        log_warning(logger, "Algoritmo no elegido no valido. Utilizando FIFO");
         break;
     }
     return;

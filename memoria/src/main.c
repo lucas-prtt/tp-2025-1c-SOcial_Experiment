@@ -1,8 +1,8 @@
 #include <main.h>
 
 int main(int argc, char* argv[]) {
-    abrirConfigYLog("memory.config", "memory.log", "memory", false);
-    log_info(logger, "Memoria iniciada");
+    abrirConfigYLog("memoria.config", "memoria.log", "memoria", false);
+    log_debug(logger, "Memoria iniciada");
     inicializarVariablesGlobales(
     config_get_int_value(config, "ENTRADAS_POR_TABLA"),
     config_get_int_value(config, "CANTIDAD_NIVELES"),
@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
         log_error(logger, "No se pudo crear el socket servidor");
         return EXIT_FAILURE;
     }
-    log_info(logger, "Servidor listo en puerto %d", config_get_int_value(config, "PUERTO_ESCUCHA"));
+    log_debug(logger, "Servidor listo en puerto %d", config_get_int_value(config, "PUERTO_ESCUCHA"));
 
     // Se crea un hilo que acepta conexiones (por el momento no voy a saber desde que modulo se conectan)
     int* socketPtr = malloc(sizeof(int));

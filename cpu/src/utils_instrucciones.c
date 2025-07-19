@@ -43,8 +43,6 @@ bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
     
     if(fin_proceso) {
         log_trace(logger, "Interrumpo ejecucion, le mando un mensaje a kernel");
-        free(instruccion);
-        list_destroy_and_destroy_elements(instruccion_list, free);
         log_trace(logger, "Aquí me voy!");
         if(interrupcion && ultimaInstruccionInitProc) { // Si a kernel le hice syscall de INIT_PROC, automaticamente me manda el mismo proceso.
             t_list * ConfirmacionSyscallRecibido = recibir_paquete_lista(cpu->socket_kernel_dispatch, MSG_WAITALL, NULL);
@@ -283,8 +281,6 @@ void marcarModificadoEnCache(CACHE *cache, int pid, int nro_pagina) {
         if(entrada.pid == pid && entrada.pagina == nro_pagina) {
             if(!cache->entradas[i].bit_modificado) {
                 cache->entradas[i].bit_modificado = 1;
-                
-                log_info(logger, "PID: %d - Dirty Page - Página: %d", pid, nro_pagina);
             }
             break;
         }

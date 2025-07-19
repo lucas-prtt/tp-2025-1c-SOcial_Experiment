@@ -82,7 +82,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
 
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 liberarMemoria(proceso->PID);
-                log_error(logger, "(%d) - Finaliza el proceso. Conexion con CPU (%d) perdida", proceso->PID, cpuDispatch->ID);
+                log_warning(logger, "(%d) - Finaliza el proceso. Conexion con CPU (%d) perdida", proceso->PID, cpuDispatch->ID);
                 pthread_exit(NULL);
             }
             int nuevoPC = *(int*)list_get(paqueteRespuesta, 1);
@@ -392,7 +392,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
         log_debug(logger, "IO me respondio");
         sem_wait(&(peticion->sem_estado));
         if(respuesta == NULL){ // Si se pierde la conexion, se termina el proceso
-            log_warning(logger, "Se perdio la conexion con IO: %s. Se envia el proceso (%d) a EXIT", io->NOMBRE, peticion->PID);
+            log_warning(logger, "Se perdio la conexion con IO %s durante la ejecucion de una entrada/salida. Se envia el proceso (%d) a EXIT", io->NOMBRE, peticion->PID);
             close(io->SOCKET);
             peticion->estado = PETICION_FINALIZADA;
             pthread_mutex_lock(&mutex_listasProcesos);

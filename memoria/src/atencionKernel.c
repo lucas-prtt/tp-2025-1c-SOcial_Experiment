@@ -46,7 +46,6 @@ int realizarDump(int PID){
     fclose(fpArchivoDump);
     free(pidAsString);
     free(buffer);
-    free(timestamp);
     free(archivoDump);
     return 0;
 }
