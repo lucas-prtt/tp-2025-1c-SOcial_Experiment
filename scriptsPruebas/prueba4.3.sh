@@ -16,7 +16,7 @@ PUERTO_INTERRUPT=8004
 PUERTO_IO=8003
 
 # ==== MEMORY ====
-MEM_CONFIG="$BASE_DIR/memoria/memory.config"
+MEM_CONFIG="$BASE_DIR/memoria/memoria.config"
 if [ -f "$MEM_CONFIG" ]; then
   sed -i "s/^PUERTO_ESCUCHA=.*/PUERTO_ESCUCHA=$PUERTO_MEMORIA/" "$MEM_CONFIG"
   sed -i "s/^TAM_MEMORIA=.*/TAM_MEMORIA=2048/" "$MEM_CONFIG"
