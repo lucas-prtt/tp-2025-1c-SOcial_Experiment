@@ -476,7 +476,6 @@ void * temporizadorSuspenderThread(void * param){
     pthread_mutex_lock(&mutex_listasProcesos);
         int r =cambiarEstado_EstadoActualConocido(peticion->PID, BLOCKED, SUSP_BLOCKED, listasProcesos);
     pthread_mutex_unlock(&mutex_listasProcesos);
-    sem_post(&sem_introducir_proceso_a_ready);
     peticion->estado = PETICION_SUSPENDIDA;
     if (r!=0)
         log_trace(logger, "Cancelacion de la suspension de (%d), ya no esta mas bloqueado",peticion->PID);
@@ -489,6 +488,8 @@ void * temporizadorSuspenderThread(void * param){
     eliminarPeticion(peticion);
     else
     sem_post(&(peticion->sem_estado));
+    usleep(100000);
+    sem_post(&sem_introducir_proceso_a_ready);
     pthread_exit(NULL);
 }
 
