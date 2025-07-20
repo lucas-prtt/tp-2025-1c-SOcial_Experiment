@@ -282,11 +282,14 @@ Peticion * crearPeticion(int PID, int milisegundos){
     return peticion;
 }
 
-void encolarPeticionIO(char * nombreIO, Peticion * peticion, t_list * lista_peticiones){
+int encolarPeticionIO(char * nombreIO, Peticion * peticion, t_list * lista_peticiones){
     PeticionesIO * io = encontrarPeticionesDeIOPorNombre(lista_peticiones, nombreIO);
+    if(io == NULL || io->instancias == 0){
+        return 0;
+    }    
     list_add(io->cola, peticion);
     sem_post(&(io->sem_peticiones));
-    return;
+    return io->instancias;
 }
 
 char * syscallAsString(CODIGO_OP syscall){
@@ -321,7 +324,7 @@ void liberarMemoria(int PID){
     t_list * respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &codOp);
     eliminar_paquete_lista(respuesta);
     if(codOp !=RESPUESTA_MEMORIA_LIBERADA_EXITOSAMENTE){
-        //ERROR
+        log_error(logger, "(%d) no pudo ser eliminado de memoria", PID);
     }
     liberarConexion(socketMemoria);
     log_trace(logger, "termino ejecucion mandar mensaje a memoria para eliminar proceso");
@@ -374,3 +377,16 @@ void enviarSolicitudSuspensionProceso(int PID){
     eliminar_paquete_lista(confirm);
     eliminar_paquete(paq);
 }
+
+//@brief Requiere aplicar mutex sobre listasProcesos
+void terminarProcesoPorPeticionInvalida(void * elem){
+    Peticion * peticion = (Peticion*)elem;
+    cambiarEstado(peticion->PID, EXIT, listasProcesos);
+    liberarMemoria(peticion->PID);
+    log_warning(logger, "(%d) - Proceso finalizado por ausencia de IOs validas", peticion->PID);
+    eliminamosOtroProceso();
+    return;
+}
+
+
+

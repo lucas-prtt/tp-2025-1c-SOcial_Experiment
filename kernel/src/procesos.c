@@ -144,12 +144,6 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 if(*pid != proceso->PID){
                     log_error(logger, "Se recibio un IO de otro proceso (%d en vez de %d)", *pid, proceso->PID);
                 }
-                pthread_mutex_lock(&mutex_listasProcesos);
-                cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
-                proceso->ProcesadorQueLoEjecutaDispatch = NULL;
-                proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
-
-                pthread_mutex_unlock(&mutex_listasProcesos);
 
                 pthread_t timerThread;
                 Peticion * pet = crearPeticion(proceso->PID, milisegundos);
@@ -157,11 +151,26 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_detach(timerThread);
 
                 pthread_mutex_lock(&mutex_peticionesIO);
-                encolarPeticionIO(nombreIO, pet, lista_peticionesIO); // Tambien hace señal a su semaforo
+                int instanciasDeLaIo = encolarPeticionIO(nombreIO, pet, lista_peticionesIO); // Tambien hace señal a su semaforo
                 pthread_mutex_unlock(&mutex_peticionesIO);
+                proceso->ProcesadorQueLoEjecutaDispatch = NULL;
+                proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
+                pthread_mutex_lock(&mutex_listasProcesos);
+                if(instanciasDeLaIo > 0){
+                    cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
+                    actualizarEstimacion(proceso, alfa);
+                    log_info(logger, "## (%d) - Bloqueado por IO: %s", proceso->PID, nombreIO);
+                    }
+                else{
+                    log_warning(logger, "(%d) - Pasa a EXIT por IO invalida", proceso->PID);
+                    cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
+                    eliminamosOtroProceso();
+                    sem_post(&evaluarFinKernel);
+                    sem_post(&sem_introducir_proceso_a_ready); 
+                }
+                pthread_mutex_unlock(&mutex_listasProcesos);
+        
 
-                actualizarEstimacion(proceso, alfa);
-                log_info(logger, "## (%d) - Bloqueado por IO: %s", proceso->PID, nombreIO);
                 break;
             case SYSCALL_DUMP_MEMORY:
                 PIDySocket * infoDump;
@@ -353,11 +362,14 @@ void * IOThread(void * NOMBREYSOCKETIO)
     if(peticiones == NULL){
     peticiones = malloc(sizeof(PeticionesIO));
     peticiones->nombre = io->NOMBRE;
+    peticiones->instancias = 1;
     pthread_mutex_init(&(peticiones->MUTEX_cola), NULL);
     sem_init(&(peticiones->sem_peticiones), 0, 0);
     peticiones->cola = list_create();
     list_add(lista_peticionesIO, peticiones);
     log_debug(logger, "Se le asigno cola de peticiones al IO");
+    }else{
+        peticiones->instancias++;
     }
     pthread_mutex_unlock(&mutex_peticionesIO);
     while(1){
@@ -368,11 +380,27 @@ void * IOThread(void * NOMBREYSOCKETIO)
             valido = recv(io->SOCKET,&caracterInutil, 1, MSG_PEEK | MSG_DONTWAIT);
             if (!valido && errno != EAGAIN && errno != EWOULDBLOCK){
                 log_debug(logger, "Socket de IO cerrado. No se enviara nada");
+                pthread_mutex_lock(&mutex_peticionesIO);
+                peticiones->instancias--;
+                pthread_mutex_unlock(&mutex_peticionesIO);
                 close(io->SOCKET);
                 return NULL;
             }
             log_debug(logger, "Recibida peticion IO");
 
+            pthread_mutex_lock(&mutex_peticionesIO);
+            if(peticiones->instancias <=0){
+                pthread_mutex_unlock(&mutex_peticionesIO);
+                pthread_mutex_lock(&mutex_listasProcesos);
+                list_iterate(peticiones->cola, terminarProcesoPorPeticionInvalida);
+                list_clean_and_destroy_elements(peticiones->cola, free);
+                pthread_mutex_unlock(&mutex_listasProcesos);
+                sem_post(&evaluarFinKernel);
+                sem_post(&sem_introducir_proceso_a_ready); 
+                return NULL;
+            }else{
+            pthread_mutex_unlock(&mutex_peticionesIO);
+            }
 
             pthread_mutex_lock(&(peticiones->MUTEX_cola));
             peticion = list_remove(peticiones->cola,0);
@@ -393,12 +421,25 @@ void * IOThread(void * NOMBREYSOCKETIO)
         sem_wait(&(peticion->sem_estado));
         if(respuesta == NULL){ // Si se pierde la conexion, se termina el proceso
             log_warning(logger, "Se perdio la conexion con IO %s durante la ejecucion de una entrada/salida. Se envia el proceso (%d) a EXIT", io->NOMBRE, peticion->PID);
+            peticiones->instancias--;
             close(io->SOCKET);
             peticion->estado = PETICION_FINALIZADA;
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado(peticion->PID, EXIT, listasProcesos);
             eliminamosOtroProceso();
             pthread_mutex_unlock(&mutex_listasProcesos);
+            pthread_mutex_lock(&mutex_peticionesIO);
+            if(peticiones->instancias <=0){
+                pthread_mutex_unlock(&mutex_peticionesIO);
+                pthread_mutex_lock(&mutex_listasProcesos);
+                list_iterate(peticiones->cola, terminarProcesoPorPeticionInvalida);
+                list_clean_and_destroy_elements(peticiones->cola, free);
+                pthread_mutex_unlock(&mutex_listasProcesos);    
+                sem_post(&evaluarFinKernel);
+                sem_post(&sem_introducir_proceso_a_ready); 
+            }else{
+            pthread_mutex_unlock(&mutex_peticionesIO);
+            }
             liberarMemoria(peticion->PID);
             return NULL;
         }else{                  // Si no se pierde la conexion, liberar el paquete y continuar a ready o susp_ready
