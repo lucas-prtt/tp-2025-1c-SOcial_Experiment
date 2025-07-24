@@ -34,7 +34,10 @@ void mergearEspaciosLibres();
 int compararEntradasSwap(EntradaSwap* a, EntradaSwap* b);
 int compararEntradasSwapPorPagina(EntradaSwap* a, EntradaSwap* b);
 int compararEspaciosPorInicio(EspacioLibre* a, EspacioLibre* b);
+
 FILE * abrirSwapFile();
+void borrarSwapfile();
+
 typedef struct {
     uint32_t pid;
     t_list* instrucciones;

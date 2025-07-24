@@ -542,3 +542,15 @@ FILE * abrirSwapFile(){
     }
     return swap;
 }
+
+
+void borrarSwapfile(){
+    FILE * swap;
+    swap = fopen(directorioSwap, "w");
+    if(!swap){
+        log_error(logger, "No se pudo crear un swapfile vacio");
+    }
+    fclose(swap);
+    return;
+}
+
