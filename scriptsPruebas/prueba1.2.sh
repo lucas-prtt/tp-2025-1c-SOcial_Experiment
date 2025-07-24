@@ -82,7 +82,7 @@ else
 fi
 
 # ==== CPU(2) ====
-CPU_CONFIG="$BASE_DIR/cpu/cpu1.config"
+CPU_CONFIG="$BASE_DIR/cpu/cpu2.config"
 if [ -f "$CPU_CONFIG" ]; then
   sed -i "s/^IP_MEMORIA=.*/IP_MEMORIA=$IP_MEMORIA/" "$CPU_CONFIG"
   sed -i "s/^PUERTO_MEMORIA=.*/PUERTO_MEMORIA=$PUERTO_MEMORIA/" "$CPU_CONFIG"
