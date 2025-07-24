@@ -293,7 +293,7 @@ int marcosOcupados(){
     int tam_lista_procesos = list_size(tablaDeProcesos); 
     for (int i=0; i<tam_lista_procesos; i++){
         if(estaCargado((PIDInfo*)list_get(tablaDeProcesos, i)))
-        acum +=  cantidadDeMarcosParaAlmacenar(*((int*)list_get(tablaDeProcesos, i)));
+        acum +=  cantidadDeMarcosParaAlmacenar((((PIDInfo*)list_get(tablaDeProcesos, i))->TamMaxProceso));
     }
     pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
     return acum;
