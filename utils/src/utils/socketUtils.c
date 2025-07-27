@@ -30,6 +30,8 @@ int conectarSocketClient(char* ip, char* puerto){ //Devuelve un socket listo par
     int soc;
     struct addrinfo * serverInfo = NULL;
     soc = crearSocket(ip, puerto, &serverInfo);
+    if (soc == -1)
+        return soc;
     int err = connect(soc, serverInfo->ai_addr, serverInfo->ai_addrlen);
 	freeaddrinfo(serverInfo);
     if (err == -1)
