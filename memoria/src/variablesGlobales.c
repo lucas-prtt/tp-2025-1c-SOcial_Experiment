@@ -35,6 +35,7 @@ void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, 
     tamañoMemoriaDeUsuario = sizeMemoria;
     log_debug(logger, "Inicializacion antes de memoria de usuario");
     memoriaDeUsuario = malloc(sizeMemoria);
+    memset(memoriaDeUsuario, 0, sizeMemoria);
     numeroDeMarcos = tamañoMemoriaDeUsuario / tamañoMarcos;
     //log_debug(logger, "Inicializacion antes de tabla de marcos");
     PIDPorMarco = malloc(numeroDeMarcos * sizeof(int));
@@ -45,21 +46,10 @@ void inicializarVariablesGlobales(int sizeTabla, int qNiveles, int sizeMemoria, 
     for (int i = 0; i<numeroDeMarcos; i++){
         PIDPorMarco[i] = -1;
     }
-    //log_debug(logger, "Apertura archivo swap iniciada");
-    //apertura del archivo SWAP
-    //FILE* swap = fopen("swapfile.bin", "wb");
-    // Esto esta por si queremos definir un tamaño maximo de paginas en SWAP porque pense que lo habia pero sino seria solo sacar estas 2 lineas de abajo.
-    // Por lo que pregunte que haya tamaño variable puede traer otros problema relacionado a huecos vacios pero si lo manejamos bien no deberia haber problema
-    //int paginasMaximasSwap = 1000; 
-    //ftruncate(fileno(swap), paginasMaximasSwap * tamañoMarcos);//esto hace que el File tenga un tamaño maximo
-    
-    //fclose(swap);
-    log_debug(logger, "Apertura swap finalizada");
-    //Tabla donde vana  estar que procesos estan en SWAP
+    //Tabla donde van a estar que procesos estan en SWAP
     tablaSwap = list_create();
     //Tabla de los espacios libres del Swap
     espaciosLibresSwapentrePaginas = list_create();
-    memset(memoriaDeUsuario, 0, sizeMemoria);
 }
 
 
