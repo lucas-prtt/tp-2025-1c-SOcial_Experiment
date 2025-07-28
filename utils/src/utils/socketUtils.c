@@ -20,6 +20,9 @@ int crearSocketServer(char* puerto){ //Devuelve un socket listo para conectar co
     int soc;
     struct addrinfo * serverInfo = NULL;
     soc = crearSocket(NULL, puerto, &serverInfo);
+    if (soc == -1)
+        freeaddrinfo(serverInfo);
+        return soc;
     bind(soc, serverInfo->ai_addr, serverInfo->ai_addrlen);
 	listen(soc, SOMAXCONN);
 	freeaddrinfo(serverInfo);
