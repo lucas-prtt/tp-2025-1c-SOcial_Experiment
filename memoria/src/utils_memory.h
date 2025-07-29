@@ -26,7 +26,7 @@ bool es_valida_dir_fisica(int * pid, int * direccion_fisica, int * tamanio);
 t_list* entradasDesdeNumeroDePagina(int numeroPagina);
 int* int_de(int valor);
 void suspenderProceso(int pid);
-void dessuspenderProceso(int pid);
+int dessuspenderProceso(int pid);
 void compactarSwap();
 int obtenerFinDeSwap();
 void liberarEspacioSwap(int pid);

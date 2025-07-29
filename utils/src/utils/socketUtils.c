@@ -20,9 +20,9 @@ int crearSocketServer(char* puerto){ //Devuelve un socket listo para conectar co
     int soc;
     struct addrinfo * serverInfo = NULL;
     soc = crearSocket(NULL, puerto, &serverInfo);
-    if (soc == -1)
+    if (soc == -1){
         freeaddrinfo(serverInfo);
-        return soc;
+        return soc;}
     bind(soc, serverInfo->ai_addr, serverInfo->ai_addrlen);
 	listen(soc, SOMAXCONN);
 	freeaddrinfo(serverInfo);
@@ -33,9 +33,9 @@ int conectarSocketClient(char* ip, char* puerto){ //Devuelve un socket listo par
     int soc;
     struct addrinfo * serverInfo = NULL;
     soc = crearSocket(ip, puerto, &serverInfo);
-    if (soc == -1)
+    if (soc == -1){
         freeaddrinfo(serverInfo);
-        return soc;
+        return soc;}
     int err = connect(soc, serverInfo->ai_addr, serverInfo->ai_addrlen);
 	freeaddrinfo(serverInfo);
     if (err == -1)
