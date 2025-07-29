@@ -258,12 +258,13 @@ int cantidadDeMarcosParaAlmacenar(int tamaño){
 int estaCargado(PIDInfo * Proceso){
     return !Proceso->enSwap;
 }
-int estaCargadoPid(int PID){
-    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
-    PIDInfo * Proceso = obtenerInfoProcesoConPID(PID);
-    return !Proceso->enSwap;
-    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
-}
+//OJO que la funcion esta mal porque retorna antes de liberar el mutex, si se quiere descomentar y usar arreglar primero.
+//int estaCargadoPid(int PID){
+//    pthread_mutex_lock(&MUTEX_tablaDeProcesos);
+//    PIDInfo * Proceso = obtenerInfoProcesoConPID(PID);
+//    return !Proceso->enSwap;
+//    pthread_mutex_unlock(&MUTEX_tablaDeProcesos);
+//}
 void setEnSwap(int PID){
     pthread_mutex_lock(&MUTEX_tablaDeProcesos);
     PIDInfo * Proceso = obtenerInfoProcesoConPID(PID);

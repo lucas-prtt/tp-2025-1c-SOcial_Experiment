@@ -381,12 +381,8 @@ int obtenerFinDeSwap() {
     return maxOffset;
 }
 
-void dessuspenderProceso(int pid) {
+int dessuspenderProceso(int pid) {
     FILE* swap = abrirSwapFile();
-    if (!swap) {
-        log_error(logger, "No se pudo abrir swapfile.bin");
-        return;
-    }
 
     // Entradas de swap del PID
     t_list* paginasDelProceso = list_create();
@@ -399,15 +395,13 @@ void dessuspenderProceso(int pid) {
         }
     }
 
+    // Si el proceso realmente no esta en el SWAP entonces no hay nada que pasar a memoria
     if (list_size(paginasDelProceso) == 0) {
         log_error(logger, "No hay entradas en swap para el PID %d", pid);
         fclose(swap);
         list_destroy(paginasDelProceso);
-        return;
+        return 2;
     }
-
-    // Ordenamos por número de página para restaurarlas en orden correcto
-    list_sort(paginasDelProceso, (void*)compararEntradasSwapPorPagina);
 
     for (int i = 0; i < list_size(paginasDelProceso); i++) {
         EntradaSwap* entrada = list_get(paginasDelProceso, i);
@@ -415,17 +409,17 @@ void dessuspenderProceso(int pid) {
         if(entrada->nro_pagina == (-1)){
             //solo lo saca de la taba swap y actualiza metricas
             aumentarMetricaSubidasAMemoriaPrincipal(pid);
-            // Eliminar entradas de tablaSwap
+            // Eliminar entrada de tablaSwap
             for (int i = 0; i < list_size(tablaSwap);i++) {
                 EntradaSwap* entrada = list_get(tablaSwap, i);
                 if (entrada->pid == pid) {
                     list_remove_and_destroy_element(tablaSwap, i, free);
-                    break;
+                    break;//Salgo porque obligatoriamente va a ser 1
                     }
             }
             list_destroy(paginasDelProceso);
             fclose(swap);
-            return;
+            return 0;
         }
 
         // Leer la página desde el archivo swap
@@ -433,22 +427,19 @@ void dessuspenderProceso(int pid) {
         fseek(swap, entrada->offset, SEEK_SET);
         fread(buffer, tamañoMarcos, 1, swap);
 
-        // Buscar un marco libre
-        int marcoLibre = siguienteMarcoLibre();
-        if (marcoLibre == -1) {
-            log_error(logger, "No hay marcos disponibles para cargar página %d del PID %d", entrada->nro_pagina, pid);
-            free(buffer);
-            continue;// No se que hacer si no hay espacio por que en teoria no deberia pasar por la memoria cuando tiene el espacio deberia avisar para que mande un proceso
-        }
-
-        // Copiar el contenido al marco
-        memcpy(punteroAMarcoPorNumeroDeMarco(marcoLibre), buffer, tamañoMarcos);
-
         // Calcular las entradas del árbol de páginas para esta página
         t_list* entradas = entradasDesdeNumeroDePagina(entrada->nro_pagina);
 
-        // Asignar el marco a la página en la tabla de páginas del proceso
-        asignarMarcoAPaginaConPIDyEntradas(pid, entradas, marcoLibre);// Esta funcion entiendo que hace eso pero tengo que preguntar todavia
+        // Buscar un marco libre y asignar el marco a la página en la tabla de páginas del proceso
+        int marcoLibre = asignarSiguienteMarcoLibreDadasLasEntradas(pid,entradas);
+        if (marcoLibre == -1) {
+            log_error(logger, "No hay marcos disponibles para cargar página %d del PID %d", entrada->nro_pagina, pid);
+            free(buffer);
+            return 1;
+        }
+        
+        // Copiar el contenido al marco
+        memcpy(punteroAMarcoPorNumeroDeMarco(marcoLibre), buffer, tamañoMarcos);
 
         aumentarMetricaSubidasAMemoriaPrincipal(pid);
 
@@ -461,6 +452,7 @@ void dessuspenderProceso(int pid) {
 
     list_destroy(paginasDelProceso);
     fclose(swap);
+    return 0;
 }
 
 int compararEntradasSwapPorPagina(EntradaSwap* a, EntradaSwap* b) {
@@ -486,11 +478,7 @@ void liberarEspacioSwap(int pid) {
             i++; // Solo avanzamos si no borramos
         }
     }
-
-    if (paginasLiberadas == 0) {
-        log_warning(logger, "No se encontraron páginas en swap para liberar del PID %d", pid);
-        return;
-    }
+    //No existe el caso en el que no hay paginasLiberadas porque ubiera sido detectado antes cuando dije "Si el proceso realmente no esta en el SWAP entonces no hay nada que pasar a memoria"
 
     int finBloqueLiberado = inicioBloque + paginasLiberadas * tamañoMarcos;
     if (finBloqueLiberado < obtenerFinDeSwap()) {//me fijo que no sea el ultimo proceso en SWAP
@@ -538,6 +526,7 @@ FILE * abrirSwapFile(){
         swap = fopen(directorioSwap, "w+");
         if(!swap){
             log_error(logger, "No se pudo abrir ni crear el swapfile. Compruebe que el directorio introducido en el archivo de config existe");
+            abort();
         }
     }
     return swap;

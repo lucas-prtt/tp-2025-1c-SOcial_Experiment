@@ -33,7 +33,7 @@ enum algoritmo{
 typedef struct{
     int PID;
     int PC;
-    int ME[7];
+    int ME[7]; // Cantidad de ingresos del procesos a cada estados
     int MT[7]; // Equivale a aproximadamente 25 dias en miilisegundos por cada estado. Se puede pasar a unsigned long long int para 580 millones de años, pero para esto me parece irrelevante
     
     int EST;     // Milisegundos de la estimacion actual, estimada tras rafaga de CPU

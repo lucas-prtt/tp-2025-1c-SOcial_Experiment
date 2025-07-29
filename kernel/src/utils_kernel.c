@@ -18,7 +18,7 @@ void * esperarCPUDispatch(void * socket) {
         CPUIDySocket->SOCKET = nuevoSocket;
         CPUIDySocket->ID = -1; // -1 = No se recibio Handshake: Se desconoce el ID del CPU
         list_add(conexiones.CPUsDispatch, CPUIDySocket);
-        pthread_t *hilo = malloc(sizeof(pthread_t)); //
+        pthread_t *hilo = malloc(sizeof(pthread_t));
         pthread_create(hilo, NULL, handshakeCPUDispatch, CPUIDySocket);
         list_add(createdThreads, hilo);
         printf("- CPU D\n"); //Por ahi conviene poner esto en el handshake

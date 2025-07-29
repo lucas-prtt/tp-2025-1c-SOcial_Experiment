@@ -97,16 +97,18 @@ void * atenderKernel(void * socketPtr){
         break;
     case SOLICITUD_MEMORIA_CARGA_SWAP: // Des suspensión del proceso en SWAP
         PID = list_get(pedido, 1);
-        aumentarMetricaSubidasAMemoriaPrincipal(*PID);
         log_debug(logger, "Tamaño de proceso que se quiere dessuspender = %d, %d marcos", tamañoProceso(*PID), cantidadDePaginasDelProceso(*PID));
         log_debug(logger, "Espacio disponible: %d marcos", marcosDisponibles());
         if (!hayEspacio(tamañoProceso(*PID))) {
            error = 1;
         } else {
             log_debug(logger, "## Se saca %d de SWAP", *PID);
-            dessuspenderProceso(*PID);
+            int r = dessuspenderProceso(*PID);
+            if(r==0){
             setEnMemoria(*PID);
             simularRetrasoSWAP();
+            } else if(r==1){error = r;}
+
         }
 
         if (!error) 
