@@ -381,12 +381,14 @@ int seleccionarEntradaVictimaCACHE(CACHE *cache) {
                         cache->puntero_clock = (indice + 1) % CACHE_SIZE;
                         return indice;
                     }
-                }
 
-                // Si no se encontró víctima, limpiar bits de uso y repetir //
-                for(int i = 0; i < CACHE_SIZE; i++) {
                     cache->entradas[i].bit_uso = 0;
                 }
+
+                /* Si no se encontró víctima, limpiar bits de uso y repetir //
+                for(int i = 0; i < CACHE_SIZE; i++) {
+                    cache->entradas[i].bit_uso = 0;
+                }*/
 
                 vueltas++;
             }
