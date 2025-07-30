@@ -395,12 +395,12 @@ int dessuspenderProceso(int pid) {
         }
     }
 
-    // Si el proceso realmente no esta en el SWAP entonces no hay nada que pasar a memoria
+    // Si el proceso realmente no esta en el SWAP entonces hay un error
     if (list_size(paginasDelProceso) == 0) {
         log_error(logger, "No hay entradas en swap para el PID %d", pid);
         fclose(swap);
         list_destroy(paginasDelProceso);
-        return 2;
+        abort();
     }
 
     for (int i = 0; i < list_size(paginasDelProceso); i++) {
@@ -419,7 +419,7 @@ int dessuspenderProceso(int pid) {
             }
             list_destroy(paginasDelProceso);
             fclose(swap);
-            return 0;
+            return 1;
         }
 
         // Leer la página desde el archivo swap
@@ -435,7 +435,7 @@ int dessuspenderProceso(int pid) {
         if (marcoLibre == -1) {
             log_error(logger, "No hay marcos disponibles para cargar página %d del PID %d", entrada->nro_pagina, pid);
             free(buffer);
-            return 1;
+            return 0;
         }
         
         // Copiar el contenido al marco
@@ -452,7 +452,7 @@ int dessuspenderProceso(int pid) {
 
     list_destroy(paginasDelProceso);
     fclose(swap);
-    return 0;
+    return 1;
 }
 
 int compararEntradasSwapPorPagina(EntradaSwap* a, EntradaSwap* b) {

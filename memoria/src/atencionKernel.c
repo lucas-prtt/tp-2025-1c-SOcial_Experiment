@@ -103,11 +103,10 @@ void * atenderKernel(void * socketPtr){
            error = 1;
         } else {
             log_debug(logger, "## Se saca %d de SWAP", *PID);
-            int r = dessuspenderProceso(*PID);
-            if(r==0){
+            if(dessuspenderProceso(*PID)){
             setEnMemoria(*PID);
             simularRetrasoSWAP();
-            } else if(r==1){error = r;}
+            } else {error = 1;}
 
         }
 
