@@ -190,10 +190,6 @@ bool asignarPaginaAlProceso (int pid, int numPagina) {
 
 void suspenderProceso(int pid){
     FILE* swap = abrirSwapFile();
-    if (!swap) {
-        log_error(logger, "No se pudo abrir swapfile.bin");
-        return;
-    }
 
     int cantidadPaginas = cantidadDePaginasDelProceso(pid);
 
@@ -322,10 +318,6 @@ int* int_de(int n) {
 
 void compactarSwap() {
     FILE* swap = abrirSwapFile();
-    if (!swap) {
-        log_error(logger, "Error al abrir el archivo swapfile.bin para compactación");
-        return;
-    }
     
     if (list_size(tablaSwap) <= 1) {
         fclose(swap);
