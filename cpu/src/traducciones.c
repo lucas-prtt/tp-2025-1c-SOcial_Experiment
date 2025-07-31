@@ -79,6 +79,10 @@ int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina) {
 
     int *codigo_operacion = malloc(sizeof(int));
     t_list* respuesta = recibir_paquete_lista(socket_memoria, MSG_WAITALL, codigo_operacion);
+    if(*codigo_operacion == RESPUESTA_MEMORIA_A_CPU_PAGINA_NO_VALIDA){
+        log_error(logger, "Error catastrofico. Se quiso leer o escribir una pagina fuera de rango");
+        abort();
+    }
     int marco = *((int *)list_get(respuesta, 1));
 
     free(codigo_operacion);
