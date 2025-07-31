@@ -158,7 +158,6 @@ void * atenderKernel(void * socketPtr){
 
         PID = list_get(pedido, 1);
         log_debug(logger, "## Se envia %d a SWAP", *PID);
-        aumentarMetricaBajadasASwap(*PID);
         suspenderProceso(*PID);
         setEnSwap(*PID);
         simularRetrasoSWAP();
