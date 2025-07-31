@@ -90,7 +90,7 @@ void setBitUso(int *bit_uso);
 void clearBitUso(int *bit_uso);
 void setBitModificado(int *bit_modificado);
 void clearBitModificado(int *bit_modificado);
-void notificarActualizacionPaginaAMemoria(cpu_t *cpu, int pid, int nro_pagina);
+void notificarActualizacionPaginaAMemoria(cpu_t *cpu, int indice_victima);
 void *pedirPaginaAMemoria(int socket_memoria, int pid, int direccion_fisica);
 void limpiarEntradaCACHE(CACHE *cache, int indice_victima);
 void limpiarProcesoCACHE(cpu_t *cpu, int pid);
