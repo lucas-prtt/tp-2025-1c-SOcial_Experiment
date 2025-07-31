@@ -134,3 +134,6 @@ else
 fi
 
 echo "✔ Configuración actualizada para $PRUEBA con IP $IP"
+echo "Ejecutar ESTABILIDAD_GENERAL 0"
+echo "4 CPU, 4 DISCO"
+echo "Cruza los dedos"

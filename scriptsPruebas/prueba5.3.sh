@@ -98,3 +98,5 @@ else
 fi
 
 echo "✔ Configuración actualizada para $PRUEBA con IP $IP"
+echo "Ejecutar MEMORIA_BASE_TLB 256"
+echo "1 CPU, 1 DISCO"

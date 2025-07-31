@@ -98,3 +98,5 @@ else
 fi
 
 echo "✔ Configuración actualizada para $PRUEBA con IP $IP"
+echo "Ejecutar PLANI_CORTO_PLAZO 0"
+echo "Solo ejecutar una IO"

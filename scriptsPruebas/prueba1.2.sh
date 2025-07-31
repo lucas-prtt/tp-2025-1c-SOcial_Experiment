@@ -100,3 +100,5 @@ else
 fi
 
 echo "✔ Configuración actualizada para $PRUEBA con IP $IP"
+echo "Ejecutar PLANI_CORTO_PLAZO 0, 2 cpu"
+echo "Levantar un disco al inicio, luego levantar uno mas y finalmente cerrar los dos"
