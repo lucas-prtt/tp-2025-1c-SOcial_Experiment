@@ -378,18 +378,18 @@ void * IOThread(void * NOMBREYSOCKETIO)
             sem_wait(&peticiones->sem_peticiones);
 
             valido = recv(io->SOCKET,&caracterInutil, 1, MSG_PEEK | MSG_DONTWAIT);
-            if (!valido && errno != EAGAIN && errno != EWOULDBLOCK){
+            int cerrar = !valido && errno != EAGAIN && errno != EWOULDBLOCK;
+            if (cerrar){
                 log_debug(logger, "Socket de IO cerrado. No se enviara nada");
                 pthread_mutex_lock(&mutex_peticionesIO);
                 peticiones->instancias--;
                 pthread_mutex_unlock(&mutex_peticionesIO);
                 close(io->SOCKET);
-                return NULL;
             }
             log_debug(logger, "Recibida peticion IO");
 
             pthread_mutex_lock(&mutex_peticionesIO);
-            if(peticiones->instancias <=0){
+            if(peticiones->instancias <=0){ // Se pierde conexion y no hay mas instancias
                 pthread_mutex_unlock(&mutex_peticionesIO);
                 pthread_mutex_lock(&mutex_listasProcesos);
                 list_iterate(peticiones->cola, terminarProcesoPorPeticionInvalida);
@@ -399,7 +399,11 @@ void * IOThread(void * NOMBREYSOCKETIO)
                 sem_post(&sem_introducir_proceso_a_ready); 
                 return NULL;
             }else{
-            pthread_mutex_unlock(&mutex_peticionesIO);
+                pthread_mutex_unlock(&mutex_peticionesIO);
+                if(cerrar){// Se pierde conexion y hay mas instancias
+                    return NULL;
+                }
+                //Else, no se pierde conexion
             }
 
             pthread_mutex_lock(&(peticiones->MUTEX_cola));
