@@ -40,7 +40,7 @@ int traducirDireccionMMU(cpu_t *cpu, int pid, int direccion_logica) {
     }
     else {
         marco = buscarMarcoAMemoria(cpu->socket_memoria, pid, nro_pagina);
-        direccion_fisica = traducirDireccion(direccion_logica, marco);
+        direccion_fisica = traducirDireccion(marco);
     }
 
     //log_warning(logger, "Traduzco DL %d a DF %d", direccion_logica, direccion_fisica);
@@ -60,7 +60,7 @@ int getDesplazamiento(int direccion_logica) {
     return direccion_logica % tamanio_pagina;
 }
 
-int traducirDireccion(int direccion_logica, int marco) {
+int traducirDireccion(int marco) {
     return marco * tamanio_pagina;
 }
 
@@ -659,7 +659,7 @@ int traducirDireccionTLB(TLB *tlb, int pid, int direccion_logica) {
 
     if(marco != -1) {
         log_info(logger, "PID: %d - OBTENER MARCO - Página: %d - Marco: %d", pid, nro_pagina, marco);
-        return traducirDireccion(direccion_logica, marco);
+        return traducirDireccion(marco);
     }
 
     return -1;

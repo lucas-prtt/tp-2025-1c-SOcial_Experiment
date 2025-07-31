@@ -72,7 +72,7 @@ int traducirDireccionMMU(cpu_t *cpu, int pid, int direccion_logica);
 int getNumeroPagina(int direccion_logica);
 int getEntradaNivelX(int nro_pagina, int nro_nivel);
 int getDesplazamiento(int direccion_logica);
-int traducirDireccion(int direccion_logica, int marco);
+int traducirDireccion(int marco);
 int buscarMarcoAMemoria(int socket_memoria, int pid, int nro_pagina);
 void escribirPaginaCompletaEnMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos);
 void escribirSeccionPaginaEnMemoria(int socket_memoria, int pid, int direccion_fisica, char *datos, int tamanio_datos);
