@@ -712,7 +712,7 @@ int seleccionarEntradaVictimaTLB(TLB *tlb) {
         default:
         {
             log_error(logger, "Algoritmo de reemplazo desconocido");
-            return 0;
+            return -1;
         }
     }
 }
