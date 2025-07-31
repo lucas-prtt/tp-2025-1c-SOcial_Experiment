@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# Permisos: chmod +x pruebaN.M.s
-
-# Uso: ./prueba1.2.sh <IP KERNEL> <IP MEMORIA> <nombre_prueba>
+# Uso: ./prueba1.3.sh <IP KERNEL> <IP MEMORIA> <nombre_prueba>
 
 IP_KERNEL=$1
 IP_MEMORIA=$2
@@ -43,7 +41,7 @@ if [ -f "$KERNEL_CONFIG" ]; then
   sed -i "s/^PUERTO_ESCUCHA_DISPATCH=.*/PUERTO_ESCUCHA_DISPATCH=$PUERTO_DISPATCH/" "$KERNEL_CONFIG"
   sed -i "s/^PUERTO_ESCUCHA_INTERRUPT=.*/PUERTO_ESCUCHA_INTERRUPT=$PUERTO_INTERRUPT/" "$KERNEL_CONFIG"
   sed -i "s/^PUERTO_ESCUCHA_IO=.*/PUERTO_ESCUCHA_IO=$PUERTO_IO/" "$KERNEL_CONFIG"
-  sed -i "s/^ALGORITMO_CORTO_PLAZO=.*/ALGORITMO_CORTO_PLAZO=FIFO/" "$KERNEL_CONFIG"
+  sed -i "s/^ALGORITMO_CORTO_PLAZO=.*/ALGORITMO_CORTO_PLAZO=SJF/" "$KERNEL_CONFIG"
   sed -i "s/^ALGORITMO_INGRESO_A_READY=.*/ALGORITMO_INGRESO_A_READY=FIFO/" "$KERNEL_CONFIG"
   sed -i "s/^ALFA=.*/ALFA=1/" "$KERNEL_CONFIG"
   sed -i "s/^ESTIMACION_INICIAL=.*/ESTIMACION_INICIAL=1000/" "$KERNEL_CONFIG"
@@ -100,5 +98,5 @@ else
 fi
 
 echo "✔ Configuración actualizada para $PRUEBA con IP $IP"
-echo "Ejecutar PLANI_CORTO_PLAZO 0, 2 cpu"
-echo "Levantar un disco al inicio, luego levantar uno mas y finalmente cerrar los dos"
+echo "Ejecutar PLANI_CORTO_PLAZO 0"
+echo "Solo ejecutar con un CPU y una IO"
