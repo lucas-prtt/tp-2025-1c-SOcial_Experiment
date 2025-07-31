@@ -635,14 +635,11 @@ int buscarIndicePaginaTLB(TLB *tlb, int pid, int nro_pagina) {
 }
 
 void actualizarTLB(TLB *tlb, int pid, int nro_pagina, int marco) {
-    // Sucede cuando buscarPaginaTLB() es -1 (TLB MISS) //
+    // Se ejecuta sabiendo que la página no está en la TLB //
     int indice_victima;
 
     if(hayEntradaVaciaTLB(tlb, &indice_victima)) {
         insertarPaginaTLB(tlb, pid, indice_victima, nro_pagina, marco);
-    }
-    else if(buscarIndicePaginaTLB(tlb, pid, nro_pagina) != -1) {
-        tlb->entradas[indice_victima].ultimo_uso = tlb->contador_uso;
     }
     else {
         indice_victima = seleccionarEntradaVictimaTLB(tlb);
