@@ -40,7 +40,6 @@ typedef struct {
     int pid;
     int pagina;
     int marco;
-    int validez; //
     int ultimo_uso;
 } r_TLB;
 

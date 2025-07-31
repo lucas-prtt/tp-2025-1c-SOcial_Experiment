@@ -601,7 +601,6 @@ void inicializarTLB(TLB *tlb) {
         tlb->entradas[i].pagina = -1;
         tlb->entradas[i].marco = -1;
         tlb->entradas[i].ultimo_uso = -1;
-        //tlb->entradas[i].validez = 0;
     }
 
     tlb->algoritmo = algoritmo_string_to_enum(config_get_string_value(config, "REEMPLAZO_TLB"));
@@ -627,7 +626,7 @@ int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina) {
 
 int buscarIndicePaginaTLB(TLB *tlb, int pid, int nro_pagina) {
     for(int i = 0; i < TLB_SIZE; i++) {
-        if(/*tlb->entradas[i].validez && */tlb->entradas[i].pid == pid && tlb->entradas[i].pagina == nro_pagina) {
+        if(tlb->entradas[i].pid == pid && tlb->entradas[i].pagina == nro_pagina) {
             return i;
         }
     }
@@ -668,7 +667,7 @@ int traducirDireccionTLB(TLB *tlb, int pid, int direccion_logica) {
 
 bool hayEntradaVaciaTLB(TLB *tlb, int *indice_victima) {
     for(int i = 0; i < TLB_SIZE; i++) {
-        if(tlb->entradas[i].pagina == -1) { // tlb->entradas[i].validez == 0
+        if(tlb->entradas[i].pagina == -1) {
             *indice_victima = i;
             return true;
         }
@@ -684,8 +683,6 @@ void insertarPaginaTLB(TLB *tlb, int pid, int indice_victima, int nro_pagina, in
 
     tlb->contador_uso++;
     tlb->entradas[indice_victima].ultimo_uso = tlb->contador_uso;
-
-    // tlb->entradas[indice_victima].validez = 1;
 
     log_debug(logger, "PID: %d - TLB Add - Pagina: %d", tlb->entradas[indice_victima].pid, tlb->entradas[indice_victima].pagina);
 }
@@ -707,7 +704,7 @@ int seleccionarEntradaVictimaTLB(TLB *tlb) {
             int menor_uso = INT_MAX;
 
             for(int i = 0; i < TLB_SIZE; i++) {
-                if(/*tlb->entradas[i].validez == 1 && */tlb->entradas[i].ultimo_uso < menor_uso) {
+                if(tlb->entradas[i].ultimo_uso < menor_uso) {
                     menor_uso = tlb->entradas[i].ultimo_uso;
                     indice_victima = i;
                 }
@@ -728,13 +725,12 @@ void limpiarEntradaTLB(TLB *tlb, int indice_victima) {
     tlb->entradas[indice_victima].pagina = -1;
     tlb->entradas[indice_victima].marco = -1;
     tlb->entradas[indice_victima].ultimo_uso = -1;
-    //tlb->entradas[indice_victima].validez = 0;
 }
 
 void limpiarProcesoTLB(TLB *tlb, int pid) {
     // Sucede por proceso //
     for(int i = 0; i < TLB_SIZE; i++) {
-        if(/*tlb->entradas[i].validez == 1 &&*/ tlb->entradas[i].pid == pid) {
+        if(tlb->entradas[i].pid == pid) {
             limpiarEntradaTLB(tlb, i);
         }
     }
