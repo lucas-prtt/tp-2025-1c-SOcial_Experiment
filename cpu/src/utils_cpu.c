@@ -46,19 +46,13 @@ bool handshakeMemoria(int socket_memoria, int identificador) {
                                 *(int *)list_get(lista_contenido, 3),
                                 *(int *)list_get(lista_contenido, 5)
                                 );
-    if(*(int *)list_get(lista_contenido, 5) == tamanio_pagina) {
-        log_debug(logger, "Crear variables globales - Success:");
-        log_debug(logger, "  Tamaño caché             : %d", CACHE_SIZE);
-        log_debug(logger, "  Tamaño TLB               : %d", TLB_SIZE);
-        log_debug(logger, "  Tamaño de página         : %d", tamanio_pagina);
-        log_debug(logger, "  Entradas por tabla       : %d", cantidad_entradas_tabla);
-        log_debug(logger, "  Cantidad de niveles      : %d", cantidad_niveles_tabla_paginas);
-    }
-    else {
-        log_error(logger, "Crear variables globales - Error");
-        eliminar_paquete_lista(lista_contenido);
-        return false;
-    }
+
+    log_debug(logger, "Crear variables globales - Success:");
+    log_debug(logger, "  Tamaño caché             : %d", CACHE_SIZE);
+    log_debug(logger, "  Tamaño TLB               : %d", TLB_SIZE);
+    log_debug(logger, "  Tamaño de página         : %d", tamanio_pagina);
+    log_debug(logger, "  Entradas por tabla       : %d", cantidad_entradas_tabla);
+    log_debug(logger, "  Cantidad de niveles      : %d", cantidad_niveles_tabla_paginas);
 
     eliminar_paquete_lista(lista_contenido);
     return true;
