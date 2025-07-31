@@ -286,22 +286,17 @@ int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
 }
 
 void actualizarCACHE(cpu_t *cpu, int pid, int nro_pagina, void *contenido) {
-    // Busca la página en la caché //
-    int indice_victima = buscarIndicePaginaCACHE(cpu->cache, pid, nro_pagina);
+    // Se ejecuta sabiendo que la página no está en la caché //
 
     usleep(CACHE_RETARDO * 1000);
 
-    // CASO 1: Está //
-    if(indice_victima != -1) {
-        setBitUso(&cpu->cache->entradas[indice_victima].bit_uso);
-    }
-    // CASO 2: No está, pero hay registros vacios //
-    indice_victima = hayEntradaVaciaCACHE(cpu->cache);
+    // CASO 1: hay registros vacios //
+    int indice_victima = hayEntradaVaciaCACHE(cpu->cache);
     if(indice_victima != -1) {
         insertarPaginaCACHE(cpu->cache, pid, indice_victima, nro_pagina, contenido);
         cpu->cache->puntero_clock = (cpu->cache->puntero_clock + 1) % CACHE_SIZE;
     }
-    // CASO 3: No está y no hay registros vacios //
+    // CASO 2: no hay registros vacios //
     else {
         indice_victima = seleccionarEntradaVictimaCACHE(cpu->cache);
         if(cpu->cache->entradas[indice_victima].bit_modificado) {
@@ -580,6 +575,9 @@ void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
         free(leido);
 }
 
+void simularRetardoCache() {
+    usleep(CACHE_RETARDO * 1000);
+}
 
 /////////////////////////       < TLB >       /////////////////////////
 
