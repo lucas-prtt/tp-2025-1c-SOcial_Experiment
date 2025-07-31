@@ -181,9 +181,9 @@ void leerDeMemoria(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
     }
 }
 
-// No se esta utilizando... Revisar //
+// No se esta utilizando... //
 void leerPaginaCompletaMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio) {
-    t_paquete *paquete_peticion_read = crear_paquete(PETICION_LEER_DE_MEMORIA_LIMITADO);
+    t_paquete *paquete_peticion_read = crear_paquete(PETICION_LEER_DE_MEMORIA);
     agregar_a_paquete(paquete_peticion_read, &pid, sizeof(int));
     agregar_a_paquete(paquete_peticion_read, &direccion_fisica, sizeof(int));
     agregar_a_paquete(paquete_peticion_read, &tamanio, sizeof(int));
@@ -208,7 +208,7 @@ void leerPaginaCompletaMemoria(int socket_memoria, int pid, int direccion_fisica
 }
 
 void leerSeccionPaginaMemoria(int socket_memoria, int pid, int direccion_fisica, int tamanio) {
-    t_paquete *paquete_peticion_read = crear_paquete(PETICION_LEER_DE_MEMORIA);
+    t_paquete *paquete_peticion_read = crear_paquete(PETICION_LEER_DE_MEMORIA_LIMITADO);
     agregar_a_paquete(paquete_peticion_read, &pid, sizeof(int));
     agregar_a_paquete(paquete_peticion_read, &direccion_fisica, sizeof(int));
     agregar_a_paquete(paquete_peticion_read, &tamanio, sizeof(int));
