@@ -502,7 +502,7 @@ void mergearEspaciosLibres() {
     }
 }
 
-int compararEspaciosPorInicio(void * a, void * b) {
+bool compararEspaciosPorInicio(void * a, void * b) {
     return (((EspacioLibre *) a)->punto_incio <= ((EspacioLibre *) b)->punto_incio);
 }
 

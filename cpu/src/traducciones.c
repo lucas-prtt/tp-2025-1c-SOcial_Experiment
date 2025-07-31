@@ -537,7 +537,8 @@ void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
 void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
     int bytes_restantes = tamanio;
     int datos_leidos = 0;
-
+    char * leido = malloc(tamanio_pagina+1);
+    leido[tamanio_pagina] = '\0';
     usleep(CACHE_RETARDO * 1000);
     
     while(bytes_restantes > 0) {
@@ -563,15 +564,16 @@ void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
             free(pagina);
         }
 
-        char *leido = strndup((char *)contenido_cache + desplazamiento, tamanio);
+        memcpy(leido, (char *)contenido_cache + desplazamiento, bytes_a_leer);
+        leido[bytes_a_leer] = '\0';
         printf("READ: %s\n", leido);
         log_info(logger, "PID: %d - Acción: LEER - Dirección Física: %d - Valor: %s", pid, direccion_fisica, leido);
-        free(leido);
         
         datos_leidos += bytes_a_leer;
         bytes_restantes -= bytes_a_leer;
         direccion_logica += bytes_a_leer;
     }
+        free(leido);
 }
 
 
