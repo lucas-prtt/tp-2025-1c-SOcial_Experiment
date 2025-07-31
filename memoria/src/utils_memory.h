@@ -31,9 +31,8 @@ void compactarSwap();
 int obtenerFinDeSwap();
 void liberarEspacioSwap(int pid);
 void mergearEspaciosLibres();
-int compararEntradasSwap(EntradaSwap* a, EntradaSwap* b);
-int compararEntradasSwapPorPagina(EntradaSwap* a, EntradaSwap* b);
-int compararEspaciosPorInicio(EspacioLibre* a, EspacioLibre* b);
+bool compararEntradasSwap(void* a, void* b);
+bool compararEspaciosPorInicio(void* a, void* b);
 
 FILE * abrirSwapFile();
 void borrarSwapfile();

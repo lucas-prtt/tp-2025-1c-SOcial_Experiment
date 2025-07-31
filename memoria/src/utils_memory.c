@@ -206,14 +206,12 @@ void suspenderProceso(int pid){
             if (nroPagina == cantidadPaginas){//me fijo si es la ultima pagina del for
                 //si es la ultima pagina y no esta el marco en memoria tampoco(osea ninguno lo esta) entonces solo se anota en la tabla de swap en el final de todo(para evitar compactacion) y se actualiza las metricas
                 // Guardar entrada en la tabla de swap
-                int offset = obtenerFinDeSwap() - tamañoMarcos;//le saco el tamañoMarcos porque al no haber espacio realmente no existe nada(fijarse calculo obtnerFinDeSWAP)
-                if(offset < 0)
-                {
-                    offset = 0;}
+                int offset = obtenerFinDeSwap();
                 EntradaSwap* entradaSwap = malloc(sizeof(EntradaSwap));
                 entradaSwap->pid = pid;
                 entradaSwap->nro_pagina = (-1);//le pongo que sea la pagina -1 para cuando desuspendo saber que no tiene que copiar nada a memoria
                 entradaSwap->offset = offset;
+                //log_warning(logger,"pid:%d nro_pagina:%d offser:%d",pid,nroPagina,offset);
                 list_add(tablaSwap, entradaSwap);
 
                 fclose(swap);
@@ -244,11 +242,11 @@ void suspenderProceso(int pid){
     }
 
     // 2. Si no hay hueco contiguo, compactar si hay espacio disperso
-    if ((offsetInicial == -1) || (paginasLibresTotalesSwapEntreProcesos != 0)) {
+    if ((offsetInicial == -1)) {
         if (paginasLibresTotalesSwapEntreProcesos >= cantidadPaginas) {
             log_debug(logger, "Compactando SWAP para PID %d", pid);
             compactarSwap();
-            offsetInicial = list_size(tablaSwap) * tamañoMarcos;
+            offsetInicial = obtenerFinDeSwap();
         } else {
             log_debug(logger, "No hay suficiente espacio total en huecos para PID %d, escribiendo al final igual (puede dejar fragmentación)", pid);
             offsetInicial = obtenerFinDeSwap();
@@ -281,6 +279,7 @@ void suspenderProceso(int pid){
         entradaSwap->pid = pid;
         entradaSwap->nro_pagina = nroPagina;
         entradaSwap->offset = offset;
+        //log_warning(logger,"pid:%d nro_pagina:%d offser:%d",pid,nroPagina,offset);
         list_add(tablaSwap, entradaSwap);
 
         free(contenido);
@@ -324,7 +323,7 @@ void compactarSwap() {
         return; // No hace falta compactar si hay 0 o 1 páginas
     }
 
-    list_sort(tablaSwap, (void*)compararEntradasSwap); // ordena por offset
+    list_sort(tablaSwap, compararEntradasSwap); // ordena por offset
 
     int nuevoOffset = 0;
     EntradaSwap* entrada;
@@ -354,8 +353,8 @@ void compactarSwap() {
     fclose(swap);
 }
 
-int compararEntradasSwap(EntradaSwap* a, EntradaSwap* b) {
-    return a->offset - b->offset;
+bool compararEntradasSwap(void * a, void * b) {
+    return (((EntradaSwap *) a)->offset <= ((EntradaSwap *) b)->offset);
 }
 
 int obtenerFinDeSwap() {
@@ -447,10 +446,6 @@ int dessuspenderProceso(int pid) {
     return 1;
 }
 
-int compararEntradasSwapPorPagina(EntradaSwap* a, EntradaSwap* b) {
-    return a->nro_pagina - b->nro_pagina;
-}
-
 void liberarEspacioSwap(int pid) {
     int paginasLiberadas = 0;
     int inicioBloque = -1;
@@ -488,7 +483,8 @@ void liberarEspacioSwap(int pid) {
 
 void mergearEspaciosLibres() {
     // Ordenamos por punto de inicio
-    list_sort(espaciosLibresSwapentrePaginas, (void*)compararEspaciosPorInicio);
+    list_sort(espaciosLibresSwapentrePaginas,compararEspaciosPorInicio);
+    
 
     for (int i = 0; i < list_size(espaciosLibresSwapentrePaginas) - 1; ) {
         EspacioLibre* actual = list_get(espaciosLibresSwapentrePaginas, i);
@@ -506,8 +502,8 @@ void mergearEspaciosLibres() {
     }
 }
 
-int compararEspaciosPorInicio(EspacioLibre* a, EspacioLibre* b) {
-    return a->punto_incio - b->punto_incio;
+int compararEspaciosPorInicio(void * a, void * b) {
+    return (((EspacioLibre *) a)->punto_incio <= ((EspacioLibre *) b)->punto_incio);
 }
 
 FILE * abrirSwapFile(){
