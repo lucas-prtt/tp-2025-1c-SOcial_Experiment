@@ -429,7 +429,6 @@ void * IOThread(void * NOMBREYSOCKETIO)
             log_warning(logger, "Se perdio la conexion con IO %s durante la ejecucion de una entrada/salida. Se envia el proceso (%d) a EXIT", io->NOMBRE, peticion->PID);
             peticiones->instancias--;
             close(io->SOCKET);
-            peticion->estado = PETICION_FINALIZADA;
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado(peticion->PID, EXIT, listasProcesos);
             eliminamosOtroProceso();
@@ -446,7 +445,11 @@ void * IOThread(void * NOMBREYSOCKETIO)
             pthread_mutex_unlock(&mutex_peticionesIO);
             }
             liberarMemoria(peticion->PID);
-            eliminarPeticion(peticion);
+            if (peticion->estado == PETICION_BLOQUEADA)
+            peticion->estado = PETICION_FINALIZADA;
+            else{
+                eliminarPeticion(peticion);
+            }
             return NULL;
         }else{                  // Si no se pierde la conexion, liberar el paquete y continuar a ready o susp_ready
         eliminar_paquete_lista(respuesta);
