@@ -231,6 +231,7 @@ int handshakeMemoria(int socketMemoria){
     log_trace(logger, "Paquete recibido, pointer = %p", respuesta);
     if(respuesta == NULL || rta != SOYMEMORIA){
         eliminar_paquete_lista(respuesta);
+        log_error(logger, "Error en el handshake con memoria: respuesta = %d", rta);
         return -1;
     }
     else{

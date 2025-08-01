@@ -117,8 +117,8 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 liberarMemoria(proceso->PID); // Envia mensaje a Memoria para liberar el espacio
                 sem_post(&evaluarFinKernel);
-                log_trace(logger, "Termino el case EXIT");
                 sem_post(&sem_introducir_proceso_a_ready); 
+                log_trace(logger, "Termino el case EXIT");
                 break;
             case SYSCALL_INIT_PROC:
                 char * path = list_get(paqueteRespuesta, 3);
@@ -165,6 +165,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                     log_warning(logger, "(%d) - Pasa a EXIT por IO invalida", proceso->PID);
                     cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
                     eliminamosOtroProceso();
+                    liberarMemoria(proceso->PID); // Envia mensaje a Memoria para liberar el espacio
                     sem_post(&evaluarFinKernel);
                     sem_post(&sem_introducir_proceso_a_ready); 
                 }
