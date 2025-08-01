@@ -334,8 +334,9 @@ bool checkInterrupt(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
         return true;
         }
         else{
-            log_warning(logger, "Falsa alarma. Se recibio un interrupt de otro proceso (%d) en lugar del que se esta ejecutando (%d)", *pidInterruptor, proc_AEjecutar->pid);
+            //log_warning(logger, "Falsa alarma. Se recibio un interrupt de otro proceso (%d) en lugar del que se esta ejecutando (%d)", *pidInterruptor, proc_AEjecutar->pid);
             log_debug(logger, "Sigo buscando interrupciones");
+            list_clean_and_destroy_elements(cpu->interrupciones, free);
         }
     }
     pthread_mutex_unlock(&cpu->mutex_interrupcion);
