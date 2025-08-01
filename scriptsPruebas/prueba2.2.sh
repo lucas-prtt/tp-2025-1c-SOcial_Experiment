@@ -26,7 +26,7 @@ if [ -f "$MEM_CONFIG" ]; then
   sed -i "s/^RETARDO_MEMORIA=.*/RETARDO_MEMORIA=500/" "$MEM_CONFIG"
   sed -i "s#^PATH_SWAPFILE=.*#PATH_SWAPFILE=/home/utnso/swapfile.bin#" "$MEM_CONFIG"
   sed -i "s/^RETARDO_SWAP=.*/RETARDO_SWAP=3000/" "$MEM_CONFIG"
-  sed -i "s/^LOG_LEVEL=.*/LOG_LEVEL=DEBUG/" "$MEM_CONFIG"
+  sed -i "s/^LOG_LEVEL=.*/LOG_LEVEL=INFO/" "$MEM_CONFIG"
   sed -i "s#^DUMP_PATH=.*#DUMP_PATH=/home/utnso/dump_files/#" "$MEM_CONFIG"
   sed -i "s#^PATH_INSTRUCCIONES=.*#PATH_INSTRUCCIONES=${INSTRUCCIONES_PATH}#" "$MEM_CONFIG"
 else
@@ -56,7 +56,7 @@ IO_CONFIG="$BASE_DIR/io/io.config"
 if [ -f "$IO_CONFIG" ]; then
   sed -i "s/^IP_KERNEL=.*/IP_KERNEL=$IP_KERNEL/" "$IO_CONFIG"
   sed -i "s/^PUERTO_KERNEL=.*/PUERTO_KERNEL=$PUERTO_IO/" "$IO_CONFIG"
-  sed -i "s/^LOG_LEVEL=.*/LOG_LEVEL=TRACE/" "$IO_CONFIG"
+  sed -i "s/^LOG_LEVEL=.*/LOG_LEVEL=INFO/" "$IO_CONFIG"
 else
   echo "❌ No se encontró $IO_CONFIG"
 fi

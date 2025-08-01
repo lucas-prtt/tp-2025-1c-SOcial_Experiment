@@ -211,7 +211,7 @@ void suspenderProceso(int pid){
                 entradaSwap->pid = pid;
                 entradaSwap->nro_pagina = (-1);//le pongo que sea la pagina -1 para cuando desuspendo saber que no tiene que copiar nada a memoria
                 entradaSwap->offset = offset;
-                //log_warning(logger,"pid:%d nro_pagina:%d offser:%d",pid,nroPagina,offset);
+                //log_warning(logger,"pid:%d nro_pagina:%d offset:%d",pid,nroPagina,offset);
                 list_add(tablaSwap, entradaSwap);
 
                 fclose(swap);
@@ -252,7 +252,7 @@ void suspenderProceso(int pid){
             offsetInicial = obtenerFinDeSwap();
         }
     }
-
+    int paginasNoEsta = 0;
     for (int nroPagina = 0; nroPagina < cantidadPaginas; nroPagina++) {
         // Obtener entradas del árbol a partir del número de página es decir el camino a seguir en el arbol en forma de lista
         t_list* entradas = entradasDesdeNumeroDePagina(nroPagina);
@@ -262,6 +262,7 @@ void suspenderProceso(int pid){
 
         if (marco == -1) {
             list_destroy(entradas);
+            paginasNoEsta++;
             continue;
         }
         // Leer contenido de la página
@@ -269,7 +270,7 @@ void suspenderProceso(int pid){
         memcpy(contenido, punteroAMarcoPorNumeroDeMarco(marco), tamañoMarcos);//guardo el contenido de la pagina
 
         // Calcular offset dentro del swapfile
-        int offset = offsetInicial + nroPagina * tamañoMarcos;
+        int offset = offsetInicial + (nroPagina-paginasNoEsta) * tamañoMarcos;
 
         fseek(swap, offset, SEEK_SET);
         fwrite(contenido, tamañoMarcos, 1, swap);
@@ -279,7 +280,7 @@ void suspenderProceso(int pid){
         entradaSwap->pid = pid;
         entradaSwap->nro_pagina = nroPagina;
         entradaSwap->offset = offset;
-        //log_warning(logger,"pid:%d nro_pagina:%d offser:%d",pid,nroPagina,offset);
+        //log_warning(logger,"pid:%d nro_pagina:%d offset:%d",pid,nroPagina,offset);
         list_add(tablaSwap, entradaSwap);
 
         free(contenido);
@@ -431,7 +432,7 @@ int dessuspenderProceso(int pid) {
         
         // Copiar el contenido al marco
         memcpy(punteroAMarcoPorNumeroDeMarco(marcoLibre), buffer, tamañoMarcos);
-
+        //log_warning(logger,"marcoLibre:%d punteroAMarcoPorNumeroDeMarco(marcoLibre):%p",marcoLibre,punteroAMarcoPorNumeroDeMarco(marcoLibre));
         aumentarMetricaSubidasAMemoriaPrincipal(pid);
 
         list_destroy_and_destroy_elements(entradas, free);
