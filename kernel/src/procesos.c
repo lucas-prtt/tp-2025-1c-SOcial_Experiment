@@ -176,7 +176,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 break;
             case SYSCALL_DUMP_MEMORY:
                 PIDySocket * infoDump;
-                infoDump = malloc(sizeof(infoDump));
+                infoDump = malloc(sizeof(PIDySocket));
                 infoDump->PID = proceso->PID;
                 enviarSolicitudDumpMemory(proceso->PID, &(infoDump->socket));
                 pthread_mutex_lock(&mutex_listasProcesos);
@@ -446,6 +446,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
             pthread_mutex_unlock(&mutex_peticionesIO);
             }
             liberarMemoria(peticion->PID);
+            eliminarPeticion(peticion);
             return NULL;
         }else{                  // Si no se pierde la conexion, liberar el paquete y continuar a ready o susp_ready
         eliminar_paquete_lista(respuesta);
