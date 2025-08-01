@@ -98,6 +98,8 @@ int main(int argc, char* argv[]) {
     }
     log_debug(logger, "========== FIN EXISTOSO =========");
     sem_destroy(&evaluarFinKernel);
+    shutdown(socketEscuchaIO, SHUT_RD);
+    pthread_join(ioConnect, NULL);
     eliminarHilos(hilos);
     list_destroy_and_destroy_elements(hilos, free);
 

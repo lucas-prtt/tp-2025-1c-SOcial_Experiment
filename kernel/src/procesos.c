@@ -329,14 +329,14 @@ void * ingresoAReadyThread(void * _){ // Planificador mediano y largo plazo
             sem_post(&sem_ordenar_cola_ready);
 
             log_trace(logger, "Ya mande el mensaje de que ordene la cola, tengo que meter otro proceso?");
-            log_trace(logger, "Validando si hay que meter otro proceso, list_size de: NEW=%d, SUSP_READY=%d",list_size(listasProcesos[NEW]), list_size(listasProcesos[SUSP_READY]));
+            //log_trace(logger, "Validando si hay que meter otro proceso, list_size de: NEW=%d, SUSP_READY=%d",list_size(listasProcesos[NEW]), list_size(listasProcesos[SUSP_READY]));
             if(hayProcesosPendientes) // Si quedan procesos pruebo meter otro
                 {
-                log_trace(logger, "Si, tengo que meter otro proceso");
+                log_trace(logger, "Tengo que meter otro proceso");
                 sem_post(&sem_introducir_proceso_a_ready);
                 }
             else{
-                log_trace(logger, "No, no tengo que meter otro proceso");
+                log_trace(logger, "No tengo que meter otro proceso");
             }
                                 
         }
