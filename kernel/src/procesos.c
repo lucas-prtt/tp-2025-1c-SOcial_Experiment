@@ -393,8 +393,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
             if(peticiones->instancias <=0){ // Se pierde conexion y no hay mas instancias
                 pthread_mutex_unlock(&mutex_peticionesIO);
                 pthread_mutex_lock(&mutex_listasProcesos);
-                list_iterate(peticiones->cola, terminarProcesoPorPeticionInvalida);
-                list_clean_and_destroy_elements(peticiones->cola, free);
+                list_iterate(peticiones->cola, terminarProcesoPorPeticionInvalida); // Destruye peticiones o las pone como "Finalizadas" para que el temporizador las ignore
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 sem_post(&evaluarFinKernel);
                 sem_post(&sem_introducir_proceso_a_ready); 
