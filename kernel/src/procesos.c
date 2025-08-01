@@ -437,7 +437,6 @@ void * IOThread(void * NOMBREYSOCKETIO)
                 pthread_mutex_unlock(&mutex_peticionesIO);
                 pthread_mutex_lock(&mutex_listasProcesos);
                 list_iterate(peticiones->cola, terminarProcesoPorPeticionInvalida);
-                list_clean_and_destroy_elements(peticiones->cola, free);
                 pthread_mutex_unlock(&mutex_listasProcesos);    
                 sem_post(&evaluarFinKernel);
                 sem_post(&sem_introducir_proceso_a_ready); 
