@@ -382,16 +382,17 @@ void enviarSolicitudSuspensionProceso(int PID){
 void terminarProcesoPorPeticionInvalida(void * elem){
     Peticion * peticion = (Peticion*)elem;
     sem_wait(&(peticion->sem_estado));
-    if (peticion->estado == PETICION_BLOQUEADA)
-    peticion->estado = PETICION_FINALIZADA;
-    else{
-        eliminarPeticion(peticion);
-    }
     cambiarEstado(peticion->PID, EXIT, listasProcesos);
     liberarMemoria(peticion->PID);
     log_warning(logger, "(%d) - Proceso finalizado por ausencia de IOs validas", peticion->PID);
     eliminamosOtroProceso();
+    if (peticion->estado == PETICION_BLOQUEADA){
+    peticion->estado = PETICION_FINALIZADA;
     sem_post(&(peticion->sem_estado));
+    }
+    else{
+        eliminarPeticion(peticion);
+    }
     return;
 }
 

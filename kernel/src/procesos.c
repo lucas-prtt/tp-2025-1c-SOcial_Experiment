@@ -145,11 +145,8 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                     log_error(logger, "Se recibio un IO de otro proceso (%d en vez de %d)", *pid, proceso->PID);
                 }
 
-                pthread_t timerThread;
-                Peticion * pet = crearPeticion(proceso->PID, milisegundos);
-                pthread_create(&timerThread, NULL, temporizadorSuspenderThread, pet);
-                pthread_detach(timerThread);
 
+                Peticion * pet = crearPeticion(proceso->PID, milisegundos);
                 pthread_mutex_lock(&mutex_peticionesIO);
                 int instanciasDeLaIo = encolarPeticionIO(nombreIO, pet, lista_peticionesIO); // Tambien hace señal a su semaforo
                 pthread_mutex_unlock(&mutex_peticionesIO);
@@ -157,12 +154,16 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
                 pthread_mutex_lock(&mutex_listasProcesos);
                 if(instanciasDeLaIo > 0){
+                    pthread_t timerThread;
+                    pthread_create(&timerThread, NULL, temporizadorSuspenderThread, pet);
+                    pthread_detach(timerThread);
                     cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, BLOCKED, listasProcesos);
                     actualizarEstimacion(proceso, alfa);
                     log_info(logger, "## (%d) - Bloqueado por IO: %s", proceso->PID, nombreIO);
                     }
                 else{
                     log_warning(logger, "(%d) - Pasa a EXIT por IO invalida", proceso->PID);
+                    eliminarPeticion(pet);
                     cambiarEstado_EstadoActualConocido(proceso->PID, EXEC, EXIT, listasProcesos);
                     eliminamosOtroProceso();
                     liberarMemoria(proceso->PID); // Envia mensaje a Memoria para liberar el espacio
@@ -232,6 +233,7 @@ void * orderThread(void * _){
             peticionInterrupt = crear_paquete(PETICION_INTERRUPT_A_CPU);
             agregar_a_paquete(peticionInterrupt, &(procesoInterrumpido->PID), sizeof(int));
             enviar_paquete(peticionInterrupt, procesoInterrumpido->ProcesadorQueLoEjecutaInterrupt->SOCKET);
+            eliminar_paquete(peticionInterrupt);
             log_debug(logger, "Peticion de desalojo enviada: Se debe interrumpir (%d)", procesoInterrumpido->PID);
             log_trace(logger, "Ordenando cola de ready de nuevo...");
             ordenar_cola_ready(listasProcesos, algoritmo_enum);
