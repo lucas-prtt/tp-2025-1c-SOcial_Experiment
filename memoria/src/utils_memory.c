@@ -259,9 +259,8 @@ void suspenderProceso(int pid){
 
         // Buscar marco actual (si tiene asignado)
         int marco = obtenerMarcoDePaginaConPIDYEntradas(pid, entradas);
-
         if (marco == -1) {
-            list_destroy(entradas);
+            list_destroy_and_destroy_elements(entradas, free);
             paginasNoEsta++;
             continue;
         }
@@ -284,7 +283,7 @@ void suspenderProceso(int pid){
         list_add(tablaSwap, entradaSwap);
 
         free(contenido);
-        list_destroy(entradas);
+        list_destroy_and_destroy_elements(entradas, free);
     }
 
     fclose(swap);
