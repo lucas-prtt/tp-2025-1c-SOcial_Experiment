@@ -475,15 +475,7 @@ void limpiarProcesoCACHE(cpu_t *cpu, int pid) {
     }
 }
 
-void limpiarProcesoCACHETrucho(cpu_t *cpu, int pid) {
-    for(int i = 0; i < CACHE_SIZE; i++) {
-        if(cpu->cache->entradas[i].pid == pid) {
-            if(cpu->cache->entradas[i].bit_modificado) {
-                notificarActualizacionPaginaAMemoria(cpu, i);
-            }
-        }
-    }
-}
+
 
 void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
     int bytes_restantes = strlen(datos);

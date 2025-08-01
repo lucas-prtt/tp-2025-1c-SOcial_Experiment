@@ -49,6 +49,7 @@ bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
                     // No tengo que aceptar el mismo proceso que me mande. Le debo dar interrupt acknoledge.
             eliminar_paquete_lista(ConfirmacionSyscallRecibido);
             log_debug(logger, "Le digo a kernel que me llego interrupcion del proceso, por lo que no lo tiene que seguir ejecutando");
+            limpiarProcesoCACHE(cpu, proc_AEjecutar->pid);
             devolverProcesoPorInterrupt(cpu->socket_kernel_dispatch, proc_AEjecutar);
             ultimaInstruccionInitProc = false;
         }else{
@@ -66,6 +67,7 @@ bool ejecutarCicloInstruccion(cpu_t *cpu, PCB_cpu *proc_AEjecutar) {
     }else if(interrupcion){
         log_debug(logger, "Solo hubo una interrupcion, no hubo syscall. Devuelvo interrupt acknoledge");
         // Si solo hubo interrupcion, solo devuelvo interrupt acknowledge
+        limpiarProcesoCACHE(cpu, proc_AEjecutar->pid);
         devolverProcesoPorInterrupt(cpu->socket_kernel_dispatch, proc_AEjecutar);
         ultimaInstruccionInitProc = false;  // Ya deberia ser, pero por las dudas
         return true;
@@ -152,13 +154,13 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
     ultimaInstruccionInitProc = false;
     switch(instr_info.tipo_instruccion)
     {
-        case INSTR_NOOP:
+        case INSTR_NOOP: // No se devuelve a Kernel
         {
             log_info(logger, "## PID: %d - Ejecutando: %s", pcb->pid, operacion);
             setProgramCounter(pcb, pcb->pc + 1);
             return false;
         }
-        case INSTR_WRITE:
+        case INSTR_WRITE: //No se devuelve a Kernel
         {
             int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
             char *datos = (char *)list_get(instruccion_list, 2);
@@ -180,7 +182,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             setProgramCounter(pcb, pcb->pc + 1);
             return false;
         }
-        case INSTR_READ:
+        case INSTR_READ: // No se devuelve a Kernel
         {
             int direccion_logica = atoi((char*)list_get(instruccion_list, 1));
             int tamanio = atoi((char *)list_get(instruccion_list, 2));
@@ -197,7 +199,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             setProgramCounter(pcb, pcb->pc + 1);
             return false;
         }
-        case INSTR_GOTO:
+        case INSTR_GOTO:    //No se devuelve a Kernel
         {
             int valor = atoi((char *)list_get(instruccion_list, 1));
 
@@ -205,11 +207,11 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             setProgramCounter(pcb, valor);
             return false;
         }
-        case INSTR_IO:
+        case INSTR_IO:  
         {
             char *dispositivo = (char *)list_get(instruccion_list, 1);
             int tiempo = atoi((char *)list_get(instruccion_list, 2));
-
+            limpiarProcesoCACHE(cpu, pcb->pid);
             t_paquete *paquete_peticion_io = crear_paquete(SYSCALL_IO);
             setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_peticion_io, &(pcb->pc), sizeof(pcb->pc));
@@ -227,7 +229,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
             ultimaInstruccionInitProc = true;
             char *path = (char *)list_get(instruccion_list, 1);
             int tamanio = atoi((char *)list_get(instruccion_list, 2));
-
+            limpiarProcesoCACHE(cpu, pcb->pid);
             t_paquete *paquete_peticion_init_proc = crear_paquete(SYSCALL_INIT_PROC);
             setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_peticion_init_proc, &(pcb->pc), sizeof(pcb->pc));
@@ -242,7 +244,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
         }
         case INSTR_DUMP_MEMORY:
         {
-            limpiarProcesoCACHETrucho(cpu, pcb->pid);
+            limpiarProcesoCACHE(cpu, pcb->pid);
             t_paquete *paquete_peticion_dump_memory = crear_paquete(SYSCALL_DUMP_MEMORY);
             setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_peticion_dump_memory, &(pcb->pc), sizeof(pcb->pc));
@@ -254,6 +256,7 @@ bool execute(cpu_t *cpu, t_list *instruccion_list, instruccionInfo instr_info, P
         }
         case INSTR_EXIT:
         {
+            limpiarProcesoCACHE(cpu, pcb->pid);
             t_paquete *paquete_instr_exit = crear_paquete(SYSCALL_EXIT);
             setProgramCounter(pcb, pcb->pc + 1);
             agregar_a_paquete(paquete_instr_exit, &(pcb->pc), sizeof(pcb->pc));
