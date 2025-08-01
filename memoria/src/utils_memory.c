@@ -201,8 +201,8 @@ void suspenderProceso(int pid){
         // Buscar marco actual (si tiene asignado)
         int marco = obtenerMarcoDePaginaConPIDYEntradas(pid, entradas);
 
+        list_destroy_and_destroy_elements(entradas, free);
         if (marco == -1) {
-            list_destroy_and_destroy_elements(entradas, free);
             if (nroPagina == cantidadPaginas){//me fijo si es la ultima pagina del for
                 //si es la ultima pagina y no esta el marco en memoria tampoco(osea ninguno lo esta) entonces solo se anota en la tabla de swap en el final de todo(para evitar compactacion) y se actualiza las metricas
                 // Guardar entrada en la tabla de swap
