@@ -312,13 +312,14 @@ int recibirInterrupcion(int socket_kernel_interrupt) {
         log_error(logger, "Pointer = %p", lista_interrupcion);
         log_error(logger, "Tamaño = %d, CodOp = %d", list_size(lista_interrupcion), *codigo_operacion);
         free(codigo_operacion);
+        list_destroy_and_destroy_elements(lista_interrupcion, free);
         return -1;
     }
     int pid = *(int*)list_get(lista_interrupcion, 1);
     log_debug(logger, "Paquete de interrupt correcto");
     log_debug(logger, "El paquete de interrupcion corresponde al proceso %d", pid);
     free(codigo_operacion);
-    eliminar_paquete_lista(lista_interrupcion);
+    list_destroy_and_destroy_elements(lista_interrupcion, free);
     return pid;
 }
 
