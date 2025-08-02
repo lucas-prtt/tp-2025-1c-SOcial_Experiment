@@ -82,6 +82,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
 
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 liberarMemoria(proceso->PID);
+                sem_post(&sem_introducir_proceso_a_ready);
                 log_warning(logger, "(%d) - Finaliza el proceso. Conexion con CPU (%d) perdida", proceso->PID, cpuDispatch->ID);
                 pthread_exit(NULL);
             }
@@ -444,6 +445,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
                 sem_post(&sem_introducir_proceso_a_ready); 
             }else{
             pthread_mutex_unlock(&mutex_peticionesIO);
+            sem_post(&sem_introducir_proceso_a_ready); 
             }
             if (peticion->estado == PETICION_BLOQUEADA)
             peticion->estado = PETICION_FINALIZADA;
@@ -501,6 +503,7 @@ void * confirmDumpMemoryThread(void * Params){
             cambiarEstado_EstadoActualConocido(infoDump->PID, BLOCKED, EXIT, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
             liberarMemoria(infoDump->PID);
+            sem_post(&sem_introducir_proceso_a_ready);
     }
     eliminar_paquete_lista(paq);
     liberarConexion(infoDump->socket);
