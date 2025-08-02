@@ -431,6 +431,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
             close(io->SOCKET);
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado(peticion->PID, EXIT, listasProcesos);
+            liberarMemoria(peticion->PID);
             eliminamosOtroProceso();
             pthread_mutex_unlock(&mutex_listasProcesos);
             pthread_mutex_lock(&mutex_peticionesIO);
@@ -444,7 +445,6 @@ void * IOThread(void * NOMBREYSOCKETIO)
             }else{
             pthread_mutex_unlock(&mutex_peticionesIO);
             }
-            liberarMemoria(peticion->PID);
             if (peticion->estado == PETICION_BLOQUEADA)
             peticion->estado = PETICION_FINALIZADA;
             else{// Si esta Suspendida
