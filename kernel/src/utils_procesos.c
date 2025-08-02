@@ -386,11 +386,11 @@ void terminarProcesoPorPeticionInvalida(void * elem){
     liberarMemoria(peticion->PID);
     log_warning(logger, "(%d) - Proceso finalizado por ausencia de IOs validas", peticion->PID);
     eliminamosOtroProceso();
-    if (peticion->estado != PETICION_FINALIZADA){
+    if (peticion->estado == PETICION_BLOQUEADA){
     peticion->estado = PETICION_FINALIZADA;
     sem_post(&(peticion->sem_estado));
     }
-    else{
+    else{ // Si esta Finalizada o suspendida
         eliminarPeticion(peticion);
     }
     return;

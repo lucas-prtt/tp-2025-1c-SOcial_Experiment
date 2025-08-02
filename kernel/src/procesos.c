@@ -447,7 +447,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
             liberarMemoria(peticion->PID);
             if (peticion->estado == PETICION_BLOQUEADA)
             peticion->estado = PETICION_FINALIZADA;
-            else{
+            else{// Si esta Suspendida
                 eliminarPeticion(peticion);
             }
             return NULL;

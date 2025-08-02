@@ -230,6 +230,7 @@ int handshakeMemoria(int socketMemoria){
     respuesta = recibir_paquete_lista(socketMemoria, MSG_WAITALL, &rta);
     log_trace(logger, "Paquete recibido, pointer = %p", respuesta);
     if(respuesta == NULL || rta != SOYMEMORIA){
+        if(respuesta != NULL)
         eliminar_paquete_lista(respuesta);
         log_error(logger, "Error en el handshake con memoria: respuesta = %d", rta);
         return -1;
