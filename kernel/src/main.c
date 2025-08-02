@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
         sem_wait(&evaluarFinKernel);
         log_debug(logger, "Un proceso se murio! Puedo finalizar?");
         int procesosRestantes = getProcesosMolestando();
-        log_debug(logger, "ProcesosRestantes = %d", procesosRestantes);
+        log_error(logger, "ProcesosRestantes = %d", procesosRestantes);
         if(procesosRestantes == 0){
             log_debug(logger, "Finalizo");
             break;

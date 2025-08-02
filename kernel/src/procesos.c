@@ -83,6 +83,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                 pthread_mutex_unlock(&mutex_listasProcesos);
                 liberarMemoria(proceso->PID);
                 sem_post(&sem_introducir_proceso_a_ready);
+                sem_post(&evaluarFinKernel);
                 log_warning(logger, "(%d) - Finaliza el proceso. Conexion con CPU (%d) perdida", proceso->PID, cpuDispatch->ID);
                 pthread_exit(NULL);
             }
@@ -148,12 +149,14 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
 
 
                 Peticion * pet = crearPeticion(proceso->PID, milisegundos);
+                log_error(logger, "Premutex");
+                pthread_mutex_lock(&mutex_listasProcesos);
                 pthread_mutex_lock(&mutex_peticionesIO);
+                log_error(logger, "postmutex");
                 int instanciasDeLaIo = encolarPeticionIO(nombreIO, pet, lista_peticionesIO); // Tambien hace señal a su semaforo
-                pthread_mutex_unlock(&mutex_peticionesIO);
                 proceso->ProcesadorQueLoEjecutaDispatch = NULL;
                 proceso->ProcesadorQueLoEjecutaInterrupt = NULL;
-                pthread_mutex_lock(&mutex_listasProcesos);
+                log_error(logger, "InstanciasDeLaIo:%d", instanciasDeLaIo);
                 if(instanciasDeLaIo > 0){
                     pthread_t timerThread;
                     pthread_create(&timerThread, NULL, temporizadorSuspenderThread, pet);
@@ -171,6 +174,7 @@ void * dispatcherThread(void * IDYSOCKETDISPATCH){ // Maneja la mayor parte de l
                     sem_post(&evaluarFinKernel);
                     sem_post(&sem_introducir_proceso_a_ready); 
                 }
+                pthread_mutex_unlock(&mutex_peticionesIO);
                 pthread_mutex_unlock(&mutex_listasProcesos);
         
 
@@ -388,21 +392,28 @@ void * IOThread(void * NOMBREYSOCKETIO)
                 pthread_mutex_lock(&mutex_peticionesIO);
                 peticiones->instancias--;
                 pthread_mutex_unlock(&mutex_peticionesIO);
+                sem_post(&peticiones->sem_peticiones);
                 close(io->SOCKET);
             }
             log_debug(logger, "Recibida peticion IO");
 
+            pthread_mutex_lock(&mutex_listasProcesos);
             pthread_mutex_lock(&mutex_peticionesIO);
             if(peticiones->instancias <=0){ // Se pierde conexion y no hay mas instancias
-                pthread_mutex_unlock(&mutex_peticionesIO);
-                pthread_mutex_lock(&mutex_listasProcesos);
-                list_iterate(peticiones->cola, terminarProcesoPorPeticionInvalida); // Destruye peticiones o las pone como "Finalizadas" para que el temporizador las ignore
-                pthread_mutex_unlock(&mutex_listasProcesos);
+                int cantidaddddd = list_size(peticiones->cola);
+                imprimirLista(peticiones->cola);
+                for(int xd = 0; xd < cantidaddddd; xd ++){
+                    terminarProcesoPorPeticionInvalida(list_remove(peticiones->cola, 0));
+                }                
+                log_error(logger, "Fin ciclo eliminacion A");
                 sem_post(&evaluarFinKernel);
                 sem_post(&sem_introducir_proceso_a_ready); 
+                pthread_mutex_unlock(&mutex_peticionesIO);
+                pthread_mutex_unlock(&mutex_listasProcesos);
                 return NULL;
             }else{
                 pthread_mutex_unlock(&mutex_peticionesIO);
+                pthread_mutex_unlock(&mutex_listasProcesos);
                 if(cerrar){// Se pierde conexion y hay mas instancias
                     return NULL;
                 }
@@ -434,21 +445,28 @@ void * IOThread(void * NOMBREYSOCKETIO)
             cambiarEstado(peticion->PID, EXIT, listasProcesos);
             liberarMemoria(peticion->PID);
             eliminamosOtroProceso();
-            pthread_mutex_unlock(&mutex_listasProcesos);
+            sem_post(&evaluarFinKernel);
             pthread_mutex_lock(&mutex_peticionesIO);
             if(peticiones->instancias <=0){
+                int cantidaddddd = list_size(peticiones->cola);
+                imprimirLista(peticiones->cola);
+                for(int xd = 0; xd < cantidaddddd; xd ++){
+                    terminarProcesoPorPeticionInvalida(list_remove(peticiones->cola, 0));
+                }
+                log_error(logger, "Fin ciclo eliminacion B");
                 pthread_mutex_unlock(&mutex_peticionesIO);
-                pthread_mutex_lock(&mutex_listasProcesos);
-                list_iterate(peticiones->cola, terminarProcesoPorPeticionInvalida);
                 pthread_mutex_unlock(&mutex_listasProcesos);    
                 sem_post(&evaluarFinKernel);
                 sem_post(&sem_introducir_proceso_a_ready); 
             }else{
             pthread_mutex_unlock(&mutex_peticionesIO);
+            pthread_mutex_unlock(&mutex_listasProcesos);
             sem_post(&sem_introducir_proceso_a_ready); 
             }
-            if (peticion->estado == PETICION_BLOQUEADA)
+            if (peticion->estado == PETICION_BLOQUEADA){
             peticion->estado = PETICION_FINALIZADA;
+            sem_post(&(peticion->sem_estado));
+            }
             else{// Si esta Suspendida
                 eliminarPeticion(peticion);
             }
@@ -503,6 +521,7 @@ void * confirmDumpMemoryThread(void * Params){
             cambiarEstado_EstadoActualConocido(infoDump->PID, BLOCKED, EXIT, listasProcesos);
             pthread_mutex_unlock(&mutex_listasProcesos);
             liberarMemoria(infoDump->PID);
+            sem_post(&evaluarFinKernel);
             sem_post(&sem_introducir_proceso_a_ready);
     }
     eliminar_paquete_lista(paq);
@@ -523,16 +542,15 @@ void * temporizadorSuspenderThread(void * param){
     log_trace(logger, "Temporizador de (%d) finalizado", peticion->PID);
 
     sem_wait(&(peticion->sem_estado));
-
+    pthread_mutex_lock(&mutex_listasProcesos);
+    pthread_mutex_lock(&mutex_peticionesIO);
     if (peticion->estado == PETICION_BLOQUEADA)
     {
-    pthread_mutex_lock(&mutex_listasProcesos);
         int r =cambiarEstado_EstadoActualConocido(peticion->PID, BLOCKED, SUSP_BLOCKED, listasProcesos);
-    pthread_mutex_unlock(&mutex_listasProcesos);
-    peticion->estado = PETICION_SUSPENDIDA;
-    if (r!=0)
-        log_trace(logger, "Cancelacion de la suspension de (%d), ya no esta mas bloqueado",peticion->PID);
-    else{
+        peticion->estado = PETICION_SUSPENDIDA;
+        if (r!=0)
+            log_trace(logger, "Cancelacion de la suspension de (%d), ya no esta mas bloqueado",peticion->PID);
+        else{
         enviarSolicitudSuspensionProceso(peticion->PID);
         log_debug(logger, "(%d) suspendido", peticion->PID);
         }
@@ -541,9 +559,16 @@ void * temporizadorSuspenderThread(void * param){
     eliminarPeticion(peticion);
     else
     sem_post(&(peticion->sem_estado));
+    pthread_mutex_unlock(&mutex_listasProcesos);
+    pthread_mutex_unlock(&mutex_peticionesIO);
     sem_post(&sem_introducir_proceso_a_ready);
     pthread_exit(NULL);
 }
 
 
 
+void imprimirLista(t_list * lista){
+    for(int i=0; i < list_size(lista); i++){
+        log_error(logger, "Lista: el %d : cont %d", i, ((Peticion*)list_get(lista, i))->PID);
+    }
+}

@@ -42,5 +42,6 @@ void * orderThread(void * _);
 void * dispatcherThread(void * IDYSOCKETDISPATCH);
 void post_sem_introducirAReady(); // Para marcar el inicio desde main
 void * temporizadorSuspenderThread(void * param);
+void imprimirLista(t_list * lista);
 #endif
 

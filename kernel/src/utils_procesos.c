@@ -284,10 +284,13 @@ Peticion * crearPeticion(int PID, int milisegundos){
 
 int encolarPeticionIO(char * nombreIO, Peticion * peticion, t_list * lista_peticiones){
     PeticionesIO * io = encontrarPeticionesDeIOPorNombre(lista_peticiones, nombreIO);
+    imprimirLista(io->cola);
     if(io == NULL || io->instancias == 0){
         return 0;
     }    
+    log_error(logger, "Añadida");
     list_add(io->cola, peticion);
+     imprimirLista(io->cola);
     sem_post(&(io->sem_peticiones));
     return io->instancias;
 }
@@ -383,6 +386,7 @@ void terminarProcesoPorPeticionInvalida(void * elem){
     Peticion * peticion = (Peticion*)elem;
     sem_wait(&(peticion->sem_estado));
     cambiarEstado(peticion->PID, EXIT, listasProcesos);
+    log_warning(logger, "Apunto de liberar memoria");
     liberarMemoria(peticion->PID);
     log_warning(logger, "(%d) - Proceso finalizado por ausencia de IOs validas", peticion->PID);
     eliminamosOtroProceso();
