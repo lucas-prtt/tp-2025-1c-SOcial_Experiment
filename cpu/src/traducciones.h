@@ -95,6 +95,7 @@ void *pedirPaginaAMemoria(int socket_memoria, int pid, int direccion_fisica);
 void limpiarEntradaCACHE(CACHE *cache, int indice_victima);
 void limpiarProcesoCACHE(cpu_t *cpu, int pid);
 void marcarModificadoEnCache(CACHE *cache, int pid, int nro_pagina);
+void simularRetardoCache();
 
 void inicializarTLB(TLB *tlb);
 int buscarPaginaTLB(TLB *tlb, int pid, int nro_pagina);

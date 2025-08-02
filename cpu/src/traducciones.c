@@ -261,9 +261,9 @@ void inicializarCACHE(CACHE *cache) {
 }
 
 void *buscarPaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
-    int pos_pagina = buscarIndicePaginaCACHE(cache, pid, nro_pagina);
+    simularRetardoCache();
 
-    usleep(CACHE_RETARDO * 1000);
+    int pos_pagina = buscarIndicePaginaCACHE(cache, pid, nro_pagina);
 
     if(pos_pagina == -1) {
         log_info(logger, "PID: %d - Cache Miss - Pagina: %d", pid, nro_pagina);
@@ -287,8 +287,7 @@ int buscarIndicePaginaCACHE(CACHE *cache, int pid, int nro_pagina) {
 
 void actualizarCACHE(cpu_t *cpu, int pid, int nro_pagina, void *contenido) {
     // Se ejecuta sabiendo que la página no está en la caché //
-
-    usleep(CACHE_RETARDO * 1000);
+    simularRetardoCache();
 
     // CASO 1: hay registros vacios //
     int indice_victima = hayEntradaVaciaCACHE(cpu->cache);
@@ -475,13 +474,9 @@ void limpiarProcesoCACHE(cpu_t *cpu, int pid) {
     }
 }
 
-
-
 void escribirEnCache(cpu_t *cpu, int pid, int direccion_logica, char *datos) {
     int bytes_restantes = strlen(datos);
     char *puntero_datos = datos;
-    
-    usleep(CACHE_RETARDO * 1000);
 
     while(bytes_restantes > 0) {
         int nro_pagina_actual = getNumeroPagina(direccion_logica);
@@ -525,7 +520,6 @@ void leerDeCache(cpu_t *cpu, int pid, int direccion_logica, int tamanio) {
     int datos_leidos = 0;
     char * leido = malloc(tamanio_pagina+1);
     leido[tamanio_pagina] = '\0';
-    usleep(CACHE_RETARDO * 1000);
     
     while(bytes_restantes > 0) {
         int nro_pagina_actual = getNumeroPagina(direccion_logica);
