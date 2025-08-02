@@ -387,6 +387,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
                 pthread_mutex_lock(&mutex_peticionesIO);
                 peticiones->instancias--;
                 pthread_mutex_unlock(&mutex_peticionesIO);
+                sem_post(&(peticiones->sem_peticiones));
                 close(io->SOCKET);
             }
             log_debug(logger, "Recibida peticion IO");
@@ -431,6 +432,7 @@ void * IOThread(void * NOMBREYSOCKETIO)
             close(io->SOCKET);
             pthread_mutex_lock(&mutex_listasProcesos);
             cambiarEstado(peticion->PID, EXIT, listasProcesos);
+            liberarMemoria(peticion->PID);
             eliminamosOtroProceso();
             pthread_mutex_unlock(&mutex_listasProcesos);
             pthread_mutex_lock(&mutex_peticionesIO);
@@ -444,7 +446,6 @@ void * IOThread(void * NOMBREYSOCKETIO)
             }else{
             pthread_mutex_unlock(&mutex_peticionesIO);
             }
-            liberarMemoria(peticion->PID);
             if (peticion->estado == PETICION_BLOQUEADA)
             peticion->estado = PETICION_FINALIZADA;
             else{
@@ -520,7 +521,9 @@ void * temporizadorSuspenderThread(void * param){
     log_trace(logger, "Temporizador de (%d) finalizado", peticion->PID);
 
     sem_wait(&(peticion->sem_estado));
-
+    if(peticion->estado == PETICION_FINALIZADA)
+        eliminarPeticion(peticion);
+    else
     if (peticion->estado == PETICION_BLOQUEADA)
     {
     pthread_mutex_lock(&mutex_listasProcesos);
@@ -533,11 +536,9 @@ void * temporizadorSuspenderThread(void * param){
         enviarSolicitudSuspensionProceso(peticion->PID);
         log_debug(logger, "(%d) suspendido", peticion->PID);
         }
-    }
-    if(peticion->estado == PETICION_FINALIZADA)
-    eliminarPeticion(peticion);
-    else
     sem_post(&(peticion->sem_estado));
+    }
+    
     sem_post(&sem_introducir_proceso_a_ready);
     pthread_exit(NULL);
 }
